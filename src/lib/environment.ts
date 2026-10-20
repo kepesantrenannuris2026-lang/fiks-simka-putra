@@ -24,10 +24,16 @@ export function getActiveEnvironment(): LingkunganPesantren {
     ''
   ).trim().toUpperCase();
 
-  if (envVar.includes('PUTRA')) return 'PUTRA';
   if (envVar.includes('PUTRI')) return 'PUTRI';
+  if (envVar.includes('PUTRA')) return 'PUTRA';
 
   if (typeof window !== 'undefined') {
+    // 1. Hostname detection for official deployment domains
+    const hostname = window.location.hostname.toLowerCase();
+    if (hostname.includes('putra') || hostname.includes('simka-putra')) return 'PUTRA';
+    if (hostname.includes('putri') || hostname.includes('simka-putri')) return 'PUTRI';
+
+    // 2. Local storage override (configured in Database Settings)
     const saved = localStorage.getItem('SIMKA_APP_ENVIRONMENT');
     if (saved) {
       const upper = saved.trim().toUpperCase();
@@ -35,8 +41,8 @@ export function getActiveEnvironment(): LingkunganPesantren {
     }
   }
 
-  // Authoritative default based on metadata.json ("Remix SIMKA.ID PUTRI")
-  return 'PUTRI';
+  // Authoritative default for SIMKA.ID PUTRA deployment
+  return 'PUTRA';
 }
 
 /**

@@ -1,6 +1,6 @@
 {
   "name": "Remix SIMKA PUTRA - Sistem Monitoring Karakter \u0026 Akhlak Santri Putri",
-  "description": "Dashboard administrasi pembinaan akhlak dan karakter santri modern untuk Koordinator dan Kasie Pembinaan Pesantren.",
+  "description": "Dashboard administrasi monitoring pelanggaran, pembinaan akhlak, dan karakter santri putra Pesantren Nurul Islam Tengaran.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
