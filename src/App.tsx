@@ -27,6 +27,13 @@ const AppContent: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    const officialTitle = 'SIMKA.ID PUTRA - Sistem Monitoring Karakter & Akhlak Santri Putra';
+    if (document.title !== officialTitle) {
+      document.title = officialTitle;
+    }
+  }, [currentRoute, isAuthenticated]);
+
+  useEffect(() => {
     setAppAuthenticated(Boolean(isAuthenticated && user));
   }, [isAuthenticated, user, setAppAuthenticated]);
 

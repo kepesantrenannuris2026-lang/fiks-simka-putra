@@ -13,7 +13,7 @@ export type LingkunganPesantren = 'PUTRA' | 'PUTRI';
  * Priority:
  * 1. Explicit environment variable (VITE_APP_ENVIRONMENT / VITE_CAMPUS / VITE_PESANTREN_TYPE)
  * 2. Local storage override (if explicitly configured by admin in database settings)
- * 3. Default to 'PUTRI' derived from project title in metadata.json
+ * 3. Default to 'PUTRA' authoritative for SIMKA.ID PUTRA deployment
  */
 export function getActiveEnvironment(): LingkunganPesantren {
   const env = (import.meta as any).env || {};

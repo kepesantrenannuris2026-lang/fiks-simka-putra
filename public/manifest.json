@@ -1,0 +1,34 @@
+{
+  "name": "SIMKA.ID PUTRA - Sistem Monitoring Karakter & Akhlak Santri Putra",
+  "short_name": "SIMKA.ID PUTRA",
+  "description": "Dashboard administrasi monitoring pelanggaran, pembinaan akhlak, dan karakter santri putra Pesantren Nurul Islam Tengaran.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#07101F",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "/favicon-simka-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-simka-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-simka.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

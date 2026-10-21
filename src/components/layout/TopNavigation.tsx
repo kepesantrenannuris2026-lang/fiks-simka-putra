@@ -104,7 +104,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onOpenSidebar }) =
       case 'akun':
         return { title: 'Pengaturan Akun Saya', sub: 'Profil pengguna aktif & keamanan kata sandi' };
       default:
-        return { title: 'SIMKA.ID', sub: 'Sistem Monitoring Karakter & Akhlak Santri' };
+        return { title: 'SIMKA.ID PUTRA', sub: 'Sistem Monitoring Karakter & Akhlak Santri Putra' };
     }
   };
 

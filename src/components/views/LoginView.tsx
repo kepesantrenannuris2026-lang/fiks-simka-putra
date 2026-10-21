@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, User, AlertCircle, ArrowRight, Eye, EyeOff, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -6,6 +6,10 @@ import { useTheme } from '../../context/ThemeContext';
 export const LoginView: React.FC = () => {
   const { login } = useApp();
   const { resolvedTheme, setThemeMode, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    document.title = 'SIMKA.ID PUTRA - Sistem Monitoring Karakter & Akhlak Santri Putra';
+  }, []);
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -124,8 +128,8 @@ export const LoginView: React.FC = () => {
             />
           </div>
 
-          {/* 2. Judul: SIMKA.ID Pro V1 */}
-          <div className="flex items-center justify-center gap-2">
+          {/* 2. Judul: SIMKA.ID PUTRA Pro V1 */}
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2">
             <h1
               className={`text-[25px] sm:text-[30px] font-black tracking-tight leading-tight transition-colors ${
                 isDark ? 'text-white' : 'text-slate-900'
@@ -140,17 +144,26 @@ export const LoginView: React.FC = () => {
                   : 'bg-emerald-50 text-emerald-700 border-emerald-300'
               }`}
             >
+              PUTRA
+            </span>
+            <span
+              className={`px-1.5 py-0.5 rounded text-[9.5px] sm:text-[10px] font-bold tracking-wider border transition-colors ${
+                isDark
+                  ? 'bg-slate-800 text-slate-300 border-slate-700'
+                  : 'bg-slate-100 text-slate-600 border-slate-200'
+              }`}
+            >
               Pro V1
             </span>
           </div>
 
-          {/* 3. Subjudul: Sistem Monitoring Karakter & Akhlak Santri */}
+          {/* 3. Subjudul: Sistem Monitoring Karakter & Akhlak Santri Putra */}
           <p
             className={`text-[13px] sm:text-[14px] font-semibold mt-1 max-w-xs sm:max-w-md leading-relaxed tracking-wide transition-colors ${
               isDark ? 'text-emerald-300/90' : 'text-emerald-700'
             }`}
           >
-            Sistem Monitoring Karakter &amp; Akhlak Santri
+            Sistem Monitoring Karakter &amp; Akhlak Santri Putra
           </p>
 
           {/* Nama Pesantren */}

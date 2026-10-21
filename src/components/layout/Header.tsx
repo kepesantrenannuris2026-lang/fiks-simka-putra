@@ -35,10 +35,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSidebar }) => {
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <MosqueLogoIcon className="w-7 h-7" />
           <span className="font-extrabold text-white text-base tracking-wider">
             SIMKA<span className="text-emerald-400">.ID</span>
+          </span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            PUTRA
           </span>
         </div>
       </div>

@@ -49,7 +49,7 @@ export function exportMutabaahPembinaanPDF(data: PembinaanFormData): void {
   doc.setFont('times', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('SIMKA.ID Pro V1 — Sistem Monitoring Karakter & Akhlak Santri', pageWidth / 2, currentY, { align: 'center' });
+  doc.text('SIMKA.ID PUTRA Pro V1 — Sistem Monitoring Karakter & Akhlak Santri Putra', pageWidth / 2, currentY, { align: 'center' });
   currentY += 3.2;
 
   // Garis Pembatas Kop Surat Resmi (Double Line)

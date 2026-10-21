@@ -143,16 +143,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {!isCollapsed && (
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-wider">
                     SIMKA<span className="text-emerald-500 dark:text-emerald-400">.ID</span>
                   </span>
                   <span className="px-1.5 py-0.5 rounded text-[8.5px] sm:text-[9px] font-bold bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 tracking-wider">
+                    PUTRA
+                  </span>
+                  <span className="px-1 py-0.5 rounded text-[8px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                     Pro V1
                   </span>
                 </div>
                 <p className="text-[9.5px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
-                  Karakter &amp; Akhlak Santri
+                  Karakter &amp; Akhlak Santri Putra
                 </p>
               </div>
             )}
