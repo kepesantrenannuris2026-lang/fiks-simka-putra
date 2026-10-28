@@ -1,3 +1,4 @@
+import {isIntegrated} from '../lib/ekosistem';
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   PageRoute, 
@@ -352,7 +353,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Database modal state
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
-  const openDatabaseModal = useCallback(() => setIsDatabaseModalOpen(true), []);
+  const openDatabaseModal = useCallback(() => { if(!isIntegrated) setIsDatabaseModalOpen(true); }, []);
   const closeDatabaseModal = useCallback(() => setIsDatabaseModalOpen(false), []);
 
   const dbConfig = getActiveSupabaseConfig();
@@ -367,6 +368,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Users database
   const [usersList, setUsersList] = useState<UserAccount[]>(() => {
+    if (isIntegrated) return [];
     try {
       const saved = localStorage.getItem('simka_users');
       return saved ? JSON.parse(saved) : initialUsers;
@@ -424,6 +426,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Santri & Riwayat Dataset (Supabase Single Source of Truth)
   const [allSantriList, setAllSantriList] = useState<Santri[]>(() => {
+    if (isIntegrated) return [];
     try {
       const saved = localStorage.getItem('simka_santri');
       return saved ? sortSantriList(JSON.parse(saved)) : sortSantriList(initialSantriList);
@@ -433,6 +436,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [allRiwayatList, setAllRiwayatList] = useState<RiwayatPelanggaran[]>(() => {
+    if (isIntegrated) return [];
     try {
       const saved = localStorage.getItem('simka_riwayat');
       if (saved) {
@@ -449,6 +453,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [allPembinaanList, setAllPembinaanList] = useState<PembinaanRecord[]>(() => {
+    if (isIntegrated) return [];
     try {
       const saved = localStorage.getItem('simka_pembinaan_records');
       if (saved) {
@@ -467,6 +472,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // State for Aktivitas & Pemberitahuan
   const [activityQueryError, setActivityQueryError] = useState<string | null>(null);
   const [hiddenNotificationIds, setHiddenNotificationIds] = useState<Set<string>>(() => {
+    if (isIntegrated) return new Set<string>();
     const set = new Set<string>();
     if (typeof window !== 'undefined') {
       try {
@@ -485,7 +491,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Local caching for offline / fast startup
   useEffect(() => {
-    localStorage.setItem('simka_users', JSON.stringify(usersList));
+    !isIntegrated && localStorage.setItem('simka_users', JSON.stringify(usersList));
   }, [usersList]);
 
   useEffect(() => {
@@ -493,15 +499,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [pelanggaranList]);
 
   useEffect(() => {
-    localStorage.setItem('simka_santri', JSON.stringify(allSantriList));
+    !isIntegrated && localStorage.setItem('simka_santri', JSON.stringify(allSantriList));
   }, [allSantriList]);
 
   useEffect(() => {
-    localStorage.setItem('simka_riwayat', JSON.stringify(allRiwayatList));
+    !isIntegrated && localStorage.setItem('simka_riwayat', JSON.stringify(allRiwayatList));
   }, [allRiwayatList]);
 
   useEffect(() => {
-    localStorage.setItem('simka_pembinaan_records', JSON.stringify(allPembinaanList));
+    !isIntegrated && localStorage.setItem('simka_pembinaan_records', JSON.stringify(allPembinaanList));
   }, [allPembinaanList]);
 
   // Central Supabase Fetch & Synchronization
@@ -550,7 +556,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let effectivePelanggaran = dbPelanggaran;
       if (effectivePelanggaran !== null) {
         setAllRiwayatList(effectivePelanggaran);
-        localStorage.setItem('simka_riwayat', JSON.stringify(effectivePelanggaran));
+        !isIntegrated && localStorage.setItem('simka_riwayat', JSON.stringify(effectivePelanggaran));
       } else {
         effectivePelanggaran = allRiwayatList;
       }
@@ -558,7 +564,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let activeUsers = dbUsers;
       if (activeUsers !== null && activeUsers.length > 0) {
         setUsersList(activeUsers);
-        localStorage.setItem('simka_users', JSON.stringify(activeUsers));
+        !isIntegrated && localStorage.setItem('simka_users', JSON.stringify(activeUsers));
 
         // Keep current logged-in user profile & unit in sync with Supabase
         setUser((currentUser) => {
@@ -639,7 +645,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         const sortedSantri = sortSantriList(santriWithPoin);
         setAllSantriList(sortedSantri);
-        localStorage.setItem('simka_santri', JSON.stringify(sortedSantri));
+        !isIntegrated && localStorage.setItem('simka_santri', JSON.stringify(sortedSantri));
       }
 
       if (dbMasterPelanggaran !== null && dbMasterPelanggaran.length > 0) {
@@ -655,7 +661,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (dbPembinaan !== null) {
         setAllPembinaanList(dbPembinaan);
-        localStorage.setItem('simka_pembinaan_records', JSON.stringify(dbPembinaan));
+        !isIntegrated && localStorage.setItem('simka_pembinaan_records', JSON.stringify(dbPembinaan));
       }
     } catch (err) {
       console.warn('Supabase data synchronization note:', err);
@@ -756,6 +762,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = () => {
+    if (isIntegrated) { window.parent.postMessage({type:'nuris:logout'},location.origin); return; }
     localStorage.removeItem('simka_session');
     sessionStorage.removeItem('simka_session');
     setUser(null);
@@ -1399,7 +1406,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const freshUsers = await fetchUsersFromDB();
     if (freshUsers && freshUsers.length > 0) {
       setUsersList(freshUsers);
-      localStorage.setItem('simka_users', JSON.stringify(freshUsers));
+      !isIntegrated && localStorage.setItem('simka_users', JSON.stringify(freshUsers));
     } else {
       setUsersList((prev) => prev.filter((u) => u.id !== userId));
     }
@@ -1573,7 +1580,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }));
           const sorted = sortSantriList(withPoints);
           setAllSantriList(sorted);
-          localStorage.setItem('simka_santri', JSON.stringify(sorted));
+          !isIntegrated && localStorage.setItem('simka_santri', JSON.stringify(sorted));
           synced = true;
         }
       } catch (err) {
@@ -2181,7 +2188,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return p;
       });
       try {
-        localStorage.setItem('simka_pembinaan_records', JSON.stringify(next));
+        !isIntegrated && localStorage.setItem('simka_pembinaan_records', JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -2321,7 +2328,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             : r
         );
         try {
-          localStorage.setItem('simka_riwayat', JSON.stringify(next));
+          !isIntegrated && localStorage.setItem('simka_riwayat', JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -2382,7 +2389,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             : p
         );
         try {
-          localStorage.setItem('simka_pembinaan_records', JSON.stringify(next));
+          !isIntegrated && localStorage.setItem('simka_pembinaan_records', JSON.stringify(next));
         } catch {}
         return next;
       });

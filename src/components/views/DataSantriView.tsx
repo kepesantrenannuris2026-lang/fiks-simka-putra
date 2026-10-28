@@ -1,3 +1,4 @@
+import {isIntegrated} from '../../lib/ekosistem';
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PointBadge } from '../common/PointBadge';
@@ -70,7 +71,7 @@ export const DataSantriView: React.FC = () => {
   });
   const [formError, setFormError] = useState<string | null>(null);
 
-  const isSuperadmin = user?.role === 'KASIE_KEPESANTRENAN';
+  const isSuperadmin = !isIntegrated && user?.role === 'KASIE_KEPESANTRENAN';
   const effectiveUnit: UnitPesantren = isSuperadmin
     ? selectedKasieUnitFilter === 'ALL'
       ? 'SMP'

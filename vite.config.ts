@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: process.env.VITE_KEPESANTRENAN_PORTAL === 'true' ? '/simka/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

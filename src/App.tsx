@@ -1,3 +1,5 @@
+import {isIntegrated} from './lib/ekosistem';
+import {EkosistemGate} from './components/EkosistemGate';
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -68,9 +70,9 @@ const AppContent: React.FC = () => {
       case 'laporan-pembinaan':
         return <LaporanPembinaanView />;
       case 'manajemen-user':
-        return <ManajemenUserView />;
+        return isIntegrated ? <CentralAccount /> : <ManajemenUserView />;
       case 'akun':
-        return <AkunView />;
+        return isIntegrated ? <CentralAccount /> : <AkunView />;
       default:
         return <DashboardView />;
     }
@@ -106,7 +108,9 @@ const AppContent: React.FC = () => {
   );
 };
 
-export default function App() {
+function CentralAccount(){return <section className="p-6 rounded-2xl bg-white dark:bg-slate-900"><h1 className="text-xl font-bold">Akun Kepesantrenan</h1><p className="my-4">Username, password, dan data santri mengikuti Mutabaah Tahfidz. Hubungi pimpinan untuk perubahan akun.</p><a href="/#mutabaah" target="_top" className="text-emerald-700 underline">Buka Mutabaah</a></section>;}
+
+function SimkaApp() {
   return (
     <ThemeProvider>
       <AppProvider>
@@ -115,3 +119,5 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
+export default function App(){return isIntegrated?<EkosistemGate><SimkaApp/></EkosistemGate>:<SimkaApp/>;}

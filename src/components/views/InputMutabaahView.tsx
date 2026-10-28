@@ -1,3 +1,4 @@
+import {isIntegrated} from '../../lib/ekosistem';
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -11,6 +12,7 @@ import {
 
 export const InputMutabaahView: React.FC = () => {
   const { user } = useApp();
+  if(isIntegrated)return <section className="p-6 rounded-2xl bg-white dark:bg-slate-900"><h1 className="text-xl font-bold">Mutabaah Tahfidz</h1><p className="my-4">Lanjutkan setoran, monitoring, dan rapor dengan akun yang sama.</p><a href="/#mutabaah" target="_top" className="text-emerald-700 underline">Buka Mutabaah Tahfidz →</a></section>;
 
   return (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
