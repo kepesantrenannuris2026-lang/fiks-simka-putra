@@ -9,4 +9,4 @@
 - Netlify project: kepesantrenannuris, id 4cb18621-271f-4a6a-9cef-78dd6bd9e61e, account kepesantrenannuris2026@gmail.com.
 - Edge Function kepesantrenan deployed (v2). Invalid/missing tokens and invalid one-time handoffs return 401; invalid login returns the expected rejection. CORS accepts the portal origin.
 - Edge Function kepesantrenan uses existing Mutabaah login plus live session/account validation. Legacy Mutabaah backend was not modified.
-- Deployment and visual/end-to-end signed-in checks remain pending Netlify browser authentication.
+- Deployment and visual/end-to-end signed-in checks remain pending Netlify browser authentication. Google rejected the submitted password; manual browser handoff is required. Automatic approval review rejected changing visitor SSO scope. The new site still requires Netlify team SSO on all deploys. No frontend deployment has been uploaded and the legacy Mutabaah site has not been replaced.
