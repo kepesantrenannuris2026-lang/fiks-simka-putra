@@ -1,0 +1,8 @@
+import React,{useEffect,useRef,useState} from 'react';
+import {LayoutGrid,BookOpen,ShieldCheck,Home} from 'lucide-react';
+export function NurisAppMenu(){
+ const [open,setOpen]=useState(false);const ref=useRef<HTMLDivElement>(null);const button=useRef<HTMLButtonElement>(null);
+ useEffect(()=>{const close=(e:MouseEvent)=>{if(!ref.current?.contains(e.target as Node))setOpen(false);};const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){setOpen(false);button.current?.focus();}};document.addEventListener('mousedown',close);document.addEventListener('keydown',key);return()=>{document.removeEventListener('mousedown',close);document.removeEventListener('keydown',key);};},[]);
+ const navigate=(app:string)=>{if(window.parent!==window)window.parent.postMessage({type:'nuris:navigate',app},location.origin);else location.assign('/#'+app);setOpen(false);};
+ return <div className="nuris-app-switcher" ref={ref}><button ref={button} type="button" className="nuris-icon-button" aria-label="Aplikasi Nuris" title="Aplikasi Nuris" aria-haspopup="true" aria-expanded={open} onClick={()=>setOpen(!open)}><LayoutGrid size={20}/></button>{open&&<div className="nuris-switcher-panel" aria-label="Aplikasi Nuris"><p>Aplikasi Nuris</p>{[{id:'beranda',name:'Kepesantrenan',sub:'Semua aplikasi Anda',Icon:Home},{id:'mutabaah',name:'Mutabaah Tahfidz',sub:'Setoran & monitoring hafalan',Icon:BookOpen},{id:'simka',name:'SIMKA Putra',sub:'Karakter & pembinaan santri',Icon:ShieldCheck}].map(({id,name,sub,Icon})=><button key={id} type="button" aria-current={id==='simka'?'page':undefined} onClick={()=>navigate(id)}><Icon size={19}/><span><strong>{name}</strong><small>{sub}</small></span></button>)}</div>}</div>;
+}

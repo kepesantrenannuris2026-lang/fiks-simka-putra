@@ -119,7 +119,7 @@ export const DataPelanggaranView: React.FC = () => {
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* Page Header Banner - Sleek & Compact */}
-      <div className="rounded-xl bg-gradient-to-r from-emerald-800 via-teal-900 to-slate-900 p-4 sm:p-5 text-white shadow-md relative overflow-hidden">
+      <div className="rounded-xl nuris-section-header p-4 sm:p-5 text-white shadow-md relative overflow-hidden">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3">

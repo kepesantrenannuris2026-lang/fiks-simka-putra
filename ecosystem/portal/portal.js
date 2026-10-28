@@ -8,7 +8,7 @@ async function request(path,body={},token=localStorage.getItem('mut_token')||'')
  const r=await res.json();if(!res.ok)throw Object.assign(new Error(r.error?.message||'Tidak dapat terhubung. Coba lagi.'),{status:res.status});return r;
 }
 function clearData(){for(const key of Object.keys(localStorage))if(key==='mut_token'||key==='mut_user'||key.startsWith('simka_'))localStorage.removeItem(key);sessionStorage.removeItem('simka_session');session=null;$('frames').replaceChildren();}
-function showLogin(message=''){$('loading').hidden=true;$('workspace').hidden=true;$('login').hidden=false;if(message){$('login-error').textContent=message;$('login-error').hidden=false;}}
+function showLogin(message=''){document.body.classList.remove('module-open');$('loading').hidden=true;$('workspace').hidden=true;$('login').hidden=false;if(message){$('login-error').textContent=message;$('login-error').hidden=false;}}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,5000);}
 function navLink(id,name,svg){const a=document.createElement('a');a.className='nav-link';a.href='#'+id;a.innerHTML=icon(svg)+'<span></span>';a.querySelector('span').textContent=name;a.dataset.app=id;return a;}
 function mount(){
@@ -21,6 +21,7 @@ function mount(){
 }
 function route(){if(!session)return;const id=location.hash.slice(1)||desired;desired='beranda';const app=window.NURIS_APPS.find(a=>a.id===id);if(app&&!session.apps[app.id]){toast('Akses SIMKA mengikuti penugasan unit Putra di Mutabaah.');location.hash='beranda';return;}
  const active=app?app.id:'beranda';document.querySelectorAll('[data-app]').forEach(a=>{if(a.dataset.app===active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+ document.body.classList.toggle('module-open',!!app);
  $('home').hidden=!!app;$('app-stage').hidden=!app;document.title=app?app.name+' · Kepesantrenan Nuris':'Kepesantrenan Nuris';
  for(const f of $('frames').children)f.hidden=f.dataset.id!==active;
  if(app&&!document.querySelector('iframe[data-id="'+app.id+'"]')){const f=document.createElement('iframe');f.src=app.path;f.title=app.name;f.dataset.id=app.id;f.referrerPolicy='same-origin';f.addEventListener('load',()=>{$('frame-loading').hidden=true;});$('frame-loading').hidden=false;$('frames').append(f);}
@@ -30,7 +31,7 @@ $('login-form').addEventListener('submit',async e=>{e.preventDefault();if(busy)r
 $('toggle-password').addEventListener('click',()=>{const hidden=$('password').type==='password';$('password').type=hidden?'text':'password';$('toggle-password').textContent=hidden?'Sembunyikan':'Lihat';$('toggle-password').setAttribute('aria-label',hidden?'Sembunyikan password':'Tampilkan password');});
 $('logout').addEventListener('click',signOut);window.addEventListener('hashchange',route);
 window.addEventListener('storage',e=>{if(e.key==='mut_token'&&!e.newValue){clearData();showLogin();}if(e.key==='mut_token'&&e.newValue)verify();});
-window.addEventListener('message',e=>{if(e.origin!==location.origin||!Array.from($('frames').children).some(f=>f.contentWindow===e.source))return;if(e.data?.type==='nuris:logout')signOut();if(e.data?.type==='nuris:session-ended')verify();});
+window.addEventListener('message',e=>{if(e.origin!==location.origin||!Array.from($('frames').children).some(f=>f.contentWindow===e.source))return;if(e.data?.type==='nuris:navigate'&&['beranda',...window.NURIS_APPS.map(a=>a.id)].includes(e.data.app))location.hash=e.data.app;if(e.data?.type==='nuris:logout')signOut();if(e.data?.type==='nuris:session-ended')verify();});
 async function verify(){try{session=await request('session');mount();}catch(e){if(e.status===401){clearData();showLogin('Sesi berakhir. Silakan masuk kembali.');}else showLogin('Belum dapat terhubung ke server. Periksa koneksi lalu coba masuk kembali.');}}
 async function startup(){
  const params=new URLSearchParams(location.hash.slice(1));const code=params.get('transfer');

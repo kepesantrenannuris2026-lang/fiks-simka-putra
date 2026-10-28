@@ -192,7 +192,7 @@ export const DataSantriView: React.FC = () => {
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Top Header Card */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-800 to-teal-900 p-5 sm:p-6 text-white shadow-lg">
+      <div className="rounded-2xl nuris-section-header p-5 sm:p-6 text-white shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-2">
@@ -212,7 +212,7 @@ export const DataSantriView: React.FC = () => {
               Data Santri
             </h1>
             <p className="text-xs sm:text-sm text-emerald-100 mt-0.5">
-              Kelola data santri, input manual per santri, atau import massal dari file Excel.
+              Lihat poin, musyrif, dan riwayat pembinaan. Data santri terhubung dengan Mutabaah Tahfidz.
             </p>
           </div>
 
@@ -429,8 +429,15 @@ export const DataSantriView: React.FC = () => {
 
       {/* Santri List Table (COMPACT SAAS DESIGN) */}
       {santriList.length > 0 && (
-        <div className="rounded-2xl bg-white dark:bg-[#101C2F] border border-slate-200/90 dark:border-[#1E3048] shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="nuris-santri-results rounded-2xl bg-white dark:bg-[#101C2F] border border-slate-200/90 dark:border-[#1E3048] shadow-xs overflow-hidden">
+          <div className="grid gap-3 md:hidden">
+            {paginatedSantri.length === 0 ? <p className="p-5 text-center text-sm text-slate-500">Tidak ada santri yang cocok dengan pencarian.</p> : paginatedSantri.map(santri => <article key={santri.id} className="nuris-student-card">
+              <h3>{santri.nama}</h3><p className="nuris-student-meta">{santri.unit} Putra · tingkat {santri.kelas}</p>
+              <div className="nuris-student-points"><div><strong>{santri.totalPoin}</strong><small>Total poin pelanggaran</small></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">{santri.statusPembinaan || 'Baik'}</span></div>
+              <footer><span>{santri.musyrifNama || 'Musyrif belum ditetapkan'}</span><button type="button" onClick={() => setSelectedSantriForDetail(santri)}>Detail santri</button></footer>
+            </article>)}
+          </div>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-[#0A1322] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-[#182740]">
                 <tr>

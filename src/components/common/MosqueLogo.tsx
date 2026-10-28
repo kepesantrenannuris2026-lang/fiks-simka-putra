@@ -24,11 +24,12 @@ export const MosqueLogo: React.FC<MosqueLogoProps> = ({
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
       <img
-        src="/logo-simka.png"
-        alt="Logo Masjid SIMKA.ID"
+        src="/logo-nuris.svg"
+        alt="Logo Pesantren Nurul Islam Tengaran"
         className={`${iconSize} object-contain shrink-0 rounded-xl`}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = '/logo-simka.svg';
+          (e.target as HTMLImageElement).onerror = null;
+          (e.target as HTMLImageElement).src = '/logo-nuris.png';
         }}
       />
 

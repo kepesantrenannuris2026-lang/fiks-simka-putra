@@ -116,14 +116,14 @@ export const LoginView: React.FC = () => {
           {/* 1. Official SIMKA.ID Mosque Logo (Emerald Rounded Box with Green-Gold Mosque) */}
           <div className="mb-3.5 sm:mb-4 flex items-center justify-center">
             <img
-              src="/logo-simka.png"
-              alt="Logo Masjid SIMKA.ID"
+              src="/logo-nuris.svg"
+              alt="Logo Pesantren Nurul Islam Tengaran"
               width={120}
               height={120}
               className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] object-contain transition-transform duration-200 hover:scale-105 filter drop-shadow-md select-none rounded-[26px]"
               onError={(e) => {
                 // Failsafe fallback path
-                (e.target as HTMLImageElement).src = '/logo-simka.svg';
+                (e.target as HTMLImageElement).src = '/logo-nuris.svg';
               }}
             />
           </div>

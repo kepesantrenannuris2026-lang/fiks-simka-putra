@@ -1,3 +1,4 @@
+import {BottomNavigation} from './components/layout/BottomNavigation';
 import {isIntegrated} from './lib/ekosistem';
 import {EkosistemGate} from './components/EkosistemGate';
 import React, { useState, useEffect } from 'react';
@@ -79,23 +80,24 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC] dark:bg-[#07101F] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col lg:flex-row antialiased transition-colors duration-200">
+    <div className="nuris-simka min-h-screen bg-[#F7F9FC] dark:bg-[#07101F] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col lg:flex-row antialiased transition-colors duration-200">
       {/* Sidebar Navigation */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:pl-[285px] flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 lg:pl-[248px] flex flex-col min-w-0 min-h-screen">
         {/* Top Navigation Bar */}
         <TopNavigation onOpenSidebar={() => setSidebarOpen(true)} />
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="nuris-content flex-1 p-4 sm:p-6 lg:p-8 max-w-[1180px] w-full mx-auto">
           <ErrorBoundary fallbackTitle="Terjadi Kendala Memuat Halaman">
             {renderActiveView()}
           </ErrorBoundary>
         </main>
       </div>
 
+      <BottomNavigation onOpenMenu={() => setSidebarOpen(true)} />
       {/* Modals & Notification Containers */}
       <DetailSantriModal />
       <DatabaseSettingsModal 

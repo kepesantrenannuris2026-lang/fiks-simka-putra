@@ -1,3 +1,4 @@
+import {NurisAppMenu} from './NurisAppMenu';
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -81,15 +82,15 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onOpenSidebar }) =
   const getPageTitle = () => {
     switch (currentRoute) {
       case 'dashboard':
-        return { title: 'Dashboard Monitoring', sub: 'Ringkasan data & performa kedisiplinan santri' };
+        return { title: 'Beranda SIMKA', sub: 'Ringkasan data & performa kedisiplinan santri' };
       case 'data-santri':
-        return { title: 'Pengelolaan Data Santri', sub: 'Master data identitas, musyrif, dan rekam jejak poin' };
+        return { title: 'Santri binaan', sub: 'Master data identitas, musyrif, dan rekam jejak poin' };
       case 'catat-pelanggaran':
-        return { title: 'Catat Pelanggaran Santri', sub: 'Pencatatan pelanggaran baru & rujukan tingkat pembinaan' };
+        return { title: 'Catat pelanggaran', sub: 'Pencatatan pelanggaran baru & rujukan tingkat pembinaan' };
       case 'input-mutabaah':
         return { title: "Input Mutaba'ah Santri", sub: 'Pencatatan mutabaah pembinaan dan ibadah santri' };
       case 'rekap-pelanggaran':
-        return { title: 'Rekap Riwayat Pelanggaran', sub: 'Log histori pelanggaran santri terstruktur' };
+        return { title: 'Rekap pelanggaran', sub: 'Log histori pelanggaran santri terstruktur' };
       case 'data-pelanggaran':
       case 'kamus-pelanggaran':
         return { title: 'Kamus Master Pelanggaran', sub: 'Katalog rujukan poin pelanggaran dan konsekuensi' };
@@ -113,13 +114,13 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onOpenSidebar }) =
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full bg-white/95 dark:bg-[#081221]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#162740] transition-colors duration-200">
-        <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+      <header className="nuris-topbar sticky top-0 z-30 w-full bg-white/95 dark:bg-[#081221]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#162740] transition-colors duration-200">
+        <div className="nuris-toolbar px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
           {/* Left: Mobile Toggle & Page Title */}
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
               onClick={onOpenSidebar}
-              className="lg:hidden p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#12233E] border border-slate-200 dark:border-[#1E3048] transition-colors"
+              className="hidden p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#12233E] border border-slate-200 dark:border-[#1E3048] transition-colors"
               aria-label="Buka Menu Navigasi"
             >
               <Menu className="w-5 h-5" />
@@ -130,9 +131,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onOpenSidebar }) =
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate flex items-center gap-2">
                 <span>{title}</span>
-                <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 tracking-wider">
-                  Pro V1
-                </span>
+
               </h1>
               <p className="hidden md:block text-xs text-slate-500 dark:text-slate-400 truncate">
                 {sub}
@@ -141,11 +140,11 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onOpenSidebar }) =
           </div>
 
           {/* Right: Quick Search, Unit Filter, Theme Switcher, Notifications, User Profile */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="nuris-toolbar-actions flex items-center gap-2 sm:gap-3">
             {/* Quick Search Button */}
             <button
               onClick={() => setSearchModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#0E1A2D] hover:bg-slate-200/80 dark:hover:bg-[#15253F] border border-slate-200 dark:border-[#1D304E] text-slate-600 dark:text-slate-400 text-xs font-medium transition-all shadow-2xs cursor-pointer"
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#0E1A2D] hover:bg-slate-200/80 dark:hover:bg-[#15253F] border border-slate-200 dark:border-[#1D304E] text-slate-600 dark:text-slate-400 text-xs font-medium transition-all shadow-2xs cursor-pointer"
               title="Cari Cepat Santri / Pelanggaran (Ctrl + K)"
             >
               <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
@@ -181,17 +180,17 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onOpenSidebar }) =
             </div>
 
             {/* Theme Switcher */}
-            <ThemeSwitcher />
+            <div className="hidden lg:block"><ThemeSwitcher className="nuris-theme-switcher" /></div>
 
             {/* Notification Bell */}
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setNotificationOpen((prev) => !prev)}
-                className="relative p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#12233E] border border-slate-200 dark:border-[#1E3048] transition-colors cursor-pointer"
+                className="nuris-icon-button relative p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#12233E] border border-slate-200 dark:border-[#1E3048] transition-colors cursor-pointer"
                 aria-label="Notifikasi & Aktivitas"
               >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <Bell className="w-5 h-5" />
+                {recentActivities.some(a => !a.isSelesai) && <span className="nuris-notification-dot" />}
               </button>
 
               {/* Notification Popover */}
@@ -206,9 +205,10 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onOpenSidebar }) =
               )}
             </div>
 
+            <NurisAppMenu />
             {/* User Profile Avatar Dropdown */}
             {user && (
-              <div className="relative" ref={userMenuRef}>
+              <div className="relative hidden" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen((prev) => !prev)}
                   className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 dark:bg-[#0E1A2D] hover:bg-slate-200/70 dark:hover:bg-[#15253F] border border-slate-200 dark:border-[#1E3048] transition-colors cursor-pointer"
