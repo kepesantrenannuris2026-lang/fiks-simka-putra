@@ -1,3 +1,4 @@
+import {campus,campusName} from '../../lib/ekosistem';
 import React, { useState, useEffect } from 'react';
 import { Lock, User, AlertCircle, ArrowRight, Eye, EyeOff, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -8,7 +9,7 @@ export const LoginView: React.FC = () => {
   const { resolvedTheme, setThemeMode, toggleTheme } = useTheme();
 
   useEffect(() => {
-    document.title = 'SIMKA.ID PUTRA - Sistem Monitoring Karakter & Akhlak Santri Putra';
+    document.title = `SIMKA.ID ${campus} - Sistem Monitoring Karakter & Akhlak Santri ${campusName}`;
   }, []);
 
   const [username, setUsername] = useState('');
@@ -144,7 +145,7 @@ export const LoginView: React.FC = () => {
                   : 'bg-emerald-50 text-emerald-700 border-emerald-300'
               }`}
             >
-              PUTRA
+              {campus}
             </span>
             <span
               className={`px-1.5 py-0.5 rounded text-[9.5px] sm:text-[10px] font-bold tracking-wider border transition-colors ${
@@ -163,7 +164,7 @@ export const LoginView: React.FC = () => {
               isDark ? 'text-emerald-300/90' : 'text-emerald-700'
             }`}
           >
-            Sistem Monitoring Karakter &amp; Akhlak Santri Putra
+            Sistem Monitoring Karakter &amp; Akhlak Santri {campusName}
           </p>
 
           {/* Nama Pesantren */}

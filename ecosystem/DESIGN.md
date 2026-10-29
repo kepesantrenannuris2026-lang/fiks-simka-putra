@@ -9,3 +9,7 @@ The shared logo is a geometric SVG trace of the supplied official logo; preserve
 App switching: compact grid button adjacent to the notification bell. It mounts only into the actual header, never floats above bottom navigation. The menu gives access to the portal, Mutabaah, and SIMKA. Embedded apps retain their frames when switching; the portal hides duplicate outer bars while a module is open.
 
 UI-only change: no database schema, account, password, record, or API authorization changes.
+
+SIMKA Putri uses the same reference-locked frontend with an explicit PUTRI build, separate /simka-putri/ route, per-campus sessions, server authorization, and isolated simka_putri schema. Official violation and coaching catalogues come from mlwildan12-arch/NEW-SIMKA-PUTRI-V1 at 6b41d701de50e3d1ee774a7f5b2f38388304881a. Do not copy sample accounts or passwords. Prior case history from external SIMKA databases has not been imported.
+
+Incident dates use datetime-local explicitly labelled WIB; all writes normalize to ISO UTC both in the client and the server. PDF coordinator names are the six unit/campus officers supplied by the owner, never the recorder or a random user.

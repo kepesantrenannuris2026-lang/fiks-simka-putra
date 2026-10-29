@@ -1,3 +1,4 @@
+import {campus,campusName} from '../../lib/ekosistem';
 import {isIntegrated} from '../../lib/ekosistem';
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
@@ -432,7 +433,7 @@ export const DataSantriView: React.FC = () => {
         <div className="nuris-santri-results rounded-2xl bg-white dark:bg-[#101C2F] border border-slate-200/90 dark:border-[#1E3048] shadow-xs overflow-hidden">
           <div className="grid gap-3 md:hidden">
             {paginatedSantri.length === 0 ? <p className="p-5 text-center text-sm text-slate-500">Tidak ada santri yang cocok dengan pencarian.</p> : paginatedSantri.map(santri => <article key={santri.id} className="nuris-student-card">
-              <h3>{santri.nama}</h3><p className="nuris-student-meta">{santri.unit} Putra · tingkat {santri.kelas}</p>
+              <h3>{santri.nama}</h3><p className="nuris-student-meta">{santri.unit} {campusName} · tingkat {santri.kelas}</p>
               <div className="nuris-student-points"><div><strong>{santri.totalPoin}</strong><small>Total poin pelanggaran</small></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">{santri.statusPembinaan || 'Baik'}</span></div>
               <footer><span>{santri.musyrifNama || 'Musyrif belum ditetapkan'}</span><button type="button" onClick={() => setSelectedSantriForDetail(santri)}>Detail santri</button></footer>
             </article>)}

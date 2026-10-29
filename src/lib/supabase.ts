@@ -1,3 +1,4 @@
+import {caseDateToISO} from './caseDate';
 import {isIntegrated,portalClient,integratedLogin} from './ekosistem';
 import { createClient } from '@supabase/supabase-js';
 import { 
@@ -2318,7 +2319,7 @@ export async function updateKasusPelanggaranInDB(
     if (updates.hukuman !== undefined) payload.hukuman = updates.hukuman;
     if (updates.catatan !== undefined) payload.catatan = updates.catatan;
     if (updates.status !== undefined) payload.status = updates.status;
-    if (updates.tanggal !== undefined) payload.tanggal_waktu = updates.tanggal;
+    if (updates.tanggal !== undefined) payload.tanggal_waktu = caseDateToISO(updates.tanggal);
     if (updates.pembinaanTingkat !== undefined) payload.pembinaan_tingkat = updates.pembinaanTingkat;
     if (updates.rekomendasiPembinaan !== undefined) payload.rekomendasi_pembinaan = updates.rekomendasiPembinaan;
 

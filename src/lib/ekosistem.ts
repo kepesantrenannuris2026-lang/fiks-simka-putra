@@ -1,7 +1,12 @@
+export const campus = import.meta.env?.VITE_APP_ENVIRONMENT === 'PUTRI' ? 'PUTRI' : 'PUTRA';
+export const campusName = campus === 'PUTRI' ? 'Putri' : 'Putra';
+export const appId = campus === 'PUTRI' ? 'simka-putri' : 'simka';
+export const sessionKey = campus === 'PUTRI' ? 'simka_putri_session' : 'simka_session';
+export const sessionUser = (s:any)=>campus === 'PUTRI' ? s.simkaPutriUser : s.simkaUser;
 export const isIntegrated = import.meta.env?.VITE_KEPESANTRENAN_PORTAL === 'true';
 export const EKOSISTEM_API = 'https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/kepesantrenan';
 export async function portalRequest(path: string, body: unknown = {}) {
- const res = await fetch(EKOSISTEM_API + '/' + path, { method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(localStorage.getItem('mut_token')||'')},body:JSON.stringify(body)});
+ const res = await fetch(EKOSISTEM_API + '/' + path, { method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(localStorage.getItem('mut_token')||'')},body:JSON.stringify({...body as any,campus})});
  const result = await res.json();
  if(!res.ok) { if(res.status===401)window.parent.postMessage({type:'nuris:session-ended'},location.origin);throw new Error(result.error?.message||'Koneksi terputus. Silakan coba lagi.'); }
  return result;
@@ -11,8 +16,8 @@ export async function integratedLogin(username: string,password: string) {
   const r=await portalRequest('mutabaah',{fn:'login',args:[username,password]});
   if(!r.ok||!r.data?.ok)return {success:false,message:r.data?.msg||r.error?.message||'Username atau password salah.'};
   localStorage.setItem('mut_token',r.data.token);localStorage.setItem('mut_user',JSON.stringify(r.data.user));
-  const s=await portalRequest('session');if(!s.simkaUser)return {success:false,message:'Akun belum memiliki penugasan SIMKA Putra. Anda tetap dapat menggunakan Mutabaah.'};
-  return {success:true,user:s.simkaUser};
+  const s=await portalRequest('session');if(!sessionUser(s))return {success:false,message:'Akun belum memiliki penugasan SIMKA yang sesuai. Anda tetap dapat menggunakan Mutabaah.'};
+  return {success:true,user:sessionUser(s)};
  }catch(e:any){return {success:false,message:e.message};}
 }
 export class PortalQuery implements PromiseLike<any> {

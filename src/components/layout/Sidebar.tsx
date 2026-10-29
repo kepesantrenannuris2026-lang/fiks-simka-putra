@@ -1,3 +1,4 @@
+import {campus,campusName} from '../../lib/ekosistem';
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageRoute } from '../../types';
@@ -148,12 +149,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     SIMKA<span className="text-emerald-500 dark:text-emerald-400">.ID</span>
                   </span>
                   <span className="px-1.5 py-0.5 rounded text-[8.5px] sm:text-[9px] font-bold bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 tracking-wider">
-                    PUTRA
+                    {campus}
                   </span>
 
                 </div>
                 <p className="text-[9.5px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
-                  Karakter &amp; Akhlak Santri Putra
+                  Karakter &amp; Akhlak Santri {campusName}
                 </p>
               </div>
             )}

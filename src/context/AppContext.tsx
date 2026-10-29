@@ -1,3 +1,5 @@
+import {sessionKey,sessionUser,campusName} from '../lib/ekosistem';
+import {caseDateToISO,caseDateDisplay} from '../lib/caseDate';
 import {isIntegrated} from '../lib/ekosistem';
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { 
@@ -307,7 +309,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 1. User & Session State (Persistent across reload or session storage)
   const [user, setUser] = useState<UserAccount | null>(() => {
     try {
-      const savedSession = localStorage.getItem('simka_session') || sessionStorage.getItem('simka_session');
+      const savedSession = localStorage.getItem(sessionKey) || sessionStorage.getItem(sessionKey);
       if (savedSession) {
         const parsed = JSON.parse(savedSession);
         if (parsed && parsed.id && parsed.username && parsed.role) {
@@ -325,7 +327,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Current Route: if not logged in, enforce login page
   const [currentRoute, setCurrentRouteState] = useState<PageRoute>(() => {
     try {
-      const savedSession = localStorage.getItem('simka_session') || sessionStorage.getItem('simka_session');
+      const savedSession = localStorage.getItem(sessionKey) || sessionStorage.getItem(sessionKey);
       if (savedSession) {
         const parsed = JSON.parse(savedSession);
         if (parsed && parsed.role) {
@@ -581,10 +583,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               unit: fresh.unit,
               is_active: fresh.is_active
             };
-            if (localStorage.getItem('simka_session')) {
-              localStorage.setItem('simka_session', JSON.stringify(updated));
-            } else if (sessionStorage.getItem('simka_session')) {
-              sessionStorage.setItem('simka_session', JSON.stringify(updated));
+            if (localStorage.getItem(sessionKey)) {
+              localStorage.setItem(sessionKey, JSON.stringify(updated));
+            } else if (sessionStorage.getItem(sessionKey)) {
+              sessionStorage.setItem(sessionKey, JSON.stringify(updated));
             }
             return updated;
           }
@@ -741,11 +743,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (result.success && result.user) {
       setUser(result.user);
       if (rememberMe) {
-        localStorage.setItem('simka_session', JSON.stringify(result.user));
-        sessionStorage.removeItem('simka_session');
+        localStorage.setItem(sessionKey, JSON.stringify(result.user));
+        sessionStorage.removeItem(sessionKey);
       } else {
-        sessionStorage.setItem('simka_session', JSON.stringify(result.user));
-        localStorage.removeItem('simka_session');
+        sessionStorage.setItem(sessionKey, JSON.stringify(result.user));
+        localStorage.removeItem(sessionKey);
       }
       const targetRoute = getDefaultRouteForRole(result.user.role);
       setCurrentRouteState(targetRoute);
@@ -763,8 +765,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     if (isIntegrated) { window.parent.postMessage({type:'nuris:logout'},location.origin); return; }
-    localStorage.removeItem('simka_session');
-    sessionStorage.removeItem('simka_session');
+    localStorage.removeItem(sessionKey);
+    sessionStorage.removeItem(sessionKey);
     setUser(null);
     setCurrentRouteState('login');
     showToast('Sesi Berakhir', 'Anda telah keluar dari sistem SIMKA.ID dengan aman.', 'info');
@@ -2035,7 +2037,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             poin: finalPoin,
             ...(data.hukuman !== undefined ? { hukuman: data.hukuman } : {}),
             ...(data.catatan !== undefined ? { catatan: data.catatan } : {}),
-            ...(data.tanggal !== undefined ? { tanggal: data.tanggal } : {}),
+            ...(data.tanggal !== undefined ? { tanggal: caseDateDisplay(data.tanggal),timestamp:caseDateToISO(data.tanggal) } : {}),
             ...(data.status !== undefined ? { status: data.status } : {}),
             ...(rekomendasi ? { pembinaanTingkat: rekomendasi.nama_tingkat, rekomendasiPembinaan: rekomendasi.jenis_pembinaan } : {})
           };

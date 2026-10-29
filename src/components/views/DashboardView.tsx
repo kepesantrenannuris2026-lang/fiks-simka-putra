@@ -1,3 +1,4 @@
+import {campus} from '../../lib/ekosistem';
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PointBadge, KategoriPelanggaranBadge } from '../common/PointBadge';
@@ -67,7 +68,7 @@ export const DashboardView: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
       <section className="nuris-dashboard-intro">
-        <div><span className="nuris-eyebrow">SIMKA PUTRA · KEPESANTRENAN</span><h2>Pendampingan karakter santri</h2><p>Catat pelanggaran, pantau perkembangan, dan tindak lanjuti pembinaan dalam satu ruang.</p></div>
+        <div><span className="nuris-eyebrow">SIMKA {campus} · KEPESANTRENAN</span><h2>Pendampingan karakter santri</h2><p>Catat pelanggaran, pantau perkembangan, dan tindak lanjuti pembinaan dalam satu ruang.</p></div>
         <div className="nuris-dashboard-actions"><button type="button" className="nuris-primary" onClick={() => setCurrentRoute('catat-pelanggaran')}><Plus size={17}/>Catat pelanggaran</button><button type="button" className="nuris-secondary" onClick={() => setCurrentRoute('rekap-pelanggaran')}><ClipboardList size={16}/>Lihat rekap</button></div>
       </section>
 

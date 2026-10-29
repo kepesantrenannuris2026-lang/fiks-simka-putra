@@ -1,3 +1,4 @@
+import {caseDateInput,caseDateToISO} from '../../lib/caseDate';
 import React, { useState, useEffect, useMemo } from 'react';
 import { RiwayatPelanggaran, Pelanggaran } from '../../types';
 import { useApp } from '../../context/AppContext';
@@ -44,7 +45,7 @@ export const EditKasusPelanggaranModal: React.FC<EditKasusPelanggaranModalProps>
       setSelectedPelanggaranId(kasus.jenisPelanggaranId || '');
       setJenisPelanggaranNama(kasus.jenisPelanggaranNama || '');
       setPoin(kasus.poin || 5);
-      setTanggal(kasus.tanggal || '');
+      setTanggal(caseDateInput(kasus.timestamp || kasus.tanggal || ''));
       setHukuman(kasus.hukuman || '');
       setCatatan(kasus.catatan || '');
       setStatus(kasus.status || 'Belum Selesai');
@@ -97,7 +98,7 @@ export const EditKasusPelanggaranModal: React.FC<EditKasusPelanggaranModalProps>
         poin: Number(poin),
         hukuman: hukuman.trim() || '-',
         catatan: catatan.trim() || undefined,
-        tanggal: tanggal.trim(),
+        tanggal: tanggal === caseDateInput(kasus.timestamp) ? caseDateToISO(kasus.timestamp) : caseDateToISO(tanggal),
         status
       });
 
@@ -262,12 +263,12 @@ export const EditKasusPelanggaranModal: React.FC<EditKasusPelanggaranModalProps>
           {/* Tanggal & Waktu Pencatatan */}
           <div className="space-y-1.5">
             <label className="block font-bold text-slate-800 dark:text-slate-200">
-              Waktu Kejadian / Pencatatan <span className="text-rose-500">*</span>
+              Waktu Kejadian / Pencatatan (WIB) <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
-                type="text"
+                type="datetime-local"
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
                 required

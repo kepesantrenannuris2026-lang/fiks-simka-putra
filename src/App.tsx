@@ -1,3 +1,4 @@
+import {campus,campusName} from './lib/ekosistem';
 import {BottomNavigation} from './components/layout/BottomNavigation';
 import {isIntegrated} from './lib/ekosistem';
 import {EkosistemGate} from './components/EkosistemGate';
@@ -30,7 +31,7 @@ const AppContent: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const officialTitle = 'SIMKA.ID PUTRA - Sistem Monitoring Karakter & Akhlak Santri Putra';
+    const officialTitle = `SIMKA.ID ${campus} - Sistem Monitoring Karakter & Akhlak Santri ${campusName}`;
     if (document.title !== officialTitle) {
       document.title = officialTitle;
     }

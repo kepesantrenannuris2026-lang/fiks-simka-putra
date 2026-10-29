@@ -2,8 +2,10 @@ import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'n
 await import('./snapshot.mjs');
 const root=process.cwd(),out=path.join(root,'dist-ekosistem');
 fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});
-const build=spawnSync('npm',['run','build'],{stdio:'inherit',env:{...process.env,VITE_KEPESANTRENAN_PORTAL:'true'}});if(build.status!==0)process.exit(build.status||1);
-fs.cpSync('dist',path.join(out,'simka'),{recursive:true});fs.cpSync('public',out,{recursive:true});
+const build=spawnSync('npm',['run','build'],{stdio:'inherit',env:{...process.env,VITE_KEPESANTRENAN_PORTAL:'true',VITE_APP_ENVIRONMENT:'PUTRA'}});if(build.status!==0)process.exit(build.status||1);
+fs.cpSync('dist',path.join(out,'simka'),{recursive:true});
+const putriBuild=spawnSync('npm',['run','build'],{stdio:'inherit',env:{...process.env,VITE_KEPESANTRENAN_PORTAL:'true',VITE_APP_ENVIRONMENT:'PUTRI'}});if(putriBuild.status!==0)process.exit(putriBuild.status||1);fs.cpSync('dist',path.join(out,'simka-putri'),{recursive:true});
+fs.cpSync('public',out,{recursive:true});
 fs.cpSync('ecosystem/mutabaah',out,{recursive:true});fs.cpSync('ecosystem/portal',out,{recursive:true});fs.mkdirSync(path.join(out,'mutabaah'),{recursive:true});
 let mutHtml=fs.readFileSync('ecosystem/mutabaah/index.html','utf8').replace('</body>','<script src="/nuris-launcher.js" defer></script></body>');
 fs.writeFileSync(path.join(out,'mutabaah/index.html'),mutHtml);fs.copyFileSync('ecosystem/nuris-launcher.js',path.join(out,'nuris-launcher.js'));fs.copyFileSync('ecosystem/portal/index.html',path.join(out,'index.html'));
@@ -20,7 +22,7 @@ for(const target of [out,legacy]){
  fs.copyFileSync('public/logo-nuris.svg',path.join(target,'nuris-mark.svg'));
  fs.copyFileSync('public/logo-nuris.png',path.join(target,'logo-mark.png'));
 }
-for(const target of [out,path.join(out,'simka')]){
+for(const target of [out,path.join(out,'simka'),path.join(out,'simka-putri')]){
  fs.copyFileSync('public/logo-nuris.svg',path.join(target,'favicon-simka.svg'));
  fs.copyFileSync('public/logo-nuris.svg',path.join(target,'favicon.svg'));
  for(const [size,file] of [[16,'favicon-simka-16x16.png'],[32,'favicon-simka-32x32.png'],[180,'apple-touch-icon.png']])fs.writeFileSync(path.join(target,file),new Resvg(logo,{fitTo:{mode:'width',value:size}}).render().asPng());
