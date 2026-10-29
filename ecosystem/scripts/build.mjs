@@ -27,3 +27,11 @@ for(const target of [out,path.join(out,'simka'),path.join(out,'simka-putri')]){
  fs.copyFileSync('public/logo-nuris.svg',path.join(target,'favicon.svg'));
  for(const [size,file] of [[16,'favicon-simka-16x16.png'],[32,'favicon-simka-32x32.png'],[180,'apple-touch-icon.png']])fs.writeFileSync(path.join(target,file),new Resvg(logo,{fitTo:{mode:'width',value:size}}).render().asPng());
 }
+
+fs.mkdirSync(path.join(out,'yaumiyyah'),{recursive:true});fs.copyFileSync(path.join(out,'simka/index.html'),path.join(out,'yaumiyyah/index.html'));
+
+// One glass navigation implementation across all applications, including the preserved Mutabaah bundle.
+for(const target of [out,legacy])fs.copyFileSync('ecosystem/liquid-glass.js',path.join(target,'liquid-glass.js'));
+for(const file of [path.join(out,'index.html'),path.join(out,'mutabaah/index.html'),path.join(out,'simka/index.html'),path.join(out,'simka-putri/index.html'),path.join(out,'yaumiyyah/index.html'),path.join(legacy,'index.html')]){
+ let source=fs.readFileSync(file,'utf8');source=source.replace('</body>','<script src="/liquid-glass.js" defer></script></body>');fs.writeFileSync(file,source);
+}

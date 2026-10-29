@@ -16,3 +16,8 @@
 - New private simka_putri schema: 478 active students (SMP 214, SMA 176, MA 88), 16 source catalogue entries, 8 coaching levels; no old history imported.
 - Existing Putra cases remained 4; coaching remained 0 across additive migration. No account/password mutations.
 - Browser file previews were previously blocked by browser policy; no visual-browser certification claimed.
+
+## Yaumiyyah and glass navigation
+- 27 tests: grade boundaries, leap-year calendars, semester dates, capped daily/weekly scores, exemptions, incomplete/future periods, authorization and stale-update rejection, plus prior SIMKA regression suite.
+- Monthly/semester PDFs generated from the actual frontend exporter with fictional data, rendered with Poppler and visually inspected.
+- Glass script syntax checked; actual mobile/browser animation could not be visually certified because local browser preview is blocked by policy.

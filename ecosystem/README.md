@@ -26,3 +26,10 @@ The portal now has Mutabaah, SIMKA Putra (/simka/) and SIMKA Putri (/simka-putri
 The additive putri-schema.sql + putri-catalogues.sql migration has been applied. Do not rerun it in the dashboard. The kepesantrenan Edge Function v3 supports both modules and normalizes legacy localized incident dates. The original Mutabaah API is unchanged.
 
 Deploy the complete dist-ekosistem output to the existing kepesantrenannuris project and complete dist-mutabaah output to mutabaahtahfidznurista. Each ZIP has index.html at its root; do not upload only /simka-putri/ over the entire portal. No manual SQL or account/password reset is needed.
+
+## Mutabaah Yaumiyyah and liquid glass navigation
+New /yaumiyyah/ module uses Mutabaah session and exact musyrif-to-student assignment (both campuses); leaders retain global access. Data is in the private yaumiyyah schema; no existing student, tahfidz or SIMKA rows are changed. Each daily record has optimistic version checks and audit logging.
+
+The module records the booklet's 15 activities, with explicit empty, zero and non-assessed values. Monthly and academic-semester PDF reports include the official Nuris mark, grade, coverage, provisional status, daily notes, musyrif and the six official coordinator mappings. Thresholds: A+ >=95, A >=85, B+ >=75, B >=65, C below65. Scores cap each assessment period at 100%; all activity weights are equal. Incomplete reports are provisional. The PDF sample files use only fictional students.
+
+liquid-glass.js is copied and injected into the portal and all four app entrypoints and the legacy Mutabaah site. Deploy the complete v4 portal ZIP and legacy navigation ZIP to their existing projects. No manual SQL is needed; the additive schema and Edge Function v4 have already been applied.

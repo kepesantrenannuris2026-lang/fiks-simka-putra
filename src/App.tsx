@@ -1,3 +1,4 @@
+import YaumiyyahApp from './yaumiyyah/YaumiyyahApp';
 import {campus,campusName} from './lib/ekosistem';
 import {BottomNavigation} from './components/layout/BottomNavigation';
 import {isIntegrated} from './lib/ekosistem';
@@ -123,4 +124,4 @@ function SimkaApp() {
   );
 }
 
-export default function App(){return isIntegrated?<EkosistemGate><SimkaApp/></EkosistemGate>:<SimkaApp/>;}
+export default function App(){if(location.pathname.startsWith('/yaumiyyah'))return <YaumiyyahApp/>;return isIntegrated?<EkosistemGate><SimkaApp/></EkosistemGate>:<SimkaApp/>;}

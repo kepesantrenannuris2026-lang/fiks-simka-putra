@@ -1,3 +1,4 @@
+import {yaumiyyah} from './yaumiyyah.ts';
 import {campusActor} from './campusScope.ts';
 import pg from 'npm:pg@8.13.1';
 import { buildWhere, checkPermission, normalizeWrite, tables } from './policy.ts';
@@ -110,6 +111,7 @@ Deno.serve(async(req:Request)=>{
    const actor=await identity(rows[0].token);return reply(req,{ok:true,token:rows[0].token,user:{username:actor.username,nama:actor.nama,role:actor.role,musyrif_master:actor.musyrif_master}});
   }
   const a=await identity(bearer(req));
+  if(['yaum-students','yaum-load','yaum-save'].includes(path||''))return reply(req,await yaumiyyah(a,path!,body,query));
   if(path==='handoff'){
    const code=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('');
    const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(code)))).map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -117,7 +119,7 @@ Deno.serve(async(req:Request)=>{
    await query("INSERT INTO simka.handoffs(code_hash,token,expires_at) VALUES($1,$2,now()+interval '90 seconds')",[hash,bearer(req)]);
    return reply(req,{ok:true,code});
   }
-  if(path==='session')return reply(req,{ok:true,mutabaahUser:{username:a.username,nama:a.nama,role:a.role,musyrif_master:a.musyrif_master},simkaUser:a.simkaUser,simkaPutriUser:a.simkaPutriUser,apps:{mutabaah:true,simka:!!a.simkaUser,'simka-putri':!!a.simkaPutriUser}});
+  if(path==='session')return reply(req,{ok:true,mutabaahUser:{username:a.username,nama:a.nama,role:a.role,musyrif_master:a.musyrif_master},simkaUser:a.simkaUser,simkaPutriUser:a.simkaPutriUser,apps:{yaumiyyah:true,mutabaah:true,simka:!!a.simkaUser,'simka-putri':!!a.simkaPutriUser}});
   if(path==='query'){
    const actor=campusActor(a,body.campus);
    const rows=await dbQuery(actor,body);if(body.single&&!body.maybeSingle&&rows.length!==1)throw new Error('Data tidak ditemukan atau tidak unik.');

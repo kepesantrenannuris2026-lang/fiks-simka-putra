@@ -13,3 +13,7 @@ UI-only change: no database schema, account, password, record, or API authorizat
 SIMKA Putri uses the same reference-locked frontend with an explicit PUTRI build, separate /simka-putri/ route, per-campus sessions, server authorization, and isolated simka_putri schema. Official violation and coaching catalogues come from mlwildan12-arch/NEW-SIMKA-PUTRI-V1 at 6b41d701de50e3d1ee774a7f5b2f38388304881a. Do not copy sample accounts or passwords. Prior case history from external SIMKA databases has not been imported.
 
 Incident dates use datetime-local explicitly labelled WIB; all writes normalize to ISO UTC both in the client and the server. PDF coordinator names are the six unit/campus officers supplied by the owner, never the recorder or a random user.
+
+Yaumiyyah reference: the attached 2026/2027 Nuris booklet, 15 daily activity rows plus July-December and January-June summaries. Daily-sheet targets take precedence over inconsistent semester-sheet targets. School attendance defaults to Monday-Friday with explicit non-assessed days. The existing Mutabaah palette and official logo are retained.
+
+Liquid glass navigation is one shared, progressive-enhancement script, mounted into horizontal tablists, mobile app navigation and portal navigation. A single translucent highlight tracks the actual selected element, responds to resizing and late rendering, and respects reduced-motion and reduced-transparency preferences. It never changes routes, data or tab selection. Existing Mutabaah JS assets remain unchanged.
