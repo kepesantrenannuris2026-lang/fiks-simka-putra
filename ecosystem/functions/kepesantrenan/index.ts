@@ -3,7 +3,7 @@ import {campusActor} from './campusScope.ts';
 import pg from 'npm:pg@8.13.1';
 import { buildWhere, checkPermission, normalizeWrite, tables } from './policy.ts';
 const MUT_API='https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/api';
-const origins=['https://kepesantrenannuris.netlify.app','https://mutabaahtahfidznurista.netlify.app','http://localhost:4173','http://localhost:3400'];
+const origins=['https://kepesantrenan-nuris.kepesantrenannuris.workers.dev','https://kepesantrenannuris.netlify.app','https://mutabaahtahfidznurista.netlify.app','http://localhost:4173','http://localhost:3400'];
 const direct=new URL(Deno.env.get('SUPABASE_DB_URL')!);
 const ref=direct.hostname.replace(/^db\./,'').split('.')[0];
 let poolPromise:Promise<any>|null=null;

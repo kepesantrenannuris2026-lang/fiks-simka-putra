@@ -48,3 +48,14 @@ Static hosting can be inexpensive, but Supabase compute/storage/backups and GitH
 - Both Netlify frontends remain usable until a separately verified cutover. No site, database, account, subscription or deploy hook was deleted or disabled.
 - Free-tier sufficiency is not guaranteed: measure actual database size, egress, function calls, active users and deployment frequency before estimating capacity. No usage measurement or paid-plan change is claimed by this preparation.
 - Current publication blocker remains the Cloudflare account mismatch. Production still requires account choice, backup/restore verification, exact-origin CORS, live-source comparison and browser acceptance checks. Local tests are not visual iPhone validation.
+
+
+## Published 30 October 2026
+
+Cloudflare account confirmed: kepesantrenannuris2026@gmail.com (031c996ff176bc538a5ccf2d212edd0a).
+URL: https://kepesantrenan-nuris.kepesantrenannuris.workers.dev/
+Worker kepesantrenan-nuris uses static assets first, no paid add-ons, no database copy.
+Supabase kepesantrenan v5 adds precisely this origin and preserves the two existing Netlify origins. All other live v4 function files were preserved. Netlify sites and original api function remain unchanged.
+Public portal.js, apps.js and the main original Mutabaah application bundle matched the live Netlify versions. Public Mutabaah assets are archived in mutabaah-public-snapshot.json.gz with manifest SHA-256 verification, allowing clean builds without Netlify. This archive is NOT a database backup.
+CORS OPTIONS passed for all three origins. Browser opened the actual Cloudflare login page. Authenticated role/write/PDF tests and physical iPhone acceptance still require user verification; no account passwords or student data were changed for testing.
+No database backup or restore test was performed during this hosting-only deployment. Do not retire Netlify or claim disaster recovery is validated based on this release.

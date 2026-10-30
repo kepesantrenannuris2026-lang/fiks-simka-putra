@@ -41,7 +41,7 @@
   apply(mode, false);
   function mount() {
     if (!document.body) return;
-    const header = document.querySelector('.nuris-toolbar-actions, .yaum-header, .topbar .profile, header');
+    const header = Array.from(document.querySelectorAll('.nuris-toolbar-actions, .yaum-header, .topbar .profile, header')).find(el => el.getClientRects().length && el.getBoundingClientRect().height > 0);
     const target = header || document.body;
     if (button.parentNode !== target) target.append(button);
     button.classList.toggle('nuris-theme-fallback', !header);
@@ -50,6 +50,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     mount(); apply(mode, false);
     let queued = false;
-    new MutationObserver(() => { if (queued) return; queued = true; queueMicrotask(() => {queued=false; mount();}); }).observe(document.body,{childList:true,subtree:true});
+    new MutationObserver(() => { if (queued) return; queued = true; queueMicrotask(() => {queued=false; mount();}); }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
   }, {once:true});
 })();
