@@ -15,7 +15,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() => {
     try {
-      const saved = localStorage.getItem('simka_theme') || localStorage.getItem('simka_theme_mode');
+      const saved = localStorage.getItem('nuris-appearance') || localStorage.getItem('simka_theme') || localStorage.getItem('simka_theme_mode');
       if (saved === 'dark') {
         return 'dark';
       }
@@ -44,7 +44,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [resolvedTheme]);
 
+  useEffect(() => {
+    const sync = (event: Event) => setThemeModeState((event as CustomEvent).detail === 'dark' ? 'dark' : 'light');
+    window.addEventListener('nuris-theme', sync);
+    return () => window.removeEventListener('nuris-theme', sync);
+  }, []);
+
   const setThemeMode = (mode: ThemeMode) => {
+    const appearance = (window as any).NurisAppearance;
+    if (appearance) { appearance.change(mode === 'dark' ? 'dark' : 'light', document.activeElement); return; }
+
     const nextMode: ThemeMode = mode === 'dark' ? 'dark' : 'light';
     setThemeModeState(nextMode);
     try {

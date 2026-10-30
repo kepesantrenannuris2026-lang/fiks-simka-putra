@@ -30,8 +30,8 @@ for(const target of [out,path.join(out,'simka'),path.join(out,'simka-putri')]){
 
 fs.mkdirSync(path.join(out,'yaumiyyah'),{recursive:true});fs.copyFileSync(path.join(out,'simka/index.html'),path.join(out,'yaumiyyah/index.html'));
 
-// One glass navigation implementation across all applications, including the preserved Mutabaah bundle.
-for(const target of [out,legacy])fs.copyFileSync('ecosystem/liquid-glass.js',path.join(target,'liquid-glass.js'));
+// Shared appearance loads before app hydration to avoid a light-theme flash.
+for(const target of [out,legacy])for(const name of ['nuris-appearance.js','nuris-appearance.css'])fs.copyFileSync('ecosystem/'+name,path.join(target,name));
 for(const file of [path.join(out,'index.html'),path.join(out,'mutabaah/index.html'),path.join(out,'simka/index.html'),path.join(out,'simka-putri/index.html'),path.join(out,'yaumiyyah/index.html'),path.join(legacy,'index.html')]){
- let source=fs.readFileSync(file,'utf8');source=source.replace('</body>','<script src="/liquid-glass.js" defer></script></body>');fs.writeFileSync(file,source);
+ let source=fs.readFileSync(file,'utf8');source=source.replace('</head>','<link rel="stylesheet" href="/nuris-appearance.css"><script src="/nuris-appearance.js"></script></head>');fs.writeFileSync(file,source);
 }

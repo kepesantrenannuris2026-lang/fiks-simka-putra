@@ -1,0 +1,24 @@
+#nuris-appearance-toggle{flex-shrink:0;width:36px;height:36px;min-width:36px;border-radius:12px;border:1px solid var(--line,#dce5df);background:var(--bg-surface,#fff);color:var(--text-primary,#122219);font:24px/1 system-ui;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin-left:4px}
+#nuris-appearance-toggle:focus-visible{outline:3px solid #17873f;outline-offset:3px}
+#nuris-appearance-toggle.nuris-theme-fallback{position:absolute;right:16px;top:12px;z-index:50}.nuris-theme-login{padding-top:56px}
+.nuris-theme-transition::view-transition-old(root),.nuris-theme-transition::view-transition-new(root){animation:none;mix-blend-mode:normal}.nuris-theme-transition::view-transition-new(root){z-index:2147483646}
+html[data-nuris-theme=dark]{--pine:#90d9a6;--ink:#edf6ef;--muted:#afc4b6;--line:#345240;--canvas:#081b11;--leaf:#76c990;--soft:#183f26;--color-mist:#081b11;--color-ink:#edf6ef;--color-muted:#afc4b6;--color-line:#345240;--color-leaf-deep:#90d9a6;--color-leaf-soft:#183f26;--color-saffron-soft:#49301c;--color-sky-soft:#1b3050;--color-rose-soft:#482729;--color-amber-soft:#40371e;background:#081b11;color:#edf6ef}
+html[data-nuris-theme=dark] body{background:#081b11;color:#edf6ef}
+html[data-nuris-theme=dark] :is(.login-form,.topbar,.quiet,.connection,.app-card,.frame-loading,#mobile-nav,.yaum-app .card,.yaum-menu-panel,.bg-white){background-color:#10281a;color:#edf6ef;border-color:#345240}
+html[data-nuris-theme=dark] :is(.login-form input,.yaum-app input,.yaum-app select,.yaum-app textarea){background:#10281a;color:#edf6ef;border-color:#345240}
+html[data-nuris-theme=dark] :is(.yaum-app,.yaum-header,.yaum-save){background:#081b11;color:#edf6ef}
+html[data-nuris-theme=dark] .yaum-app :is(label,p,small,.yaum-muted,.yaum-period>span){color:#afc4b6}
+html[data-nuris-theme=dark] .yaum-app :is(.yaum-summary strong,.yaum-method summary,.yaum-app-menu>button){color:#90d9a6}
+html[data-nuris-theme=dark] :is(.yaum-tabs,.yaum-table th,.yaum-summary b,.yaum-activity-title>span,.yaum-success){background:#183f26;color:#90d9a6}
+html[data-nuris-theme=dark] .yaum-tabs button{color:#afc4b6}html[data-nuris-theme=dark] .yaum-tabs button[aria-selected=true]{background:#345240;color:#fff}
+html[data-nuris-theme=dark] .intro{background:#082e1a}html[data-nuris-theme=dark] .primary{background:#17873f;color:#fff}
+html[data-nuris-theme=dark] #nuris-appearance-toggle{background:#10281a;color:#edf6ef;border-color:#345240}
+/* Opaque navigation avoids continuous backdrop-filter compositing. */
+:is(.nuris-topbar,.yaum-header,.yaum-save){backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.nuris-topbar{background:var(--bg-header)}.yaum-header,.yaum-save{background:#f2f6f3}
+@media(prefers-reduced-motion:no-preference){button,.app-card{transition:transform 120ms ease,background-color 120ms ease}button:active:not(:disabled){transform:scale(.97)}.nuris-switcher-panel,.yaum-menu-panel{animation:nuris-enter 150ms ease-out}@keyframes nuris-enter{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media print{#nuris-appearance-toggle{display:none!important}.nuris-theme-login{padding-top:0}}
+html[data-nuris-theme=dark] :is(.text-pine,.text-leaf-deep){color:#90d9a6}
+html[data-nuris-theme=dark] .bg-mist{background-color:#081b11}
+html[data-nuris-theme=dark] .bg-leaf-soft{background-color:#183f26}

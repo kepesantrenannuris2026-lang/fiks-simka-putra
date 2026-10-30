@@ -37,3 +37,14 @@ Give staff the new URL only after the gate passes. Retain the old site temporari
 After verified adoption and backup/restore checks, stop Netlify automatic builds and remove the paid plan only after reviewing billing and site-retention consequences. No Netlify deletion or cancellation is authorized by this preparation. Pin and record the last good Cloudflare artifact, so frontend failures can be fixed forward without changing the database.
 
 Static hosting can be inexpensive, but Supabase compute/storage/backups and GitHub build limits still apply. Do not promise a universally free deployment. Serve files directly rather than invoking a Worker for every request; cap logs and monitor actual usage.
+
+## Appearance and free-tier preparation (30 October 2026)
+
+- Liquid-glass runtime is no longer included in any generated app or the legacy-site package. Safari system chrome remains controlled by iOS, not this website.
+- Shared light/dark preference is browser-local, synchronized by storage events on the same origin, with no database reads/writes. Different hosting origins retain independent preferences.
+- View Transition radial reveal lasts 360ms, with immediate fallback when unsupported or reduced motion is requested. Short button/menu feedback uses transforms/opacity; no perpetual decorative animation or polling was added.
+- Hashed JS/CSS assets receive long immutable cache headers in the Cloudflare package. HTML and appearance resources revalidate. Private API responses must never enter public CDN cache.
+- Keep static assets served before Worker execution. Keep Supabase as the existing single source of data, and generate reports locally. Do not add D1/R2 replicas, background keepalive jobs, or a paid subscription merely for migration.
+- Both Netlify frontends remain usable until a separately verified cutover. No site, database, account, subscription or deploy hook was deleted or disabled.
+- Free-tier sufficiency is not guaranteed: measure actual database size, egress, function calls, active users and deployment frequency before estimating capacity. No usage measurement or paid-plan change is claimed by this preparation.
+- Current publication blocker remains the Cloudflare account mismatch. Production still requires account choice, backup/restore verification, exact-origin CORS, live-source comparison and browser acceptance checks. Local tests are not visual iPhone validation.

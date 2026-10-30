@@ -1,25 +1,25 @@
-import YaumiyyahApp from './yaumiyyah/YaumiyyahApp';
+const YaumiyyahApp = lazy(() => import('./yaumiyyah/YaumiyyahApp'));
 import {campus,campusName} from './lib/ekosistem';
 import {BottomNavigation} from './components/layout/BottomNavigation';
 import {isIntegrated} from './lib/ekosistem';
 import {EkosistemGate} from './components/EkosistemGate';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopNavigation } from './components/layout/TopNavigation';
-import { DashboardView } from './components/views/DashboardView';
-import { RekapPelanggaranView } from './components/views/RekapPelanggaranView';
-import { DataSantriView } from './components/views/DataSantriView';
-import { DataPelanggaranView } from './components/views/DataPelanggaranView';
-import { CatatPelanggaranView } from './components/views/CatatPelanggaranView';
-import { DataPembinaanView } from './components/views/DataPembinaanView';
-import { RiwayatPembinaanView } from './components/views/RiwayatPembinaanView';
-import { LaporanPembinaanView } from './components/views/LaporanPembinaanView';
-import { AkunView } from './components/views/AkunView';
-import { ManajemenUserView } from './components/views/ManajemenUserView';
-import { InputMutabaahView } from './components/views/InputMutabaahView';
-import { LoginView } from './components/views/LoginView';
+const DashboardView = lazy(() => import('./components/views/DashboardView').then(m => ({default:m.DashboardView})));
+const RekapPelanggaranView = lazy(() => import('./components/views/RekapPelanggaranView').then(m => ({default:m.RekapPelanggaranView})));
+const DataSantriView = lazy(() => import('./components/views/DataSantriView').then(m => ({default:m.DataSantriView})));
+const DataPelanggaranView = lazy(() => import('./components/views/DataPelanggaranView').then(m => ({default:m.DataPelanggaranView})));
+const CatatPelanggaranView = lazy(() => import('./components/views/CatatPelanggaranView').then(m => ({default:m.CatatPelanggaranView})));
+const DataPembinaanView = lazy(() => import('./components/views/DataPembinaanView').then(m => ({default:m.DataPembinaanView})));
+const RiwayatPembinaanView = lazy(() => import('./components/views/RiwayatPembinaanView').then(m => ({default:m.RiwayatPembinaanView})));
+const LaporanPembinaanView = lazy(() => import('./components/views/LaporanPembinaanView').then(m => ({default:m.LaporanPembinaanView})));
+const AkunView = lazy(() => import('./components/views/AkunView').then(m => ({default:m.AkunView})));
+const ManajemenUserView = lazy(() => import('./components/views/ManajemenUserView').then(m => ({default:m.ManajemenUserView})));
+const InputMutabaahView = lazy(() => import('./components/views/InputMutabaahView').then(m => ({default:m.InputMutabaahView})));
+const LoginView = lazy(() => import('./components/views/LoginView').then(m => ({default:m.LoginView})));
 import { DetailSantriModal } from './components/common/DetailSantriModal';
 import { DatabaseSettingsModal } from './components/common/DatabaseSettingsModal';
 import { ToastContainer } from './components/common/Toast';
@@ -44,7 +44,7 @@ const AppContent: React.FC = () => {
 
   // If not logged in, show the simple username/password Login screen
   if (!isAuthenticated || !user) {
-    return <LoginView />;
+    return <Suspense fallback={<p role="status">Memuat halaman masuk…</p>}><LoginView /></Suspense>;
   }
 
   const renderActiveView = () => {
@@ -94,7 +94,7 @@ const AppContent: React.FC = () => {
         {/* Dynamic Page Content */}
         <main className="nuris-content flex-1 p-4 sm:p-6 lg:p-8 max-w-[1180px] w-full mx-auto">
           <ErrorBoundary fallbackTitle="Terjadi Kendala Memuat Halaman">
-            {renderActiveView()}
+            <Suspense fallback={<p role="status">Memuat halaman…</p>}>{renderActiveView()}</Suspense>
           </ErrorBoundary>
         </main>
       </div>
@@ -124,4 +124,4 @@ function SimkaApp() {
   );
 }
 
-export default function App(){if(location.pathname.startsWith('/yaumiyyah'))return <YaumiyyahApp/>;return isIntegrated?<EkosistemGate><SimkaApp/></EkosistemGate>:<SimkaApp/>;}
+export default function App(){if(location.pathname.startsWith('/yaumiyyah'))return <Suspense fallback={<p role="status">Memuat Yaumiyyah…</p>}><YaumiyyahApp/></Suspense>;return isIntegrated?<EkosistemGate><SimkaApp/></EkosistemGate>:<SimkaApp/>;}
