@@ -338,7 +338,7 @@ export const RekapPelanggaranView: React.FC = () => {
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* Page Header - Compact & Responsive */}
-      <div className="rounded-xl bg-gradient-to-r from-emerald-800 to-teal-900 p-4 sm:p-5 text-white shadow-md">
+      <div className="rounded-xl nuris-section-header p-4 sm:p-5 text-white shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-emerald-200 text-[10px] font-bold tracking-wider mb-1">

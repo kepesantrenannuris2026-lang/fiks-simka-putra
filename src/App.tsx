@@ -1,3 +1,8 @@
+import YaumiyyahApp from './yaumiyyah/YaumiyyahApp';
+import {campus,campusName} from './lib/ekosistem';
+import {BottomNavigation} from './components/layout/BottomNavigation';
+import {isIntegrated} from './lib/ekosistem';
+import {EkosistemGate} from './components/EkosistemGate';
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -27,7 +32,7 @@ const AppContent: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const officialTitle = 'SIMKA.ID PUTRA - Sistem Monitoring Karakter & Akhlak Santri Putra';
+    const officialTitle = `SIMKA.ID ${campus} - Sistem Monitoring Karakter & Akhlak Santri ${campusName}`;
     if (document.title !== officialTitle) {
       document.title = officialTitle;
     }
@@ -68,32 +73,33 @@ const AppContent: React.FC = () => {
       case 'laporan-pembinaan':
         return <LaporanPembinaanView />;
       case 'manajemen-user':
-        return <ManajemenUserView />;
+        return isIntegrated ? <CentralAccount /> : <ManajemenUserView />;
       case 'akun':
-        return <AkunView />;
+        return isIntegrated ? <CentralAccount /> : <AkunView />;
       default:
         return <DashboardView />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC] dark:bg-[#07101F] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col lg:flex-row antialiased transition-colors duration-200">
+    <div className="nuris-simka min-h-screen bg-[#F7F9FC] dark:bg-[#07101F] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col lg:flex-row antialiased transition-colors duration-200">
       {/* Sidebar Navigation */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:pl-[285px] flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 lg:pl-[248px] flex flex-col min-w-0 min-h-screen">
         {/* Top Navigation Bar */}
         <TopNavigation onOpenSidebar={() => setSidebarOpen(true)} />
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="nuris-content flex-1 p-4 sm:p-6 lg:p-8 max-w-[1180px] w-full mx-auto">
           <ErrorBoundary fallbackTitle="Terjadi Kendala Memuat Halaman">
             {renderActiveView()}
           </ErrorBoundary>
         </main>
       </div>
 
+      <BottomNavigation onOpenMenu={() => setSidebarOpen(true)} />
       {/* Modals & Notification Containers */}
       <DetailSantriModal />
       <DatabaseSettingsModal 
@@ -106,7 +112,9 @@ const AppContent: React.FC = () => {
   );
 };
 
-export default function App() {
+function CentralAccount(){return <section className="p-6 rounded-2xl bg-white dark:bg-slate-900"><h1 className="text-xl font-bold">Akun Kepesantrenan</h1><p className="my-4">Username, password, dan data santri mengikuti Mutabaah Tahfidz. Hubungi pimpinan untuk perubahan akun.</p><a href="/#mutabaah" target="_top" className="text-emerald-700 underline">Buka Mutabaah</a></section>;}
+
+function SimkaApp() {
   return (
     <ThemeProvider>
       <AppProvider>
@@ -115,3 +123,5 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
+export default function App(){if(location.pathname.startsWith('/yaumiyyah'))return <YaumiyyahApp/>;return isIntegrated?<EkosistemGate><SimkaApp/></EkosistemGate>:<SimkaApp/>;}

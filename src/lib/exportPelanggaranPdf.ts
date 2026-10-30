@@ -1,3 +1,4 @@
+import {campus,campusName} from './ekosistem';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { RiwayatPelanggaran } from '../types';
@@ -102,7 +103,7 @@ export function exportRiwayatPelanggaranPDF(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139); // Slate 500
-  doc.text('SIMKA.ID PUTRA — Sistem Monitoring Karakter & Akhlak Santri Putra', pageWidth / 2, currentY, { align: 'center' });
+  doc.text(`SIMKA.ID ${campus} — Sistem Monitoring Karakter & Akhlak Santri ${campusName}`, pageWidth / 2, currentY, { align: 'center' });
   currentY += 3.8;
 
   // Garis Pembatas Tipis & Elegan
@@ -325,7 +326,7 @@ export function exportRiwayatPelanggaranPDF(
       doc.setTextColor(100, 116, 139); // Slate 500
 
       // Left footer
-      doc.text('SIMKA.ID PUTRA — Sistem Monitoring Karakter & Akhlak Santri Putra', marginX, footerY);
+      doc.text(`SIMKA.ID ${campus} — Sistem Monitoring Karakter & Akhlak Santri ${campusName}`, marginX, footerY);
 
       // Center footer
       doc.text(`Dicetak: ${formattedDate}`, pageWidth / 2, footerY, { align: 'center' });

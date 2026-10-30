@@ -25,7 +25,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (e) {
       // fallback
     }
-    return 'dark'; // Default is GELAP / DARK jika belum ada preferensi tersimpan
+    return 'light'; // Match the default light Mutabaah interface; keep saved user preferences.
   });
 
   // Default is 'light'. If user chooses 'dark', it applies to Login and the app.

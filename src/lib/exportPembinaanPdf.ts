@@ -1,3 +1,4 @@
+import {campus,campusName} from './ekosistem';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PembinaanFormData } from './pembinaanHelper';
@@ -49,7 +50,7 @@ export function exportMutabaahPembinaanPDF(data: PembinaanFormData): void {
   doc.setFont('times', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('SIMKA.ID PUTRA Pro V1 — Sistem Monitoring Karakter & Akhlak Santri Putra', pageWidth / 2, currentY, { align: 'center' });
+  doc.text(`SIMKA.ID ${campus} — Sistem Monitoring Karakter & Akhlak Santri ${campusName}`, pageWidth / 2, currentY, { align: 'center' });
   currentY += 3.2;
 
   // Garis Pembatas Kop Surat Resmi (Double Line)

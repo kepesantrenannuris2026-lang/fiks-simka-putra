@@ -1,0 +1,134 @@
+{
+  "source": "https://mutabaahtahfidznurista.netlify.app",
+  "deploy": "https://6adccd12682f3e5e5ffc53f8--mutabaahtahfidznurista.netlify.app",
+  "files": [
+    {
+      "path": "_next/static/chunks/255-9fa72d4716897496.js",
+      "sha256": "326967ebf4393d67ee1c5f84a76e9dd9aeabc8b518dea5d43703f931bfb9f84f"
+    },
+    {
+      "path": "_next/static/chunks/4bd1b696-409494caf8c83275.js",
+      "sha256": "d7fd4b1b9d7f818cc97ddd7b672944e523f23d36a2963d5769caf809141fb9e6"
+    },
+    {
+      "path": "_next/static/chunks/594-8c8eec053d63d57d.js",
+      "sha256": "0d0fe2bc9dc0bdb0e47c2e5428d816bd587dcc1391c6d018ab8850a9585ea574"
+    },
+    {
+      "path": "_next/static/chunks/app/page-12515cd771faad79.js",
+      "sha256": "35552df3197e3883c00695fd6c864e3f8b65625401094d0a77478ac1bff6ccd6"
+    },
+    {
+      "path": "_next/static/chunks/main-app-1543d00a9f113e5b.js",
+      "sha256": "bdc6bac4e21d1562f82945eaac2647a842f1d146312871789c110d9a6efc3f46"
+    },
+    {
+      "path": "_next/static/chunks/polyfills-42372ed130431b0a.js",
+      "sha256": "0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683"
+    },
+    {
+      "path": "_next/static/chunks/webpack-9be4df611b3e1ea9.js",
+      "sha256": "00af9dc51293f6d369f2b9f8607226b0a712f6539c011fcc8c3c31a9a72348ec"
+    },
+    {
+      "path": "_next/static/css/b442962f5e106910.css",
+      "sha256": "abb238a146bf1a2fcb0caed1860363b197020dc0f7721e10615da3e62424b056"
+    },
+    {
+      "path": "_next/static/media/5aae3a1c1074c5e1-s.p.woff2",
+      "sha256": "4c2750cf6100ce8854fa06f67c875263bbc76bf80e8f9d4808a54fdb804d374e"
+    },
+    {
+      "path": "_next/static/media/636a5ac981f94f8b-s.p.woff2",
+      "sha256": "cd8db90cd950e26bc8761f65d323588bd5cd112d326d6d322bc7c8ea86771215"
+    },
+    {
+      "path": "_next/static/media/6fe53d21e6e7ebd8-s.woff2",
+      "sha256": "a16f29d7d2a21a4f9b3249a82eb2725ed5bdb91500dfb5c4758977de27477f20"
+    },
+    {
+      "path": "_next/static/media/8c2fd50d66d22a18-s.woff2",
+      "sha256": "06649aaf429d76e50721c2ad2115bf8cff7c4ee34ad21725aee7c36ccbf222ac"
+    },
+    {
+      "path": "_next/static/media/8ebc6e9dde468c4a-s.woff2",
+      "sha256": "5c913fc1b1f86f4b475e5df45a796aa480d1f7f0891ed6f1a5991d6d1be887c3"
+    },
+    {
+      "path": "_next/static/media/9c79641216ce8622-s.woff2",
+      "sha256": "d93796e7620a6d4c895ade947874d3a982c076d04589e22a2da5dc562292c137"
+    },
+    {
+      "path": "_next/static/media/9e7b0a821b9dfcb4-s.woff2",
+      "sha256": "0303e02b53b0298fb26a0193941a2e8754f0f9a9fce50d90b178d8da3424873f"
+    },
+    {
+      "path": "_next/static/media/da6e5417d357d163-s.p.woff2",
+      "sha256": "1313bcd0bcb23aa414a601c41d7cd3e751a00f80ae72f0d5dad8acdba04f836f"
+    },
+    {
+      "path": "_next/static/media/dd5f2241e050216b-s.woff2",
+      "sha256": "25feffc5815d323a2eb4daef379697d0ebffff34367ee8b2560e5a0e9a54fa23"
+    },
+    {
+      "path": "_next/static/media/ecb0c194634e5a7f-s.woff2",
+      "sha256": "18b9d9c89a96e772dfd107857ece34b3eab2e5331bcb4c11bbd7cfac628351b8"
+    },
+    {
+      "path": "apple-touch-icon.png",
+      "sha256": "40a2c4dac1952263fdf24c12b65e15040b0f79a408b2e0d8ae4787f8d5e448a2"
+    },
+    {
+      "path": "icons/icon-192.png",
+      "sha256": "b2518c6e1a4fa68d1019095ee790588860cbd70086268bd21fbc9bdfdce88795"
+    },
+    {
+      "path": "icons/icon-512.png",
+      "sha256": "34914880ca98d5fa678087a53515d66f620246ce4c4ce1972aa52519ed1c52e4"
+    },
+    {
+      "path": "icons/icon-maskable-512.png",
+      "sha256": "9b97ebde5cba9cf811951d95847a17dff90213283179b91f22c23cb691d70265"
+    },
+    {
+      "path": "index.html",
+      "sha256": "d99b9a1d3fd15ea99618f266eb4d474ebcee9567494c4356daaad92a2845af22"
+    },
+    {
+      "path": "logo/g-kiri.png",
+      "sha256": "59d3a8dd7ec1e0c99e3bae686ee3eeb2ba134c70e3f7566ba703a3edb6d52402"
+    },
+    {
+      "path": "logo/g-titik.png",
+      "sha256": "2ff5d68072435f3c918c5ff2822e6d93f6323d201651b5b6b449f01ec0d630b2"
+    },
+    {
+      "path": "logo/g-utama.png",
+      "sha256": "73eae40512e95525d98a500232b4a3067a80e2c37eb589354a96c019cd7bbd05"
+    },
+    {
+      "path": "logo/o-atas.png",
+      "sha256": "3c5ad0ee013108ec363c3d0f0947d0860b6fb9c2785f5388a4debfb295b40ab0"
+    },
+    {
+      "path": "logo/o-bawah.png",
+      "sha256": "c2811e51a2bf37fac66232b498cbb3339c888876ddfc339206393084ba81556b"
+    },
+    {
+      "path": "logo/o-chevron.png",
+      "sha256": "75e981dad06e611e0727c34a85ba564db079192c43b9fa3b276e22f76bc7bd87"
+    },
+    {
+      "path": "logo-full.png",
+      "sha256": "0acd0e9306544cfe58b89363a6027e86848225a89ffeb0d3a8e9864f9c824cc4"
+    },
+    {
+      "path": "logo-mark.png",
+      "sha256": "b7b606475238fbdb4ffde4aff21f5fc12f85b8a32f5bef0b5902bdcc856487e3"
+    },
+    {
+      "path": "manifest.webmanifest",
+      "sha256": "ea276f36de17e68e877ca39790805456ca94f91360be4b65a98bc3341068d79c"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import {campus,campusName} from '../../lib/ekosistem';
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageRoute } from '../../types';
@@ -87,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         {
           route: 'input-mutabaah',
-          label: "Input Mutaba'ah",
+          label: 'Mutabaah Tahfidz',
           icon: FileCheck2,
           badgeText: 'Coming Soon'
         }
@@ -127,8 +128,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-white dark:bg-[#091424] border-r border-slate-200 dark:border-[#162740] transition-all duration-300 ease-in-out lg:translate-x-0 ${
-          isCollapsed ? 'w-[76px]' : 'w-[260px] sm:w-[280px]'
+        className={`nuris-sidebar fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-white dark:bg-[#091424] border-r border-slate-200 dark:border-[#162740] transition-all duration-300 ease-in-out lg:translate-x-0 ${
+          isCollapsed ? 'w-[76px]' : 'w-[280px] lg:w-[248px]'
         } ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
       >
         {/* Top Logo Section */}
@@ -148,14 +149,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     SIMKA<span className="text-emerald-500 dark:text-emerald-400">.ID</span>
                   </span>
                   <span className="px-1.5 py-0.5 rounded text-[8.5px] sm:text-[9px] font-bold bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 tracking-wider">
-                    PUTRA
+                    {campus}
                   </span>
-                  <span className="px-1 py-0.5 rounded text-[8px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                    Pro V1
-                  </span>
+
                 </div>
                 <p className="text-[9.5px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
-                  Karakter &amp; Akhlak Santri Putra
+                  Karakter &amp; Akhlak Santri {campusName}
                 </p>
               </div>
             )}
@@ -227,6 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   return (
                     <button
                       key={item.route}
+                      aria-current={isActive ? 'page' : undefined}
                       title={isCollapsed ? item.label : undefined}
                       onClick={() => handleNavClick(item.route)}
                       className={`w-full flex items-center ${
