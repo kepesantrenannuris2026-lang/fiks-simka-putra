@@ -1,3 +1,4 @@
+import {campus} from '../../lib/ekosistem';
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PointBadge, KategoriPelanggaranBadge } from '../common/PointBadge';
@@ -62,51 +63,14 @@ export const DashboardView: React.FC = () => {
   const recentActivities = getRecentActivities();
 
   // Color palette for Donut Chart
-  const DONUT_COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899'];
+  const DONUT_COLORS = ['#17873F', '#2F6BD8', '#EE8A35', '#B7791F', '#D14343'];
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
-      {/* BANNER DASHBOARD */}
-      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-900 p-4 sm:p-8 text-white shadow-lg border border-emerald-600/30">
-        {/* Background Islamic Geometric Accent */}
-        <div className="absolute right-0 top-0 bottom-0 opacity-10 flex items-center pr-6 pointer-events-none">
-          <MosqueLogoIcon className="w-48 sm:w-64 h-48 sm:h-64 text-white" />
-        </div>
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3.5 sm:gap-6">
-          <div className="space-y-1 sm:space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-white/15 backdrop-blur-md text-[10.5px] sm:text-xs font-bold text-white tracking-wider uppercase border border-white/20">
-              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-300" />
-              <span>SIMKA.ID</span>
-            </div>
-
-            <h2 className="text-lg sm:text-3xl font-black tracking-tight text-white leading-snug">
-              Sistem Monitoring Karakter & Akhlak Santri
-            </h2>
-
-            <p className="text-[11.5px] sm:text-sm text-emerald-100 max-w-2xl leading-relaxed italic font-medium">
-              &ldquo;Mencatat, Memantau, Membina — untuk Generasi Qur&apos;ani yang Berakhlak Mulia&rdquo;
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-0">
-            <button
-              onClick={() => setCurrentRoute('catat-pelanggaran')}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-[11px] sm:text-xs font-black shadow-md transition-all cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700" />
-              <span>Catat Pelanggaran</span>
-            </button>
-            <button
-              onClick={() => setCurrentRoute('rekap-pelanggaran')}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-emerald-950/60 hover:bg-emerald-950/80 text-white border border-emerald-500/40 text-[11px] sm:text-xs font-bold transition-all cursor-pointer"
-            >
-              <ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>Lihat Rekap Data</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <section className="nuris-dashboard-intro">
+        <div><span className="nuris-eyebrow">SIMKA {campus} · KEPESANTRENAN</span><h2>Pendampingan karakter santri</h2><p>Catat pelanggaran, pantau perkembangan, dan tindak lanjuti pembinaan dalam satu ruang.</p></div>
+        <div className="nuris-dashboard-actions"><button type="button" className="nuris-primary" onClick={() => setCurrentRoute('catat-pelanggaran')}><Plus size={17}/>Catat pelanggaran</button><button type="button" className="nuris-secondary" onClick={() => setCurrentRoute('rekap-pelanggaran')}><ClipboardList size={16}/>Lihat rekap</button></div>
+      </section>
 
       {/* 4 KPI CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
@@ -168,7 +132,7 @@ export const DashboardView: React.FC = () => {
         <div className="rounded-xl sm:rounded-2xl bg-white dark:bg-[#101C2F] border border-slate-200/90 dark:border-[#1E3048] p-3.5 sm:p-5 shadow-xs flex items-center justify-between transition-colors">
           <div>
             <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Terseelesaikan
+              Terselesaikan
             </p>
             <h3 className="text-xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 sm:mt-1">
               {stats.terseelesaikan}

@@ -48,7 +48,7 @@ export const AkunView: React.FC = () => {
   return (
     <div className="max-w-[650px] mx-auto space-y-5 animate-in fade-in duration-200">
       {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-800 to-teal-900 p-5 sm:p-6 text-white shadow-lg">
+      <div className="rounded-2xl nuris-section-header p-5 sm:p-6 text-white shadow-lg">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-emerald-200 text-xs font-semibold tracking-wider mb-2">
             <UserCog className="w-3.5 h-3.5" />

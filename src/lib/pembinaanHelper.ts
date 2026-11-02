@@ -1,3 +1,5 @@
+import {coordinatorName} from './coordinators';
+import {getActiveEnvironment} from './environment';
 import { MasterPembinaan, Santri, Pelanggaran, UserAccount } from '../types';
 
 export interface CategorizedPembinaan {
@@ -427,12 +429,8 @@ export function generatePembinaanFormData(params: {
   }));
 
   // Cari nama Koordinator Unit dan Musyrif
-  const koordinator = usersList.find(
-    (u) => u.role === 'KOORDINATOR' && (u.unit === santri.unit || u.unit === 'ALL')
-  ) || usersList.find((u) => u.role === 'KASIE_KEPESANTRENAN');
-
   const musyrifName = santri.musyrifNama || (user?.role === 'MUSYRIF' ? user.nama : 'Musyrif Asrama');
-  const koordinatorName = koordinator ? koordinator.nama : 'Koordinator Kedisiplinan Unit';
+  const koordinatorName = coordinatorName(santri.lingkungan || getActiveEnvironment(),santri.unit);
 
   // HANYA jika kasus BARU yang belum tersimpan di database, tambahkan poin untuk preview.
   // Untuk kasus yang SUDAH TERSIMPAN di Rekap & Riwayat, gunakan santri.totalPoin apa adanya.

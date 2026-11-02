@@ -1,0 +1,13 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'
+/index.html
+  Cache-Control: no-cache
+/portal.js
+  Cache-Control: no-cache
+/apps.js
+  Cache-Control: no-cache
+/simka/*
+  Cache-Control: no-cache

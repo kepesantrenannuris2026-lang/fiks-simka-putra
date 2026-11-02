@@ -88,7 +88,7 @@ export const RiwayatPembinaanView: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Header Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-800 to-teal-900 p-6 sm:p-7 text-white shadow-lg">
+      <div className="rounded-2xl nuris-section-header p-6 sm:p-7 text-white shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-semibold text-white mb-2">

@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+.netlify/
+dist-ekosistem/
+dist-mutabaah/
+ecosystem/mutabaah/

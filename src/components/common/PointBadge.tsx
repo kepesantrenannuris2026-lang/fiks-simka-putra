@@ -12,13 +12,13 @@ export const PointBadge: React.FC<PointBadgeProps> = ({ points, showSuffix = tru
   let dotColor = '';
 
   if (points === 0) {
-    badgeStyle = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+    badgeStyle = 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30';
     dotColor = 'bg-emerald-400';
   } else if (points < 50) {
-    badgeStyle = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+    badgeStyle = 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30';
     dotColor = 'bg-amber-400';
   } else {
-    badgeStyle = 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+    badgeStyle = 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30';
     dotColor = 'bg-rose-400';
   }
 

@@ -1,0 +1,2 @@
+export const coordinators={PUTRA:{MA:'Ust. Muhlisin',SMP:'Ust. Arif',SMA:'Ust. Hisom'},PUTRI:{SMP:'Usth. Lubna',SMA:'Usth. Hajar',MA:'Usth. Muawanah'}} as const;
+export function coordinatorName(environment:string,unit:string):string {const e=coordinators[environment as keyof typeof coordinators];if(!e||!Object.hasOwn(e,unit))throw new Error('Unit atau lingkungan koordinator tidak valid.');return e[unit as keyof typeof e];}

@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: process.env.VITE_KEPESANTRENAN_PORTAL === 'true' ? (process.env.VITE_APP_ENVIRONMENT === 'PUTRI' ? '/simka-putri/' : '/simka/') : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

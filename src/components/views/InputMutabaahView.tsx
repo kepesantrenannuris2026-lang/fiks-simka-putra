@@ -1,3 +1,4 @@
+import {isIntegrated} from '../../lib/ekosistem';
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -11,11 +12,12 @@ import {
 
 export const InputMutabaahView: React.FC = () => {
   const { user } = useApp();
+  if(isIntegrated)return <section className="p-6 rounded-2xl bg-white dark:bg-slate-900"><h1 className="text-xl font-bold">Mutabaah Tahfidz</h1><p className="my-4">Lanjutkan setoran, monitoring, dan rapor dengan akun yang sama.</p><a href="/#mutabaah" target="_top" className="text-emerald-700 underline">Buka Mutabaah Tahfidz →</a></section>;
 
   return (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
       {/* Top Banner Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-800 via-teal-900 to-slate-900 p-5 sm:p-7 text-white shadow-lg relative overflow-hidden">
+      <div className="rounded-2xl nuris-section-header p-5 sm:p-7 text-white shadow-lg relative overflow-hidden">
         <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 max-w-2xl">

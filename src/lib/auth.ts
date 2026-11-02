@@ -1,3 +1,4 @@
+import {isIntegrated} from './ekosistem';
 import { UserRole, UnitPesantren, UserAccount, PageRoute } from '../types';
 
 const SALT = 'simka_secure_salt_v2_2026';
@@ -122,6 +123,7 @@ export type AppPermission =
  */
 export function can(user: UserAccount | null | undefined, permission: AppPermission): boolean {
   if (!user) return false;
+  if(isIntegrated && ['create_student','edit_student','delete_student','import_students','manage_users','database_sync'].includes(permission)) return false;
 
   switch (permission) {
     case 'view_dashboard':

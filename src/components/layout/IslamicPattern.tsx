@@ -4,11 +4,12 @@ export const MosqueLogoIcon: React.FC<{ className?: string }> = ({ className = '
   return (
     <div className={`relative flex items-center justify-center shrink-0 ${className}`}>
       <img
-        src="/logo-simka.png"
-        alt="Logo Masjid SIMKA.ID"
+        src="/logo-nuris.svg"
+        alt="Logo Pesantren Nurul Islam Tengaran"
         className="w-full h-full object-contain rounded-xl"
         onError={(e) => {
-          (e.target as HTMLImageElement).src = '/logo-simka.svg';
+          (e.target as HTMLImageElement).onerror = null;
+          (e.target as HTMLImageElement).src = '/logo-nuris.png';
         }}
       />
     </div>

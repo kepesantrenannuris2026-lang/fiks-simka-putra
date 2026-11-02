@@ -1,3 +1,5 @@
+import {caseDateToISO} from './caseDate';
+import {isIntegrated,portalClient,integratedLogin} from './ekosistem';
 import { createClient } from '@supabase/supabase-js';
 import { 
   MasterPembinaan, 
@@ -42,6 +44,7 @@ export const STORAGE_KEY_SUPABASE_KEY = 'SIMKA_SUPABASE_ANON_KEY';
 export const STORAGE_KEY_OFFLINE_MODE = 'SIMKA_SUPABASE_OFFLINE_MODE';
 
 export function getActiveSupabaseConfig(): { url: string; anonKey: string; isCustom: boolean; offlineMode: boolean } {
+  if (isIntegrated) return {url:'https://yvcqcgbzdsrjkskvcmqq.supabase.co',anonKey:'',isCustom:false,offlineMode:false};
   const customUrl = typeof window !== 'undefined' ? (localStorage.getItem(STORAGE_KEY_SUPABASE_URL) || '').trim().replace(/^["']|["']$/g, '') : '';
   const customKey = typeof window !== 'undefined' ? (localStorage.getItem(STORAGE_KEY_SUPABASE_KEY) || '').trim().replace(/^["']|["']$/g, '') : '';
   const offlineMode = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_OFFLINE_MODE) === 'true' : false;
@@ -65,6 +68,7 @@ let activeClient: any = null;
 let lastKey = '';
 
 export function getSupabaseClient() {
+  if (isIntegrated) return portalClient;
   const config = getActiveSupabaseConfig();
   if (config.offlineMode || !config.url || !config.anonKey) {
     return null;
@@ -122,6 +126,7 @@ export function setOfflineMode(enabled: boolean): void {
 }
 
 export function isSupabaseConfigured(): boolean {
+  if (isIntegrated) return true;
   const cfg = getActiveSupabaseConfig();
   return Boolean(cfg.url && cfg.anonKey && !cfg.offlineMode);
 }
@@ -416,6 +421,7 @@ export async function authenticateUser(
   passwordInput: string,
   localUsers: UserAccount[]
 ): Promise<{ success: boolean; user?: UserAccount; message?: string }> {
+  if (isIntegrated) return integratedLogin(usernameInput,passwordInput);
   const cleanUsername = usernameInput.trim().toLowerCase();
   logAuthDebug(`Attempting login for username: "${cleanUsername}"`);
 
@@ -2313,7 +2319,7 @@ export async function updateKasusPelanggaranInDB(
     if (updates.hukuman !== undefined) payload.hukuman = updates.hukuman;
     if (updates.catatan !== undefined) payload.catatan = updates.catatan;
     if (updates.status !== undefined) payload.status = updates.status;
-    if (updates.tanggal !== undefined) payload.tanggal_waktu = updates.tanggal;
+    if (updates.tanggal !== undefined) payload.tanggal_waktu = caseDateToISO(updates.tanggal);
     if (updates.pembinaanTingkat !== undefined) payload.pembinaan_tingkat = updates.pembinaanTingkat;
     if (updates.rekomendasiPembinaan !== undefined) payload.rekomendasi_pembinaan = updates.rekomendasiPembinaan;
 
