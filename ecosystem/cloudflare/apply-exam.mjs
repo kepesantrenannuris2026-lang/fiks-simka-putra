@@ -5,3 +5,5 @@ const file=path.join(out,'mutabaah/index.html');let html=fs.readFileSync(file,'u
 fs.copyFileSync('ecosystem/tahfidz-exam/ui/mutabaah-link.js',path.join(out,'ujian-tahfidz/mutabaah-link.js'));
 const headers=path.join(out,'_headers');let h=fs.readFileSync(headers,'utf8');if(!h.includes('/ujian-tahfidz/*'))h+='\n/ujian-tahfidz/*\n  Cache-Control: no-cache\n/ujian-tahfidz/chunks/*\n  Cache-Control: public, max-age=31536000, immutable\n';fs.writeFileSync(headers,h);
 console.log('Cloudflare exam navigation enabled; Netlify output was not changed.');
+
+await import('./route-semester-exam.mjs');
