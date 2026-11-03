@@ -27,6 +27,9 @@
     "node_modules",
     "dist",
     "dist-ekosistem",
-    "ecosystem/functions"
+    "ecosystem/functions",
+    "dist-cloudflare",
+    "dist-mutabaah",
+    "exam-live-baseline"
   ]
 }

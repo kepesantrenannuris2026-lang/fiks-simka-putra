@@ -10,7 +10,9 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "build:ekosistem": "node ecosystem/scripts/build.mjs",
-    "test:ekosistem": "node --import tsx --test ecosystem/tests/*.test.ts"
+    "test:ekosistem": "node --import tsx --test ecosystem/tests/*.test.ts",
+    "test:ujian": "node --import tsx --test ecosystem/tahfidz-exam/tests/*.test.ts",
+    "build:ujian": "node ecosystem/tahfidz-exam/build.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -42,6 +44,7 @@
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.3"
+    "vite": "^6.2.3",
+    "@electric-sql/pglite": "0.3.14"
   }
 }
