@@ -74,3 +74,12 @@ POST Supabase /functions/v1/ujian-tahfidz with Authorization Bearer existing mut
 Read actions: bootstrap, participants, candidates, load, history, report.
 Writes (request_id UUID required): period, staff, prepare, reassign, start, save, finalize, publish.
 GET returns public module version only. OPTIONS provides exact-origin CORS.
+
+
+## November 3 usability update
+
+Restart now submits directly without a reason/note screen and returns a first-attempt student to “Belum diuji”. The server records an automatic audit reason, archives the old draft as BATAL, clears it from operational scores, and lets another authorized teacher in the same unit start. Finalized results remain protected. Existing final results are retained if a remedial draft is cancelled. Optimistic locking and idempotency checks remain enforced.
+
+The mobile roster uses full-width student names with actions below, and the exam uses compact error counters. Five-question selection and the current half-point scoring rules are unchanged. The Cloudflare Mutabaah bundle groups monitor rows by teacher and unit; it retains halaqah labels and recomputes counts/status totals. Netlify bundles are unchanged. Tests: 14 exam/SQL tests and 5 portal/navigation/monitor tests, plus TypeScript validation. Production authenticated flows still require the user's session for acceptance.
+
+One certification record for the user-identified class-10 Taqy student was deleted at the owner's explicit request. Its full pre-deletion row is retained in the existing protected database audit, and a matching Spreadsheet delete was queued. Other students and their operational records were not changed.

@@ -83,7 +83,7 @@ export async function examService(a:any,b:any,pool:any){
   }else if(action==='restart'){
    const r=await loadAttempt(db,b.attempt_id);requireUnit(a,r.assignment.unit);if(r.assignment.unit!==r.assignment.current_unit)fail('Unit peserta sudah berubah.',409);
    if(r.attempt.status!=='DRAFT'||r.attempt.version!==b.version)fail('Sesi sudah berubah atau telah final. Muat ulang sebelum membatalkan.',409);
-   const reason=text(b.reason,500);if(reason.length<5)fail('Pilih alasan restart.');
+   const reason=text(b.reason||'Restart sesi ujian',500);
    await db.query("UPDATE tahfidz_exam.attempts SET status='BATAL',reason=$2,version=version+1 WHERE id=$1",[r.attempt.id,reason]);
    const previous=(await db.query("SELECT status,passed FROM tahfidz_exam.attempts WHERE assignment_id=$1 AND status<>'BATAL' ORDER BY attempt_no DESC LIMIT 1",[r.assignment.id])).rows[0];
    await db.query('UPDATE tahfidz_exam.assignments SET status=$2,version=version+1 WHERE id=$1',[r.assignment.id,previous?.status==='FINAL'?(previous.passed?'SELESAI':'PERLU_REMEDIAL'):'SUDAH_DITUGASKAN']);
