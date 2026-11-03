@@ -30,7 +30,7 @@ test('full database lifecycle, scoped reads, optimistic locking, retries, remedi
  await db.query("INSERT INTO public.ujian_semester(id,santri_id,tahun_ajaran,semester,makhraj_nilai) VALUES('legacy','s1','2026/2027',1,88)");
  await call(admin,{action:'publish',attempt_id:final2.attempt.id,confirm_replace:true});const legacy=(await db.query('SELECT * FROM public.ujian_semester')).rows[0] as any;assert.equal(legacy.makhraj_nilai,'88');assert.equal(Number(legacy.tahfidz_nilai),100);assert.equal((await db.query('SELECT * FROM public.sync_queue')).rows.length,1);
  await db.exec('SET ROLE anon');await assert.rejects(db.query('SELECT * FROM tahfidz_exam.attempts'),/permission denied/);await db.exec('RESET ROLE');
- const old=(await db.query('SELECT count(*)::int n FROM tahfidz_exam.attempts')).rows[0] as any;assert.equal(old.n,2);
+ const old=(await db.query<{n:number}>('SELECT count(*)::int n FROM tahfidz_exam.attempts')).rows[0] as any;assert.equal(old.n,2);
 });
 test('active account and session metadata are verified; forged role is rejected',async()=>{await db.query("INSERT INTO public.sesi VALUES('test-token',$1,now()+interval '1 hour')",[JSON.stringify({username:'teacher',role:'musyrif',musyrif_master:'Guru B'})]);assert.equal((await actorFromToken('test-token',(s:any,a:any)=>db.query(s,a))).admin,false);await db.query("UPDATE public.sesi SET data=jsonb_set(data,'{role}','\"pimpinan\"') WHERE token='test-token'");await assert.rejects(actorFromToken('test-token',(s:any,a:any)=>db.query(s,a)),/Sesi atau penugasan/);});
 
@@ -45,16 +45,19 @@ test('semester is created automatically and full unit roster is visible before p
  await assert.rejects(call(colleague,{action:'save',attempt_id:opened.attempt.id,version:opened.attempt.version,draft:opened.draft}),/Penguji atau penugasan/);
 });
 
-test('restart archives draft, releases same-unit examiner, preserves history and rejects stale/final/cross-unit writes',async()=>{
- const roster=await call(teacher,{action:'roster',period_id:period.id});const row=roster.rows.find(s=>s.santri_id==='s3');const draft=await call(teacher,{action:'load',attempt_id:row.attempt_id});
- await assert.rejects(call(other,{action:'restart',attempt_id:draft.attempt.id,version:draft.attempt.version,reason:'Salah memilih santri'}),/unit penugasan/);
- const colleague={...teacher,username:'admin',admin:false};const body={action:'restart',attempt_id:draft.attempt.id,version:draft.attempt.version,request_id:crypto.randomUUID()};const cancelled=await call(colleague,body);assert.equal(cancelled.ok,true);assert.deepEqual(await call(colleague,body),cancelled);
- const archived=await call(teacher,{action:'load',attempt_id:draft.attempt.id});assert.equal(archived.attempt.status,'BATAL');assert.equal(archived.attempt.reason,'Restart sesi ujian');
- await assert.rejects(call(teacher,{action:'save',attempt_id:draft.attempt.id,version:draft.attempt.version,draft:draft.draft}),/Data telah berubah|sudah final/);
- const ready=(await call(teacher,{action:'roster',period_id:period.id})).rows.find(s=>s.santri_id==='s3');assert.equal(ready.attempt_id,null);assert.equal(ready.status,'SUDAH_DITUGASKAN');assert.equal(ready.score,null);assert.equal(ready.penguji,null);
- const restarted=await call(colleague,{action:'start',assignment_id:cancelled.assignment_id});assert.equal(restarted.attempt.examiner,'admin');assert.equal(restarted.attempt.attempt_no,draft.attempt.attempt_no+1);assert.equal(restarted.draft.events.length,0);assert.equal(restarted.draft.completed.length,0);
- const history=await call(teacher,{action:'history',assignment_id:cancelled.assignment_id});assert.ok(history.attempts.some(t=>t.id===draft.attempt.id&&t.status==='BATAL'));
- await assert.rejects(call(admin,{action:'restart',attempt_id:first.attempt.id,version:first.attempt.version,reason:'Mengubah hasil final'}),/sudah berubah|final/);
+test('restart permanently deletes draft/history/cache while rejecting cross-unit and finalized resets',async()=>{
+ const row=(await call(teacher,{action:'roster',period_id:period.id})).rows.find(s=>s.santri_id==='s3');const draft=await call(teacher,{action:'load',attempt_id:row.attempt_id});
+ await assert.rejects(call(other,{action:'restart',attempt_id:draft.attempt.id,version:draft.attempt.version}),/unit penugasan/);
+ const cancelled=(await db.query("INSERT INTO tahfidz_exam.attempts(assignment_id,attempt_no,kind,examiner,rules,coverage,exam_type,seed,status,note) SELECT assignment_id,99,kind,examiner,rules,coverage,exam_type,seed,'BATAL','Catatan lama' FROM tahfidz_exam.attempts WHERE id=$1 RETURNING id",[draft.attempt.id])).rows[0] as any;
+ await db.query("INSERT INTO tahfidz_exam.audit(username,action,record_id,before_data) VALUES('teacher','OLD_DRAFT',$1,'{\"note\":\"Catatan lama\"}')",[cancelled.id]);
+ const colleague={...teacher,username:'admin',admin:false},body={action:'restart',attempt_id:draft.attempt.id,version:draft.attempt.version,request_id:crypto.randomUUID()};const reset=await call(colleague,body);assert.equal(reset.ok,true);assert.deepEqual(await call(colleague,body),reset);assert.ok(reset.deleted_attempt_ids.includes(draft.attempt.id)&&reset.deleted_attempt_ids.includes(cancelled.id));
+ await assert.rejects(call(teacher,{action:'load',attempt_id:draft.attempt.id}),/tidak ditemukan/);await assert.rejects(call(teacher,{action:'save',attempt_id:draft.attempt.id,version:draft.attempt.version,draft:draft.draft}),/tidak ditemukan/);
+ for(const table of ['questions','error_events'])assert.equal((await db.query<{n:number}>(`SELECT count(*)::int n FROM tahfidz_exam.${table} WHERE attempt_id=$1`,[draft.attempt.id])).rows[0].n,0);
+ assert.equal((await db.query<{n:number}>('SELECT count(*)::int n FROM tahfidz_exam.audit WHERE record_id=$1',[cancelled.id])).rows[0].n,0);
+ assert.equal((await db.query<{n:number}>("SELECT count(*)::int n FROM tahfidz_exam.requests WHERE response#>>'{attempt,id}'=$1",[draft.attempt.id])).rows[0].n,0);
+ assert.equal((await call(teacher,{action:'history',assignment_id:row.id})).attempts.length,0);const ready=(await call(teacher,{action:'roster',period_id:period.id})).rows.find(s=>s.santri_id==='s3');assert.equal(ready.attempt_count,0);assert.equal(ready.status,'SUDAH_DITUGASKAN');assert.equal(ready.score,null);assert.equal(ready.penguji,null);
+ const restarted=await call(colleague,{action:'start',assignment_id:row.id});assert.equal(restarted.attempt.attempt_no,1);assert.equal(restarted.attempt.examiner,'admin');assert.equal(restarted.draft.events.length,0);
+ await assert.rejects(call(admin,{action:'restart',attempt_id:first.attempt.id,version:first.attempt.version}),/sudah berubah|final/);assert.equal((await call(teacher,{action:'load',attempt_id:first.attempt.id})).attempt.status,'FINAL');
 });
 
 test('multi-juz material and scoped context, then partial/tahsin changes archive drafts without touching finalized results',async()=>{
@@ -75,11 +78,18 @@ test('multi-juz material and scoped context, then partial/tahsin changes archive
  await call(teacher,{action:'change-material',attempt_id:partialSession.attempt.id,version:partialSession.attempt.version,exam_type:'UJI_KOMPETENSI_DASAR',coverage:basics});const basic=await call(teacher,{action:'start',assignment_id:prep.assignment_id});assert.deepEqual(basic.questions.map(q=>q.start),['1:1','53:1']);
  const final=await call(teacher,{action:'finalize',attempt_id:basic.attempt.id,version:basic.attempt.version,draft:{events:[],completed:[1,2],note:''}});assert.equal(Number(final.attempt.score),100);
  await assert.rejects(call(teacher,{action:'change-material',attempt_id:final.attempt.id,version:final.attempt.version,exam_type:'HAFALAN_5_SOAL',coverage}),/sudah berubah|final/);
- const history=await call(teacher,{action:'history',assignment_id:prep.assignment_id});assert.deepEqual(history.attempts.map(t=>t.status),['BATAL','BATAL','FINAL']);
+ const history=await call(teacher,{action:'history',assignment_id:prep.assignment_id});assert.deepEqual(history.attempts.map(t=>t.status),['FINAL']);
 });
 
 test('all 30 juz persist 150 uniquely keyed questions and independent results',async()=>{
  await db.query("INSERT INTO public.santri VALUES('s5','Contoh Seluruh Juz','SMP Ikhwan','8','A','Guru B',true)");const ranges=JSON.parse(fs.readFileSync('ecosystem/tahfidz-exam/core/quran-metadata.json','utf8'));const all=Array.from({length:30},(_,i)=>{const rows=ranges.filter(v=>v[3]===i+1);return {juz:i+1,start:rows[0][1],end:rows.at(-1)[1]};});
  const prep=await call(teacher,{action:'begin-student',period_id:period.id,santri_id:'s5',exam_type:'HAFALAN_5_SOAL',coverage:{...all[0],ranges:all,target:'TUNTAS',verified:true,mode:'full'}});const opened=await call(teacher,{action:'start',assignment_id:prep.assignment_id});assert.equal(opened.questions.length,150);assert.equal(new Set(opened.questions.map(q=>q.n)).size,150);
  const draft={events:[{id:crypto.randomUUID(),q:150,type:'JALI',at:new Date().toISOString()}],completed:opened.questions.map(q=>q.n),note:''};const final=await call(teacher,{action:'finalize',attempt_id:opened.attempt.id,version:opened.attempt.version,draft});assert.equal(final.attempt.result.juz_results.length,30);assert.equal(final.attempt.result.juz_results.find(j=>j.juz===30).score,99);assert.equal(final.attempt.result.juz_results.find(j=>j.juz===1).score,100);assert.equal(Number(final.attempt.score),99.97);
+});
+
+test('teacher-halaqah filter works across the authorized unit, and target selection is not required',async()=>{
+ const boot=await call(teacher,{action:'bootstrap'});assert.ok(boot.halaqah_options.some(h=>h.musyrif==='Guru X'));assert.ok(!boot.halaqah_options.some(h=>h.unit==='MA Akhwat'));
+ const roster=await call(teacher,{action:'roster',period_id:period.id,musyrif:'Guru X',halaqah:'Lain'});assert.deepEqual(roster.rows.map(s=>s.santri_id),['s3']);assert.equal(roster.summary[0].total,1);
+ assert.equal((await call(teacher,{action:'roster',period_id:period.id,unit:'MA Akhwat',musyrif:'Guru C'})).rows.length,0);
+ await db.query("INSERT INTO public.santri VALUES('s6','Tanpa Target','SMP Ikhwan','8','C','Guru B',true)");const prepared=await call(teacher,{action:'begin-student',period_id:period.id,santri_id:'s6',exam_type:'UJI_KOMPETENSI_DASAR',coverage:{juz:1,start:'1:1',end:'1:7',mode:'basic',verified:true}});const started=await call(teacher,{action:'start',assignment_id:prepared.assignment_id});assert.equal(started.questions.length,2);
 });

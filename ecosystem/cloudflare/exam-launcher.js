@@ -133,7 +133,6 @@
   };
   const registry = [
     {id:'beranda',name:'Beranda Kepesantrenan',icon:'home'},
-    {id:'ujian-tahfidz',name:'Ujian Tahfidz Semester',icon:'book'},
     {id:'yaumiyyah',name:'Mutabaah Yaumiyyah',icon:'book'},
     {id:'mutabaah',name:'Mutabaah Tahfidz',icon:'book'},
     {id:'simka',name:'SIMKA Putra',icon:'shield'},

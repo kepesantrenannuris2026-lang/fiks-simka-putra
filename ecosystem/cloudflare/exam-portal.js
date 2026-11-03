@@ -28,7 +28,7 @@
   for(const nav of [$('desktop-nav'),$('mobile-nav')]){nav.replaceChildren(navLink('beranda','Beranda','home'));for(const app of window.NURIS_APPS)nav.append(navLink(app.id,app.short,app.icon));}
   $('app-grid').replaceChildren();$('apps-empty').hidden=window.NURIS_APPS.length>0;
   for(const app of window.NURIS_APPS){
-   const allowed=(app.id==='ujian-tahfidz'||session.apps[app.id]), card=document.createElement(allowed?'a':'article');
+   const allowed=session.apps[app.id], card=document.createElement(allowed?'a':'article');
    card.className='app-card'+(allowed?'':' disabled');if(allowed)card.href='#'+app.id;
    card.innerHTML='<div class="icon">'+icon(app.icon)+'</div><div class="label"></div><h3></h3><p></p><div class="card-action"></div>';
    card.querySelector('.label').textContent=app.label;card.querySelector('h3').textContent=app.name;card.querySelector('p').textContent=app.description;
@@ -39,15 +39,16 @@
  }
  function route() {
   if(!session)return;
-  const id=location.hash.slice(1)||desired;desired='beranda';const app=window.NURIS_APPS.find(a=>a.id===id);
-  if(app&&!(app.id==='ujian-tahfidz'||session.apps[app.id])){toast('Akses '+app.name+' belum ditugaskan. Hubungi pimpinan untuk memeriksa akses Anda.');location.hash='beranda';return;}
+  const rawId=location.hash.slice(1)||desired,legacyExam=rawId==='ujian-tahfidz',id=legacyExam?'mutabaah':rawId;if(legacyExam)history.replaceState(null,'','#mutabaah');desired='beranda';const app=window.NURIS_APPS.find(a=>a.id===id);
+  if(app&&!session.apps[app.id]){toast('Akses '+app.name+' belum ditugaskan. Hubungi pimpinan untuk memeriksa akses Anda.');location.hash='beranda';return;}
   const active=app?app.id:'beranda';
   document.querySelectorAll('[data-app]').forEach(a=>{if(a.dataset.app===active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.body.classList.toggle('module-open',!!app);$('home').hidden=!!app;$('app-stage').hidden=!app;
   document.title=app?app.name+' · Kepesantrenan Nuris':'Kepesantrenan Nuris';
   for(const f of $('frames').children)f.hidden=f.dataset.id!==active;
+  const existingFrame=document.querySelector('iframe[data-id="mutabaah"]');if(legacyExam&&existingFrame)existingFrame.src='/mutabaah/?tool=ujian';
   if(app&&!document.querySelector('iframe[data-id="'+app.id+'"]')) {
-   const f=document.createElement('iframe');f.src=app.path;f.title=app.name;f.dataset.id=app.id;f.referrerPolicy='same-origin';
+   const f=document.createElement('iframe');f.src=legacyExam?'/mutabaah/?tool=ujian':app.path;f.title=app.name;f.dataset.id=app.id;f.referrerPolicy='same-origin';
    f.addEventListener('load',()=>{$('frame-loading').hidden=true;});
    $('frame-loading').hidden=false;$('frames').append(f);
   }
