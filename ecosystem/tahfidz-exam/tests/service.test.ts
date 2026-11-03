@@ -44,3 +44,15 @@ test('semester is created automatically and full unit roster is visible before p
  const colleague={...teacher,username:'admin',admin:false};const read=await call(colleague,{action:'load',attempt_id:opened.attempt.id});assert.equal(read.assignment.santri_id,'s3');
  await assert.rejects(call(colleague,{action:'save',attempt_id:opened.attempt.id,version:opened.attempt.version,draft:opened.draft}),/Penguji atau penugasan/);
 });
+
+test('restart archives draft, releases same-unit examiner, preserves history and rejects stale/final/cross-unit writes',async()=>{
+ const roster=await call(teacher,{action:'roster',period_id:period.id});const row=roster.rows.find(s=>s.santri_id==='s3');const draft=await call(teacher,{action:'load',attempt_id:row.attempt_id});
+ await assert.rejects(call(other,{action:'restart',attempt_id:draft.attempt.id,version:draft.attempt.version,reason:'Salah memilih santri'}),/unit penugasan/);
+ const colleague={...teacher,username:'admin',admin:false};const body={action:'restart',attempt_id:draft.attempt.id,version:draft.attempt.version,reason:'Pergantian penguji',request_id:crypto.randomUUID()};const cancelled=await call(colleague,body);assert.equal(cancelled.ok,true);assert.deepEqual(await call(colleague,body),cancelled);
+ const archived=await call(teacher,{action:'load',attempt_id:draft.attempt.id});assert.equal(archived.attempt.status,'BATAL');
+ await assert.rejects(call(teacher,{action:'save',attempt_id:draft.attempt.id,version:draft.attempt.version,draft:draft.draft}),/Data telah berubah|sudah final/);
+ const ready=(await call(teacher,{action:'roster',period_id:period.id})).rows.find(s=>s.santri_id==='s3');assert.equal(ready.attempt_id,null);assert.equal(ready.status,'SUDAH_DITUGASKAN');
+ const restarted=await call(colleague,{action:'start',assignment_id:cancelled.assignment_id});assert.equal(restarted.attempt.examiner,'admin');assert.equal(restarted.attempt.attempt_no,draft.attempt.attempt_no+1);assert.equal(restarted.draft.events.length,0);assert.equal(restarted.draft.completed.length,0);
+ const history=await call(teacher,{action:'history',assignment_id:cancelled.assignment_id});assert.ok(history.attempts.some(t=>t.id===draft.attempt.id&&t.status==='BATAL'));
+ await assert.rejects(call(admin,{action:'restart',attempt_id:first.attempt.id,version:first.attempt.version,reason:'Mengubah hasil final'}),/sudah berubah|final/);
+});

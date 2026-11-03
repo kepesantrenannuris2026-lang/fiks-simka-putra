@@ -1,3 +1,9 @@
+## Restart sesi yang belum final
+
+Tombol **Restart / ganti penguji** tersedia pada daftar peserta yang sedang ujian dan halaman pengisian. Pilih alasan salah santri, pergantian penguji atau mengulang penilaian; konfirmasikan pembatalan. Pilihan mulai ulang dengan akun saya membuat sesi baru dengan nilai awal 100. Jika tidak dipilih, peserta kembali tersedia bagi penguji unit yang sama.
+
+Sesi lama berstatus BATAL, catatan/kesalahan tetap tersimpan, tidak dihitung dalam rekap nilai. Pembatalan memeriksa unit, versi data dan kunci baris yang sama dengan finalisasi. Hasil FINAL tidak dapat direstart lewat tombol ini. Daftar riwayat tetap menampilkan sesi batal. Tidak ada sesi operasional yang dibatalkan otomatis saat pemasangan fitur ini.
+
 # Update 3 November 2026: ujian langsung per unit
 
 Periode semester berjalan otomatis tersedia berdasarkan tanggal WIB (Juli–Desember semester 1, Januari–Juni semester 2). Periode 2026/2027 semester 1 dibuka saat perubahan ini. Pengelola tetap dapat menutup periode secara sengaja.
