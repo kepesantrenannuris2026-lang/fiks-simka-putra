@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="id">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <title>Kepesantrenan Nuris</title>
+ <meta name="description" content="Ruang kerja Kepesantrenan Nurul Islam Tengaran untuk mutabaah harian, tahfidz, dan pembinaan karakter santri.">
+ <meta name="theme-color" content="#0d4a28">
+ <link rel="icon" href="/logo.svg" type="image/svg+xml">
+ <link rel="manifest" href="/manifest.webmanifest">
+ <link rel="preload" href="/fonts/nuris-jakarta.woff2" as="font" type="font/woff2" crossorigin>
+ <link rel="stylesheet" href="/nuris-appearance.css">
+ <link rel="stylesheet" href="/portal.css?v=20261030b">
+ <script src="/nuris-appearance.js"></script>
+ <script defer src="/apps.js"></script>
+ <script defer src="/portal.js?v=20261030b"></script>
+</head>
+<body>
+ <a class="skip-link" href="#main-content">Lewati ke konten</a>
+ <main id="loading" class="loading" role="status"><img src="/logo.svg" width="56" height="56" alt=""><p>Menyiapkan ruang kepesantrenan…</p></main>
+ <main id="login" hidden>
+  <section class="intro" aria-label="Kepesantrenan Nuris">
+   <a class="brand" href="/"><img src="/logo.svg" width="48" height="48" alt="Logo Nuris"><span>Kepesantrenan<strong>Nuris</strong></span></a>
+   <div class="intro-copy"><h1>Mendampingi santri,<br>setiap hari.</h1><p>Ruang kerja Kepesantrenan<br>Pesantren Nurul Islam Tengaran.</p>
+    <div class="intro-modules" aria-label="Aplikasi kepesantrenan">
+     <div><span>01</span><p><b>Mutabaah Yaumiyyah</b><small>Ibadah dan kebiasaan harian</small></p></div>
+     <div><span>02</span><p><b>Mutabaah Tahfidz</b><small>Hafalan dan pendampingan halaqah</small></p></div>
+     <div><span>03</span><p><b>SIMKA Putra &amp; Putri</b><small>Karakter dan kedisiplinan santri</small></p></div>
+    </div>
+   </div>
+   <small>Pesantren Nurul Islam Tengaran</small>
+  </section>
+  <section class="login-form" aria-labelledby="login-heading"><form id="login-form">
+   <div id="main-content" tabindex="-1"><h2 id="login-heading">Masuk ke ruang kerja</h2><p class="form-description">Gunakan akun Mutabaah Tahfidz Anda.</p></div>
+   <label for="username">Username</label><input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="120" placeholder="Username Mutabaah">
+   <label for="password">Password</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256" placeholder="Masukkan password"><button id="toggle-password" type="button" aria-label="Tampilkan password" aria-pressed="false">Lihat</button></div>
+   <p id="login-error" role="alert" tabindex="-1" hidden></p>
+   <button id="submit" class="primary" type="submit">Masuk ke Kepesantrenan</button>
+   <div class="login-note"><strong>Belum memiliki akun?</strong><p>Hubungi pimpinan Kepesantrenan untuk mendapatkan akun atau bantuan akses.</p></div>
+  </form><small>Satu akun untuk aplikasi sesuai penugasan Anda.</small></section>
+ </main>
+ <div id="workspace" hidden>
+  <header class="topbar"><a class="brand" href="#beranda" aria-label="Beranda Kepesantrenan Nuris"><img src="/logo.svg" width="38" height="38" alt=""><span>Kepesantrenan<strong>Nuris</strong></span></a><nav id="desktop-nav" aria-label="Aplikasi kepesantrenan"></nav><div class="profile"><div><strong id="user-name"></strong><small id="user-role"></small></div><button id="logout" class="quiet" type="button">Keluar</button></div></header>
+  <main id="home" class="home" tabindex="-1"><div class="home-heading"><div><h1 id="greeting">Assalamu’alaikum.</h1><p>Pilih aplikasi untuk melanjutkan pendampingan santri.</p></div></div>
+   <section aria-labelledby="apps-heading"><div class="section-heading"><h2 id="apps-heading">Aplikasi kepesantrenan</h2><span>Akses sesuai penugasan</span></div><div id="app-grid" class="app-grid"></div><p id="apps-empty" class="empty-state" hidden>Belum ada aplikasi yang tersedia. Hubungi pimpinan Kepesantrenan untuk memeriksa penugasan Anda.</p></section>
+   <aside class="account-note"><h2>Tentang akses Anda</h2><p>Akun dan password mengikuti Mutabaah Tahfidz. Jika aplikasi belum dapat dibuka, hubungi pimpinan untuk memeriksa penugasan lingkungan dan unit Anda.</p></aside>
+   <footer><span>Pesantren Nurul Islam Tengaran</span><span>Kepesantrenan Nuris</span></footer>
+  </main>
+  <section id="app-stage" hidden aria-label="Ruang aplikasi"><div id="frame-loading" class="frame-loading" role="status" hidden>Memuat aplikasi…</div><div id="frames"></div></section>
+  <nav id="mobile-nav" aria-label="Menu aplikasi"></nav><div id="toast" class="toast" role="status" hidden></div>
+ </div>
+ <noscript><p class="empty-state">Aktifkan JavaScript di browser untuk masuk ke aplikasi Kepesantrenan Nuris.</p></noscript>
+</body>
+</html>
