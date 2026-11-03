@@ -1,6 +1,6 @@
 import {before,after,test} from 'node:test';import assert from 'node:assert/strict';import {PGlite} from '@electric-sql/pglite';import fs from 'node:fs';import {examService,actorFromToken} from '../../functions/ujian-tahfidz/service.ts';import {DEFAULT_RULES} from '../core/engine.ts';
 let db:PGlite,serial=Promise.resolve();const pool={connect:async()=>{let release:any;const wait=serial;serial=new Promise<void>(r=>release=r);await wait;return {query:async(sql:string,args:any[]=[])=>sql.includes('pg_advisory_xact_lock')?{rows:[]}:db.query(sql,args),release};}};
-const admin={username:'admin',nama:'Pengelola',admin:true,coordinator_units:[],musyrif_master:''};const teacher={username:'teacher',nama:'Penguji',admin:false,coordinator_units:[],musyrif_master:'Guru B'};const other={username:'other',nama:'Lain',admin:false,coordinator_units:[],musyrif_master:'Guru C'};
+const admin={username:'admin',nama:'Pengelola',admin:true,coordinator_units:[],musyrif_master:''};const teacher={username:'teacher',units:['SMP Ikhwan'],nama:'Penguji',admin:false,coordinator_units:[],musyrif_master:'Guru B'};const other={username:'other',units:['MA Akhwat'],nama:'Lain',admin:false,coordinator_units:[],musyrif_master:'Guru C'};
 const call=(a:any,b:any)=>examService(a,{...b,request_id:b.request_id||crypto.randomUUID()},pool);
 let period:any,assignment:any,attempt:any,first:any;
 before(async()=>{db=new PGlite();await db.exec(`CREATE ROLE anon;CREATE ROLE authenticated;
@@ -15,7 +15,7 @@ test('full database lifecycle, scoped reads, optimistic locking, retries, remedi
  const coverage={juz:30,start:'78:1',end:'114:6',target:'BELUM_TUNTAS',verified:true};const request_id=crypto.randomUUID();const prepare={action:'prepare',period_id:period.id,unit:'SMP Ikhwan',students:['s1'],exam_type:'HAFALAN_5_SOAL',coverage,request_id};
  const p=await call(admin,prepare);assert.equal(p.prepared,1);assert.deepEqual(await call(admin,prepare),p);assert.equal((await db.query('SELECT * FROM tahfidz_exam.assignments')).rows.length,1);await assert.rejects(call(admin,{...prepare,students:['s2']}),/Kunci permintaan/);
  assignment=(await call(teacher,{action:'participants',period_id:period.id})).rows[0];assert.equal(assignment.examiner,'teacher');assert.equal((await call(other,{action:'participants',period_id:period.id})).rows.length,0);
- await assert.rejects(call(other,{action:'start',assignment_id:assignment.id}),/penguji lain/);const started=await call(teacher,{action:'start',assignment_id:assignment.id});attempt=started.attempt;
+ await assert.rejects(call(other,{action:'start',assignment_id:assignment.id}),/unit penugasan/);const started=await call(teacher,{action:'start',assignment_id:assignment.id});attempt=started.attempt;
  assert.equal(started.questions.length,5);assert.equal((await call(teacher,{action:'start',assignment_id:assignment.id})).attempt.id,attempt.id);
  await assert.rejects(call(other,{action:'load',attempt_id:attempt.id}),/Tidak berwenang/);
  const draft={events:Array.from({length:30},()=>({id:crypto.randomUUID(),q:1,type:'JALI',at:new Date().toISOString()})),completed:[1,2,3,4,5],note:'Catatan contoh'};
@@ -33,3 +33,14 @@ test('full database lifecycle, scoped reads, optimistic locking, retries, remedi
  const old=(await db.query('SELECT count(*)::int n FROM tahfidz_exam.attempts')).rows[0] as any;assert.equal(old.n,2);
 });
 test('active account and session metadata are verified; forged role is rejected',async()=>{await db.query("INSERT INTO public.sesi VALUES('test-token',$1,now()+interval '1 hour')",[JSON.stringify({username:'teacher',role:'musyrif',musyrif_master:'Guru B'})]);assert.equal((await actorFromToken('test-token',(s:any,a:any)=>db.query(s,a))).admin,false);await db.query("UPDATE public.sesi SET data=jsonb_set(data,'{role}','\"pimpinan\"') WHERE token='test-token'");await assert.rejects(actorFromToken('test-token',(s:any,a:any)=>db.query(s,a)),/Sesi atau penugasan/);});
+
+test('semester is created automatically and full unit roster is visible before preparation',async()=>{
+ const b=await call(teacher,{action:'bootstrap'});assert.ok(b.active_period_id);assert.ok(b.periods.some(p=>p.id===b.active_period_id&&p.is_open));
+ await db.query("INSERT INTO public.santri VALUES('s3','Santri Unit Sama','SMP Ikhwan','8','Lain','Guru X',true)");
+ const r=await call(teacher,{action:'roster',period_id:b.active_period_id});assert.ok(r.rows.some(s=>s.santri_id==='s3'&&s.unprepared));assert.ok(!r.rows.some(s=>s.santri_id==='s2'));
+ const coverage={juz:30,start:'78:1',end:'114:6',target:'BELUM_TUNTAS',verified:true};
+ await assert.rejects(call(other,{action:'begin-student',period_id:b.active_period_id,santri_id:'s3',exam_type:'HAFALAN_5_SOAL',coverage}),/unit penugasan/);
+ const prep=await call(teacher,{action:'begin-student',period_id:b.active_period_id,santri_id:'s3',exam_type:'HAFALAN_5_SOAL',coverage});const opened=await call(teacher,{action:'start',assignment_id:prep.assignment_id});assert.equal(opened.attempt.examiner,'teacher');
+ const colleague={...teacher,username:'admin',admin:false};const read=await call(colleague,{action:'load',attempt_id:opened.attempt.id});assert.equal(read.assignment.santri_id,'s3');
+ await assert.rejects(call(colleague,{action:'save',attempt_id:opened.attempt.id,version:opened.attempt.version,draft:opened.draft}),/Penguji atau penugasan/);
+});

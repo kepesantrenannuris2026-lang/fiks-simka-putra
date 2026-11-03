@@ -1,3 +1,15 @@
+# Update 3 November 2026: ujian langsung per unit
+
+Periode semester berjalan otomatis tersedia berdasarkan tanggal WIB (Juli–Desember semester 1, Januari–Juni semester 2). Periode 2026/2027 semester 1 dibuka saat perubahan ini. Pengelola tetap dapat menutup periode secara sengaja.
+
+Musyrif melihat seluruh santri aktif dalam unit penugasan yang diturunkan dari master santri dan penugasan petugas di server. MA Ikhwan berbeda dari MA Akhwat maupun SMA/SMP. Hak lintas unit tidak diberikan.
+
+Alur utama: cari santri → Isi ujian → konfirmasi materi → mulai mencatat. Peserta tidak perlu dipersiapkan terlebih dahulu. Pengacakan penguji oleh pengelola tetap tersedia, sedangkan anggota unit dapat mengambil sesi pertama ketika pembagian lapangan berbeda. Penguji aktual dicatat dalam audit. Draf yang sudah dimulai hanya dapat diubah oleh penguji aktual atau pimpinan, sehingga dua penguji tidak menimpa data. Anggota unit lain dapat melihat hasil sesuai unitnya; nilai final dan riwayat remedial tetap dipertahankan.
+
+Daftar seluruh santri menggunakan aksi `roster`; `begin-student` menyiapkan satu peserta secara atomik setelah cakupan dikonfirmasi. Modul lain tidak menerima perluasan izin ini. Netlify tidak diperbarui.
+
+---
+
 # Ujian Tahfidz Semester Nuris
 
 Cloudflare only, 3 November 2026. Netlify is not rebuilt or deployed by this release.

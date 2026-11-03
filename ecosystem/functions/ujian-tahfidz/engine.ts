@@ -27,8 +27,8 @@ export function score(draft:Draft,questions:Question[],type:ExamType,rules:Rules
  return {score:value,penalty:100-value,totals,components,complete,passed,status:!basicOk?'BELUM_MEMENUHI_KOMPETENSI_DASAR':passed?'LULUS':'PERLU_REMEDIAL'};
 }
 export function canManage(a:any,unit:string){return !!a.admin||!!a.coordinator_units?.includes(unit);}
-export function canRead(a:any,assignment:any){return canManage(a,assignment.unit)||assignment.examiner===a.username||norm(assignment.musyrif)===norm(a.musyrif_master)&&!!norm(a.musyrif_master);}
-export function canExamine(a:any,assignment:any){return assignment.examiner===a.username||!!a.admin;}
+export function canRead(a:any,assignment:any){return !!a.admin||!!a.units?.includes(assignment.unit);}
+export function canExamine(a:any,assignment:any){return !!a.admin||!!a.units?.includes(assignment.unit);}
 export function balancedAssign(students:any[],examiners:any[],random:()=>number=Math.random,counts:Record<string,number>={}){
  const shuffled=[...students].sort((a,b)=>String(a.id).localeCompare(String(b.id)));for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
  return shuffled.map(s=>{let eligible=examiners.filter(e=>e.units.includes(s.unit));if(!eligible.length)fail('Belum ada penguji aktif untuk '+s.unit);const alt=eligible.filter(e=>norm(e.musyrif_master)!==norm(s.musyrif));if(alt.length)eligible=alt;const min=Math.min(...eligible.map(e=>counts[e.username]||0));const tied=eligible.filter(e=>(counts[e.username]||0)===min);const e=tied[Math.floor(random()*tied.length)];counts[e.username]=(counts[e.username]||0)+1;return {santri_id:s.id,examiner:e.username,own_halaqah:norm(e.musyrif_master)===norm(s.musyrif)};});
