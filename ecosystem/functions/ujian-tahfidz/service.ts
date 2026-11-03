@@ -20,7 +20,15 @@ async function loadAttempt(db:any,id:string){const link=(await db.query('SELECT 
 async function audit(db:any,a:any,action:string,id:string,before:any,after:any,reason=''){await db.query('INSERT INTO tahfidz_exam.audit(username,action,record_id,before_data,after_data,reason) VALUES($1,$2,$3,$4,$5,$6)',[a.username,action,id,JSON.stringify(before),JSON.stringify(after),reason]);}
 async function requireManager(a:any,unit:string){if(!canManage(a,unit))fail('Hanya pengelola unit yang berwenang.',403);}
 async function examinerList(db:any){const rows=(await db.query(`SELECT a.username,a.nama,a.musyrif_master,ARRAY(SELECT unit FROM (${unitSQL.replace('$1','a.musyrif_master')} UNION SELECT unit FROM tahfidz_exam.staff t WHERE t.username=a.username) u) AS units FROM public.akun a WHERE upper(a.aktif)<>'N' AND a.role IN('musyrif','pimpinan','admin') ORDER BY a.nama`)).rows;return rows;}
-const readActions=new Set(['bootstrap','roster','participants','candidates','load','history','report']);
+function coverageInput(b:any){
+ if(!['HAFALAN_5_SOAL','UJI_KOMPETENSI_DASAR'].includes(b.exam_type)||b.coverage?.verified!==true)fail('Konfirmasikan materi yang dikuasai peserta.');
+ const v=b.coverage;const coverage:any={juz:v.juz,start:v.start,end:v.end,target:v.target,verified:true};
+ if(!['TUNTAS','BELUM_TUNTAS','BELUM_WAJIB'].includes(v.target))fail('Status target tidak valid.');
+ if(v.mode!==undefined){if(!['full','partial','basic'].includes(v.mode))fail('Mode materi tidak valid.');coverage.mode=v.mode;}
+ if(v.ranges!==undefined){if(!Array.isArray(v.ranges)||v.ranges.length<1||v.ranges.length>5)fail('Pilih 1–5 juz berbeda untuk lima soal.');coverage.ranges=v.ranges.map((r:any)=>({juz:r?.juz,start:r?.start,end:r?.end}));}
+ selectQuestions(metadata,coverage,b.exam_type,'validate');return coverage;
+}
+const readActions=new Set(['bootstrap','roster','participants','candidates','load','history','report','student-context']);
 export async function examService(a:any,b:any,pool:any){
  const action=text(b.action||'',40);const db=await pool.connect();
  try{await db.query('BEGIN');
@@ -50,12 +58,33 @@ export async function examService(a:any,b:any,pool:any){
    if(b.kelas){args.push(text(b.kelas,20));where+=` AND s.tingkat=$${args.length}`;}
    const rows=(await db.query(`SELECT coalesce(x.id::text,s.id) AS id,s.id AS santri_id,s.nama,s.unit,s.tingkat,s.halaqah,s.musyrif,x.id IS NULL AS unprepared,x.exam_type,x.coverage,coalesce(x.status,'BELUM_DIUJI') AS status,x.examiner,CASE WHEN t.id IS NOT NULL THEN a.nama END AS penguji,t.id AS attempt_id,t.attempt_no,t.score,t.passed,t.status AS attempt_status,t.result,t.published_at FROM public.santri s LEFT JOIN tahfidz_exam.assignments x ON x.santri_id=s.id AND x.period_id=$1 AND x.unit=s.unit LEFT JOIN public.akun a ON a.username=x.examiner LEFT JOIN LATERAL(SELECT * FROM tahfidz_exam.attempts t WHERE t.assignment_id=x.id AND t.status<>'BATAL' ORDER BY attempt_no DESC LIMIT 1)t ON true WHERE ${where} ORDER BY s.nama LIMIT 30 OFFSET $${args.length+1}`,[...args,Math.min(Math.max(Number(b.offset)||0,0),5000)])).rows;
    const summary=(await db.query(`SELECT count(*)::int AS total,count(*) FILTER(WHERE x.id IS NULL OR x.status='SUDAH_DITUGASKAN')::int AS belum,count(*) FILTER(WHERE x.status='SEDANG_UJIAN')::int AS berjalan,count(*) FILTER(WHERE x.status='SELESAI' OR x.status='PERLU_REMEDIAL')::int AS selesai,count(*) FILTER(WHERE x.status='PERLU_REMEDIAL')::int AS remedial FROM public.santri s LEFT JOIN tahfidz_exam.assignments x ON x.santri_id=s.id AND x.period_id=$1 AND x.unit=s.unit WHERE ${where}`,args)).rows;result={rows,summary};
+  }else if(action==='student-context'){
+   const student=(await db.query('SELECT id,unit FROM public.santri WHERE id=$1 AND aktif',[text(b.santri_id,150)])).rows[0];if(!student)fail('Peserta tidak tersedia.',404);requireUnit(a,student.unit);
+   const hafalan=(await db.query('SELECT baris_terverifikasi,target_juz,juz_selesai,juz_diuji FROM public.hafalan WHERE santri_id=$1',[student.id])).rows[0]||null;
+   const tajwid=(await db.query("SELECT ym,makhraj,tajwid FROM public.penilaian_tajwid WHERE santri_id=$1 AND ym<to_char(now() AT TIME ZONE 'Asia/Jakarta','YYYY-MM') ORDER BY ym DESC,diperbarui_pada DESC LIMIT 1",[student.id])).rows[0]||null;
+   result={hafalan,tajwid};
+  }else if(action==='change-material'){
+   const r=await loadAttempt(db,b.attempt_id);requireUnit(a,r.assignment.unit);
+   if(r.assignment.unit!==r.assignment.current_unit||!r.assignment.aktif||!r.assignment.is_open)fail('Status peserta atau periode telah berubah.',409);
+   if(!a.admin&&r.attempt.examiner!==a.username)fail('Hanya penguji sesi ini yang dapat mengubah materi. Gunakan Restart untuk pergantian penguji.',403);
+   if(r.attempt.status!=='DRAFT'||r.attempt.version!==b.version)fail('Sesi sudah berubah atau telah final. Muat ulang.',409);
+   if((await db.query("SELECT 1 FROM tahfidz_exam.attempts WHERE assignment_id=$1 AND status='FINAL'",[r.assignment.id])).rows.length)fail('Materi hasil final tetap tersimpan. Hubungi pengelola untuk remedial.',409);
+   const coverage=coverageInput(b);
+   await db.query("UPDATE tahfidz_exam.attempts SET status='BATAL',reason='Mengubah materi ujian',version=version+1 WHERE id=$1",[r.attempt.id]);
+   await db.query("UPDATE tahfidz_exam.assignments SET exam_type=$2,coverage=$3,verified_by=$4,verified_at=now(),status='SUDAH_DITUGASKAN',version=version+1 WHERE id=$1",[r.assignment.id,b.exam_type,JSON.stringify(coverage),a.username]);
+   await audit(db,a,'CHANGE_MATERIAL',r.attempt.id,{coverage:r.attempt.coverage,exam_type:r.attempt.exam_type,draft:r.draft},{coverage,exam_type:b.exam_type,status:'BATAL'},'Mengubah materi ujian');
+   result={assignment_id:r.assignment.id,cancelled_attempt_id:r.attempt.id};
   }else if(action==='begin-student'){
    const p=(await db.query('SELECT * FROM tahfidz_exam.periods WHERE id=$1 FOR UPDATE',[uuid(b.period_id)])).rows[0];if(!p?.is_open)fail('Periode ujian ditutup oleh pengelola.');
    const student=(await db.query('SELECT id,unit,musyrif FROM public.santri WHERE id=$1 AND aktif FOR UPDATE',[text(b.santri_id,150)])).rows[0];if(!student)fail('Peserta tidak tersedia.',404);requireUnit(a,student.unit);
-   const existing=(await db.query('SELECT id FROM tahfidz_exam.assignments WHERE period_id=$1 AND santri_id=$2',[p.id,student.id])).rows[0];if(existing){result={assignment_id:existing.id};}else{
-    if(!['HAFALAN_5_SOAL','UJI_KOMPETENSI_DASAR'].includes(b.exam_type)||b.coverage?.verified!==true)fail('Konfirmasikan materi yang dikuasai peserta.');
-    const coverage={juz:b.coverage.juz,start:b.coverage.start,end:b.coverage.end,target:b.coverage.target,verified:true as const};if(!['TUNTAS','BELUM_TUNTAS','BELUM_WAJIB'].includes(coverage.target))fail('Status target tidak valid.');selectQuestions(metadata,coverage,b.exam_type,'validate');
+   const coverage=coverageInput(b);
+   const existing=(await db.query('SELECT * FROM tahfidz_exam.assignments WHERE period_id=$1 AND santri_id=$2 FOR UPDATE',[p.id,student.id])).rows[0];if(existing){
+    const equal=existing.exam_type===b.exam_type&&JSON.stringify(coverageInput({exam_type:existing.exam_type,coverage:existing.coverage}))===JSON.stringify(coverage);
+    const active=(await db.query("SELECT status FROM tahfidz_exam.attempts WHERE assignment_id=$1 AND status<>'BATAL' ORDER BY attempt_no DESC LIMIT 1",[existing.id])).rows[0];
+    if(active&&!equal)fail('Sesi sudah berjalan atau final. Gunakan Ubah materi pada draf atau hubungi pengelola.',409);
+    if(!active){if(existing.unit!==student.unit)fail('Unit penugasan berubah. Hubungi pengelola.',409);await db.query('UPDATE tahfidz_exam.assignments SET coverage=$2,exam_type=$3,verified_by=$4,verified_at=now(),version=version+1 WHERE id=$1',[existing.id,JSON.stringify(coverage),b.exam_type,a.username]);await audit(db,a,'PREPARE_MATERIAL',existing.id,{coverage:existing.coverage,exam_type:existing.exam_type},{coverage,exam_type:b.exam_type});}
+    result={assignment_id:existing.id};
+   }else{
     const x=(await db.query(`INSERT INTO tahfidz_exam.assignments(period_id,santri_id,unit,examiner,exam_type,coverage,verified_by) VALUES($1,$2,$3,$4,$5,$6,$4) RETURNING id`,[p.id,student.id,student.unit,a.username,b.exam_type,JSON.stringify(coverage)])).rows[0];await audit(db,a,'PREPARE_AND_CLAIM',x.id,null,{examiner:a.username,coverage});result={assignment_id:x.id};
    }
   }else if(action==='participants'||action==='report'){
@@ -70,8 +99,7 @@ export async function examService(a:any,b:any,pool:any){
    const p=(await db.query('SELECT * FROM tahfidz_exam.periods WHERE id=$1 FOR UPDATE',[uuid(b.period_id)])).rows[0];if(!p)fail('Pilih periode ujian.');await requireManager(a,b.unit);
    if(!Array.isArray(b.students)||!b.students.length||b.students.length>100||new Set(b.students).size!==b.students.length)fail('Pilih 1–100 peserta berbeda.');
    const students=(await db.query('SELECT id,unit,musyrif FROM public.santri WHERE aktif AND unit=$1 AND id=ANY($2::text[])',[b.unit,b.students])).rows;if(students.length!==b.students.length)fail('Peserta tidak sesuai unit.',403);
-   if(!['HAFALAN_5_SOAL','UJI_KOMPETENSI_DASAR'].includes(b.exam_type)||b.coverage?.verified!==true)fail('Konfirmasikan materi yang dikuasai seluruh peserta terpilih.');
-   const coverage={juz:b.coverage.juz,start:b.coverage.start,end:b.coverage.end,target:b.coverage.target,verified:true as const};if(!['TUNTAS','BELUM_TUNTAS','BELUM_WAJIB'].includes(coverage.target))fail('Status target tidak valid.');selectQuestions(metadata,coverage,b.exam_type,'validate');
+   const coverage=coverageInput(b);
    const counts:Record<string,number>=Object.fromEntries((await db.query('SELECT examiner,count(*)::int n FROM tahfidz_exam.assignments WHERE period_id=$1 GROUP BY examiner',[p.id])).rows.map((r:any)=>[r.examiner,r.n]));
    const staff=await examinerList(db);const chosen=balancedAssign(students,staff,Math.random,counts);
    for(const c of chosen){const row=(await db.query(`INSERT INTO tahfidz_exam.assignments(period_id,santri_id,unit,examiner,exam_type,coverage,verified_by) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,[p.id,c.santri_id,b.unit,c.examiner,b.exam_type,JSON.stringify(coverage),a.username])).rows[0];await audit(db,a,'ASSIGN',row.id,null,{...c,coverage,exam_type:b.exam_type});}

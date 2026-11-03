@@ -6,7 +6,7 @@ export type Rules=typeof DEFAULT_RULES;
 export interface Question{n:number;start:string;end:string;page:number;juz:number;group:number;label:string;mode:'hafalan'|'tilawah';}
 export interface ErrorEvent{id:string;q:number;type:ErrorType;at:string;}
 export interface Draft{events:ErrorEvent[];completed:number[];note:string;}
-export interface Coverage{juz:number;start:string;end:string;target:'TUNTAS'|'BELUM_TUNTAS'|'BELUM_WAJIB';verified:true;}
+export interface Coverage{juz:number;start:string;end:string;target:'TUNTAS'|'BELUM_TUNTAS'|'BELUM_WAJIB';verified:true;ranges?:{juz:number;start:string;end:string}[];mode?:'full'|'partial'|'basic';}
 export function fail(message:string,status=400):never{throw Object.assign(new Error(message),{status});}
 export const norm=(x:unknown)=>String(x||'').trim().replace(/\s+/g,' ').toLowerCase();
 export function validRules(input:any):Rules{const r={...DEFAULT_RULES,...input,weights:WEIGHTS};if(!Number.isFinite(r.kkm)||r.kkm<0||r.kkm>100||!Number.isInteger(r.min_completed)||r.min_completed<1||r.min_completed>5||typeof r.require_min_completed!=='boolean')fail('Aturan penilaian tidak valid.');return r;}
@@ -37,6 +37,13 @@ export function seeded(seed:string){let n=2166136261;for(const c of seed)n=Math.
 export function selectQuestions(metadata:any[],coverage:Coverage,type:ExamType,seed:string):Question[]{
  if(type==='UJI_KOMPETENSI_DASAR')return [{n:1,start:'1:1',end:'1:7',page:1,juz:1,group:0,label:'Al-Fatihah · hafalan tanpa mushaf',mode:'hafalan'},{n:2,start:'53:1',end:'53:18',page:526,juz:27,group:0,label:'An-Najm 1–18 · membaca dengan mushaf',mode:'tilawah'}];
  if(coverage.verified!==true||!Number.isInteger(coverage.juz)||coverage.juz<1||coverage.juz>30||!['TUNTAS','BELUM_TUNTAS','BELUM_WAJIB'].includes(coverage.target))fail('Konfirmasikan cakupan hafalan terlebih dahulu.');
+ // Five questions total, spread across every explicitly selected juz (at most five).
+ if(coverage.ranges!==undefined){
+  const ranges=coverage.ranges;
+  if(!Array.isArray(ranges)||!ranges.length||ranges.length>5||new Set(ranges.map(r=>r?.juz)).size!==ranges.length)fail('Pilih 1–5 juz berbeda untuk lima soal.');
+  const banks=ranges.map((r,i)=>{if(!r||!Number.isInteger(r.juz))fail('Cakupan juz tidak valid.');return selectQuestions(metadata,{juz:r.juz,start:r.start,end:r.end,target:coverage.target,verified:true},type,ranges.length===1?seed:seed+':juz:'+i);});
+  return Array.from({length:5},(_,i)=>({...banks[i%banks.length][Math.floor(i/banks.length)],n:i+1}));
+ }
  const first=metadata.findIndex(v=>v[1]===coverage.start),last=metadata.findIndex(v=>v[1]===coverage.end);if(first<0||last<first||metadata[first][3]!==coverage.juz||metadata[last][3]!==coverage.juz)fail('Rentang ayat harus valid dan berada pada juz yang dipilih.');
  const verses=metadata.slice(first,last+1);if(new Set(verses.map(v=>v[2])).size<5)fail('Cakupan kurang dari sekitar ¼ juz. Gunakan ujian kompetensi dasar.');
  const pages:Record<string,any[]>={};for(const v of verses)(pages[v[2]+(coverage.juz===30?':'+(Number(v[1].split(':')[0])<=81?1:Number(v[1].split(':')[0])<=87?2:Number(v[1].split(':')[0])<=94?3:4):'')]??=[]).push(v);
