@@ -1,4 +1,4 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {DEFAULT_RULES,score,validateDraft,selectQuestions,balancedAssign,canRead,canExamine,canManage} from '../core/engine.ts';
+import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {DEFAULT_RULES,score,validateDraft,selectQuestions,balancedAssign,canRead,canExamine,canManage,partialJuz30,JUZ30_QUARTERS} from '../core/engine.ts';
 const metadata=JSON.parse(fs.readFileSync('ecosystem/tahfidz-exam/core/quran-metadata.json','utf8'));
 const cov:any={juz:30,start:'78:1',end:'114:6',target:'BELUM_TUNTAS',verified:true};
 const qs=selectQuestions(metadata,cov,'HAFALAN_5_SOAL','stable-seed');
@@ -14,11 +14,20 @@ test('partial and other-juz selections never go outside verified verse range',()
 test('cross-unit and assigned-examiner authorization cannot be forged by client role',()=>{const a={username:'guru-a',units:['SMP Ikhwan'],musyrif_master:'Guru A',coordinator_units:['SMP Ikhwan']};const x={examiner:'guru-b',unit:'SMA Akhwat',musyrif:'Guru B'};assert.equal(canRead(a,x),false);assert.equal(canExamine(a,x),false);assert.equal(canManage(a,x.unit),false);assert.equal(canRead(a,{...x,musyrif:'Guru A'}),false);assert.equal(canRead(a,{...x,unit:'SMP Ikhwan'}),true);assert.equal(canExamine(a,{...x,unit:'SMP Ikhwan'}),true);assert.equal(canExamine(a,{...x,musyrif:'Guru A'}),false);});
 test('assignment excludes own halaqah when alternatives exist and respects exact unit',()=>{const students=Array.from({length:20},(_,i)=>({id:String(i),unit:'SMP Ikhwan',musyrif:'Guru A'}));const staff=[{username:'a',musyrif_master:'Guru A',units:['SMP Ikhwan']},{username:'b',musyrif_master:'Guru B',units:['SMP Ikhwan']},{username:'c',musyrif_master:'Guru C',units:['SMA Akhwat']}];const r=balancedAssign(students,staff,()=>.5);assert.ok(r.every(x=>x.examiner==='b'));assert.throws(()=>balancedAssign([{id:'x',unit:'MA Akhwat'}],staff));});
 test('rules snapshot and old question snapshots remain independent from next period',()=>{const old=structuredClone(DEFAULT_RULES);const next={...DEFAULT_RULES,kkm:95};assert.equal(old.kkm,75);assert.equal(next.kkm,95);const s=score(draft([ev('TIDAK_JAWAB',1)],[2,3,4,5]),qs,'HAFALAN_5_SOAL',old);assert.equal(s.passed,true);assert.equal(score(draft([ev('TIDAK_JAWAB',1)],[2,3,4,5]),qs,'HAFALAN_5_SOAL',next).passed,false);});
-test('multiple juz share exactly five stable questions with coverage for every selected juz',()=>{
+test('each juz has five stable questions and its own score; one juz cannot hide a failed juz',()=>{
  const coverage:any={...cov,ranges:[{juz:30,start:'78:1',end:'114:6'},{juz:29,start:'67:1',end:'77:50'}]};const selected=selectQuestions(metadata,coverage,'HAFALAN_5_SOAL','multi');
- assert.equal(selected.length,5);assert.deepEqual(selected.map(q=>q.n),[1,2,3,4,5]);assert.deepEqual([...new Set(selected.map(q=>q.juz))],[30,29]);assert.deepEqual(selected,selectQuestions(metadata,coverage,'HAFALAN_5_SOAL','multi'));assert.equal(score(draft([ev('JALI',4)]),selected,'HAFALAN_5_SOAL').score,99);
- for(const q of selected){assert.equal(metadata.find(v=>v[1]===q.start)[3],q.juz);assert.equal(metadata.find(v=>v[1]===q.end)[3],q.juz);}
+ assert.equal(selected.length,10);assert.deepEqual(selected.map(q=>q.n),[1,2,3,4,5,6,7,8,9,10]);for(const juz of [30,29])assert.equal(selected.filter(q=>q.juz===juz).length,5);assert.deepEqual(selected,selectQuestions(metadata,coverage,'HAFALAN_5_SOAL','multi'));
+ const result=score(draft([ev('JALI',6)],selected.map(q=>q.n)),selected,'HAFALAN_5_SOAL');assert.deepEqual(result.juz_results.map(j=>j.score),[100,99]);assert.equal(result.score,99.5);
+ const failed=score(draft(Array.from({length:30},()=>ev('JALI',6)),selected.map(q=>q.n)),selected,'HAFALAN_5_SOAL');assert.equal(failed.score,85);assert.equal(failed.passed,false);assert.deepEqual(failed.juz_results.map(j=>j.passed),[true,false]);
+ const empty=score(draft(Array.from({length:110},()=>ev('JALI',6)),selected.map(q=>q.n)),selected,'HAFALAN_5_SOAL');assert.deepEqual(empty.juz_results.map(j=>j.score),[100,0]);
  assert.throws(()=>selectQuestions(metadata,{...coverage,ranges:[coverage.ranges[0],coverage.ranges[0]]},'HAFALAN_5_SOAL','bad'));
- assert.throws(()=>selectQuestions(metadata,{...coverage,ranges:Array.from({length:6},(_,i)=>({juz:i+1,start:'2:1',end:'2:74'}))},'HAFALAN_5_SOAL','bad'));
- assert.throws(()=>selectQuestions(metadata,{...coverage,ranges:[{juz:29,start:'78:1',end:'114:6'}]},'HAFALAN_5_SOAL','bad'));
+});
+test('administrative quarters of Juz30 allow 1/4, 1/2 and 3/4 including non-contiguous memorized groups',()=>{
+ for(const parts of Array.from({length:14},(_,i)=>[1,2,3,4].filter(q=>(i+1)&(1<<(q-1))))){
+  const c=partialJuz30(parts);const qs=selectQuestions(metadata,c,'HAFALAN_5_SOAL','quarter-'+parts.join('-'));assert.equal(qs.length,5);assert.equal(new Set(qs.map(q=>q.start)).size,5);assert.ok(qs.every(q=>q.juz===30&&parts.includes(q.group)));for(const part of parts)assert.ok(qs.some(q=>q.group===part));assert.equal(score(draft(),qs,'HAFALAN_5_SOAL').score,100);
+ }
+ assert.throws(()=>partialJuz30([]));assert.throws(()=>partialJuz30([1,2,3,4]));assert.throws(()=>partialJuz30([2,2]));assert.throws(()=>selectQuestions(metadata,{...partialJuz30([4]),juz:29},'HAFALAN_5_SOAL','bad'));
+});
+test('legacy snapshots retain their original overall scoring without changing old results',()=>{
+ const legacy:any={...DEFAULT_RULES};delete legacy.scoring_mode;const oldQuestions=qs.map((q,i)=>({...q,juz:i<3?30:29}));const d=draft([ev('JALI',4)]);assert.equal(score(d,oldQuestions,'HAFALAN_5_SOAL',legacy).score,99);assert.equal(score(d,oldQuestions,'HAFALAN_5_SOAL',legacy).scoring_mode,'LEGACY_5_TOTAL');
 });

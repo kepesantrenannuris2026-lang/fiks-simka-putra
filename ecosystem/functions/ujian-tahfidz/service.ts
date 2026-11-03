@@ -1,4 +1,4 @@
-import {DEFAULT_RULES,WEIGHTS,validRules,validateDraft,score,selectQuestions,canManage,canRead,canExamine,balancedAssign,fail,norm,seeded} from './engine.ts';
+import {DEFAULT_RULES,WEIGHTS,validRules,validateDraft,score,selectQuestions,canManage,canRead,canExamine,balancedAssign,fail,norm,seeded,partialJuz30} from './engine.ts';
 import metadata from './quran-metadata.json' with {type:'json'};
 const uuid=(s:any)=>{if(typeof s!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s))fail('Identitas data tidak valid.');return s;};
 const text=(s:any,max=2000)=>{if(typeof s!=='string'||s.length>max)fail('Teks tidak valid.');return s.trim();};
@@ -25,7 +25,8 @@ function coverageInput(b:any){
  const v=b.coverage;const coverage:any={juz:v.juz,start:v.start,end:v.end,target:v.target,verified:true};
  if(!['TUNTAS','BELUM_TUNTAS','BELUM_WAJIB'].includes(v.target))fail('Status target tidak valid.');
  if(v.mode!==undefined){if(!['full','partial','basic'].includes(v.mode))fail('Mode materi tidak valid.');coverage.mode=v.mode;}
- if(v.ranges!==undefined){if(!Array.isArray(v.ranges)||v.ranges.length<1||v.ranges.length>5)fail('Pilih 1–5 juz berbeda untuk lima soal.');coverage.ranges=v.ranges.map((r:any)=>({juz:r?.juz,start:r?.start,end:r?.end}));}
+ if(v.ranges!==undefined){if(!Array.isArray(v.ranges)||v.ranges.length<1||v.ranges.length>30)fail('Pilih 1–30 juz berbeda; setiap juz mendapat lima soal.');coverage.ranges=v.ranges.map((r:any)=>({juz:r?.juz,start:r?.start,end:r?.end}));}
+ if(v.mode==='partial'){if(b.exam_type!=='HAFALAN_5_SOAL')fail('Bagian Juz 30 memakai ujian hafalan.');const partial=partialJuz30(v.quarters,v.target);if(v.juz!==30||v.start!==partial.start||v.end!==partial.end||v.ranges!==undefined)fail('Ujian sebagian hanya memakai kelompok resmi Juz 30.');return partial;}
  selectQuestions(metadata,coverage,b.exam_type,'validate');return coverage;
 }
 const readActions=new Set(['bootstrap','roster','participants','candidates','load','history','report','student-context']);
@@ -79,7 +80,7 @@ export async function examService(a:any,b:any,pool:any){
    const student=(await db.query('SELECT id,unit,musyrif FROM public.santri WHERE id=$1 AND aktif FOR UPDATE',[text(b.santri_id,150)])).rows[0];if(!student)fail('Peserta tidak tersedia.',404);requireUnit(a,student.unit);
    const coverage=coverageInput(b);
    const existing=(await db.query('SELECT * FROM tahfidz_exam.assignments WHERE period_id=$1 AND santri_id=$2 FOR UPDATE',[p.id,student.id])).rows[0];if(existing){
-    const equal=existing.exam_type===b.exam_type&&JSON.stringify(coverageInput({exam_type:existing.exam_type,coverage:existing.coverage}))===JSON.stringify(coverage);
+    const equal=existing.exam_type===b.exam_type&&(await db.query('SELECT $1::jsonb=$2::jsonb AS eq',[JSON.stringify(existing.coverage),JSON.stringify(coverage)])).rows[0].eq;
     const active=(await db.query("SELECT status FROM tahfidz_exam.attempts WHERE assignment_id=$1 AND status<>'BATAL' ORDER BY attempt_no DESC LIMIT 1",[existing.id])).rows[0];
     if(active&&!equal)fail('Sesi sudah berjalan atau final. Gunakan Ubah materi pada draf atau hubungi pengelola.',409);
     if(!active){if(existing.unit!==student.unit)fail('Unit penugasan berubah. Hubungi pengelola.',409);await db.query('UPDATE tahfidz_exam.assignments SET coverage=$2,exam_type=$3,verified_by=$4,verified_at=now(),version=version+1 WHERE id=$1',[existing.id,JSON.stringify(coverage),b.exam_type,a.username]);await audit(db,a,'PREPARE_MATERIAL',existing.id,{coverage:existing.coverage,exam_type:existing.exam_type},{coverage,exam_type:b.exam_type});}
@@ -124,7 +125,7 @@ export async function examService(a:any,b:any,pool:any){
     if(previous&&!canManage(a,x.unit))fail('Pengelola unit perlu menjadwalkan remedial/revisi.',403);const kind=previous?(previous.passed?'REVISI':'REMEDIAL'):'PERTAMA';const reason=previous?text(b.reason||'',500):'';if(previous&&reason.length<5)fail('Isi alasan dan rencana remedial/revisi.');
     if(!a.admin&&x.examiner!==a.username){await db.query('UPDATE tahfidz_exam.assignments SET examiner=$2,version=version+1 WHERE id=$1',[x.id,a.username]);await audit(db,a,'CLAIM_UNIT',x.id,{examiner:x.examiner},{examiner:a.username});x.examiner=a.username;}
     const nextNo=(await db.query('SELECT coalesce(max(attempt_no),0)+1 AS n FROM tahfidz_exam.attempts WHERE assignment_id=$1',[x.id])).rows[0].n;
-    const seed=crypto.randomUUID();const qs=selectQuestions(metadata,x.coverage,x.exam_type,seed);const rules={...validRules(x.rules),version:x.rules_version};const t=(await db.query(`INSERT INTO tahfidz_exam.attempts(assignment_id,attempt_no,kind,reason,examiner,rules,coverage,exam_type,seed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,[x.id,nextNo,kind,reason,x.examiner,JSON.stringify(rules),JSON.stringify(x.coverage),x.exam_type,seed])).rows[0];
+    const seed=crypto.randomUUID();const qs=selectQuestions(metadata,x.coverage,x.exam_type,seed);const rules={...validRules(x.rules),scoring_mode:'PER_JUZ_5',version:x.rules_version};const t=(await db.query(`INSERT INTO tahfidz_exam.attempts(assignment_id,attempt_no,kind,reason,examiner,rules,coverage,exam_type,seed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,[x.id,nextNo,kind,reason,x.examiner,JSON.stringify(rules),JSON.stringify(x.coverage),x.exam_type,seed])).rows[0];
     for(const q of qs)await db.query('INSERT INTO tahfidz_exam.questions(attempt_id,n,start_key,end_key,page,juz,group_no,label,mode) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[t.id,q.n,q.start,q.end,q.page,q.juz,q.group,q.label,q.mode]);await db.query("UPDATE tahfidz_exam.assignments SET status='SEDANG_UJIAN',version=version+1 WHERE id=$1",[x.id]);await audit(db,a,'START',t.id,null,{seed,questions:qs,examiner:t.examiner,kind},reason);result=await loadAttempt(db,t.id);
    }
   }else if(action==='load'){
@@ -142,7 +143,8 @@ export async function examService(a:any,b:any,pool:any){
    const x=r.assignment,old=(await db.query('SELECT * FROM public.ujian_semester WHERE santri_id=$1 AND tahun_ajaran=$2 AND semester=$3 FOR UPDATE',[x.santri_id,x.tahun_ajaran,x.semester])).rows[0];
    if(old&&b.confirm_replace!==true)fail('Rapor sudah memiliki isian. Konfirmasikan penggantian aspek tahfidz saja.',409);
    const grade=Number(r.attempt.score)>=95?'A+':Number(r.attempt.score)>=85?'A':Number(r.attempt.score)>=75?'B+':Number(r.attempt.score)>=65?'B':'C';
-   const ket=`Ujian semester: ${r.attempt.score}; KKM ${r.attempt.rules.kkm}: ${r.attempt.passed?'Lulus':'Belum lulus'}; target: ${r.attempt.coverage.target}. Percobaan ${r.attempt.attempt_no}.`;
+   const perJuz=(r.attempt.result?.juz_results||[]).map((j:any)=>`Juz ${j.juz}: ${j.score} (${j.passed?'Lulus':'Remedial'})`).join('; ');
+   const ket=`${perJuz?perJuz+'. ':''}Ujian semester: ${r.attempt.score}; KKM ${r.attempt.rules.kkm}: ${r.attempt.passed?'Lulus':'Belum lulus'}; target: ${r.attempt.coverage.target}. Percobaan ${r.attempt.attempt_no}.`;
    const row=(await db.query(`INSERT INTO public.ujian_semester(id,santri_id,santri_nama,unit,tingkat,halaqah,musyrif,tahun_ajaran,semester,tahfidz,ket_tahfidz,tahfidz_nilai,tahfidz_ujian,penguji,tanggal,diperbarui_oleh) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,to_char(now() AT TIME ZONE 'Asia/Jakarta','YYYY-MM-DD'),$15) ON CONFLICT(santri_id,tahun_ajaran,semester) DO UPDATE SET tahfidz=excluded.tahfidz,ket_tahfidz=excluded.ket_tahfidz,tahfidz_nilai=excluded.tahfidz_nilai,tahfidz_ujian=excluded.tahfidz_ujian,penguji=excluded.penguji,tanggal=excluded.tanggal,diperbarui_oleh=excluded.diperbarui_oleh,diperbarui_pada=now() RETURNING *`,[crypto.randomUUID(),x.santri_id,x.nama,x.unit,x.tingkat,x.halaqah,x.musyrif,x.tahun_ajaran,x.semester,grade,ket,r.attempt.score,JSON.stringify(r.questions.map((q:any)=>({...q,events:r.draft.events.filter((e:any)=>e.q===q.n),attempt_id:r.attempt.id}))),r.attempt.examiner,a.username])).rows[0];
    await db.query("INSERT INTO public.sync_queue(sheet,op,payload) VALUES('UjianSemester','upsert',$1)",[JSON.stringify(row)]);await db.query('UPDATE tahfidz_exam.attempts SET published_at=now() WHERE id=$1',[r.attempt.id]);await audit(db,a,'PUBLISH_RAPOR',r.attempt.id,old,row,'Aspek tahfidz; aspek lain dipertahankan');result={ok:true};
   }else fail('Perintah ujian tidak dikenal.',404);
