@@ -21,12 +21,12 @@ export function reportModel(raw:any){
   // Published exam grades measure test quality, not the guide's achievement/target ratio.
   if(!grade&&legacy[key]&&!(key==='tahfidz'&&legacy.tahfidz_ujian)){grade=legacy[key];source='Penilaian semester';note=note||legacy['ket_'+key]||'';}
   if(!grade&&['makhraj','tajwid'].includes(key)&&fromMonth){grade=fromMonth[key]||numericGrade(fromMonth[key+'_nilai']);source=`Penilaian ${fromMonth.ym}`;note=note||fromMonth['ket_'+key]||'';}
-  if(!grade&&key==='tahfidz'&&w.length&&targetBars!=null){grade=capaianGrade(ziyadah,targetBars);source='Capaian semester menurut panduan';note=note||(targetBars===0?'Fokus tahsin/iqro; sudah mulai menghafal.':`${pages(ziyadah)} dari ${pages(targetBars)} (${fmt(ziyadah/targetBars*100)}%).`);}
+  if(!grade&&key==='tahfidz'&&w.length&&targetBars!=null){grade=capaianGrade(ziyadah,targetBars);source='Capaian semester menurut panduan';note=note||(targetBars===0?(ziyadah>0?'Fokus tahsin/iqro; sudah mulai menghafal.':'Fokus tahsin/iqro; belum ada tambahan hafalan tercatat.'):`${pages(ziyadah)} dari ${pages(targetBars)} (${fmt(ziyadah/targetBars*100)}%).`);}
   // Attendance alone cannot determine discipline/adab. Missing teacher assessments stay blank.
   if(grade&&!['A+','A','B+','B','C'].includes(grade))grade='';
   return {key,label,predikat:grade||'—',keterangan:note||descriptions[key]?.[grade]||'Belum dinilai.',source:source||'Perlu penilaian musyrif/ah'};
  });
- let opening=extra.hafalan_awal_baris??null;if(opening==null&&raw.balance?.verified_ym<p.from)opening=Math.max(0,raw.balance.bars-ziyadah);
+ let opening=extra.hafalan_awal_baris??null;if(opening==null&&raw.balance?.verified_ym<p.from&&raw.balance.bars>=ziyadah)opening=raw.balance.bars-ziyadah;
  const total=opening!=null?Number(opening)+ziyadah:raw.balance?.bars??null;
  const exam=raw.exam,examRows=exam?(exam.result?.juz_results?.length?exam.result.juz_results.map((j:any)=>[`Juz ${j.juz}${exam.coverage?.mode==='partial'?' · '+(exam.coverage.quarters?.length||0)+'/4 bagian':''}`,String(j.question_count||5),fmt(j.score),j.passed?'Lulus':'Perlu remedial']):exam.exam_type==='UJI_KOMPETENSI_DASAR'?(exam.result?.components||[]).map((c:any)=>[c.q===1?'Al-Fatihah · hafalan':'An-Najm 1–18 · tilawah','1',fmt(c.score),c.completed&&Number(c.score)>=Number(exam.rules?.kkm??75)?'Lulus':'Perlu remedial']):[['Ujian hafalan','5',fmt(exam.score),exam.passed?'Lulus':'Perlu remedial']]):[];
  if(exam&&exam.exam_type==='UJI_KOMPETENSI_DASAR'&&!examRows.length)examRows.push(['Tahsin/dasar · Al-Fatihah & An-Najm','2',fmt(exam.score),exam.passed?'Lulus':'Perlu remedial']);
