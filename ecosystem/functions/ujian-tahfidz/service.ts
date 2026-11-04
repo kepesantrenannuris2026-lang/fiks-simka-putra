@@ -1,3 +1,4 @@
+import {semesterReport,saveSemesterReport} from './semester-report.ts';
 import {DEFAULT_RULES,WEIGHTS,validRules,validateDraft,score,selectQuestions,canManage,canRead,canExamine,balancedAssign,fail,norm,seeded,partialJuz30} from './engine.ts';
 import metadata from './quran-metadata.json' with {type:'json'};
 const uuid=(s:any)=>{if(typeof s!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s))fail('Identitas data tidak valid.');return s;};
@@ -28,7 +29,7 @@ function coverageInput(b:any){
  if(v.mode==='partial'){if(b.exam_type!=='HAFALAN_5_SOAL')fail('Bagian Juz 30 memakai ujian hafalan.');const partial=partialJuz30(v.quarters,target);if(v.juz!==30||v.start!==partial.start||v.end!==partial.end||v.ranges!==undefined)fail('Ujian sebagian hanya memakai kelompok resmi Juz 30.');return partial;}
  selectQuestions(metadata,coverage,b.exam_type,'validate');return coverage;
 }
-const readActions=new Set(['bootstrap','roster','participants','candidates','load','history','report','student-context']);
+const readActions=new Set(['bootstrap','roster','participants','candidates','load','history','report','student-context','semester-report']);
 export async function examService(a:any,b:any,pool:any){
  const action=text(b.action||'',40);const db=await pool.connect();
  try{await db.query('BEGIN');
@@ -39,7 +40,11 @@ export async function examService(a:any,b:any,pool:any){
    if(old){const eq=(await db.query('SELECT $1::jsonb=$2::jsonb AS eq',[JSON.stringify(old.body),JSON.stringify(b)])).rows[0].eq;if(!eq)fail('Kunci permintaan telah digunakan untuk isian berbeda.',409);await db.query('COMMIT');return old.response;}
   }
   let result:any;
-  if(action==='bootstrap'){
+  if(action==='semester-report'){
+   result=await semesterReport(db,a,b);
+  }else if(action==='save-semester-report'){
+   result=await saveSemesterReport(db,a,b);
+  }else if(action==='bootstrap'){
    const activePeriod=await ensureCurrentPeriod(db);
    const periods=(await db.query('SELECT * FROM tahfidz_exam.periods ORDER BY tahun_ajaran DESC,semester DESC LIMIT 16')).rows;
    const halaqah_options=(await db.query(`SELECT DISTINCT unit,musyrif,halaqah FROM public.santri WHERE aktif AND ($1::boolean OR unit=ANY($2::text[])) ORDER BY unit,musyrif,halaqah`,[a.admin,a.units||[]])).rows;

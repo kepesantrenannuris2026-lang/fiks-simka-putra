@@ -1,0 +1,9 @@
+import fs from 'node:fs';import crypto from 'node:crypto';
+const root='dist-cloudflare',htmlPath=root+'/mutabaah/index.html';let html=fs.readFileSync(htmlPath,'utf8');const old=html.match(/\/_next\/static\/chunks\/app\/(page-[^"?]+\.js)/)?.[1];if(!old)throw Error('Mutabaah bundle missing');let code=fs.readFileSync(root+'/_next/static/chunks/app/'+old,'utf8');
+if(!code.includes('function NurisSemesterReport(){')){
+ const start=code.indexOf('function tN(){'),end=code.indexOf('var tv=',start);if(start<0||end<0)throw Error('Report component changed; inspect before patching');
+ const component='function NurisSemesterReport(){let{raport:a,go:e,dirty:t}=t2(),l=n.useRef(null),[i,r]=n.useState(1100);n.useEffect(()=>{let a=a=>{if(a.origin!==location.origin||a.source!==l.current?.contentWindow)return;if(a.data?.type==="nuris:report-back"){t.current=!1;e("santri")}if(a.data?.type==="nuris:report-state"){t.current=!!a.data.dirty;let e=Number(a.data.height);Number.isFinite(e)&&r(Math.max(350,Math.min(100000,e)))}};window.addEventListener("message",a);return()=>{window.removeEventListener("message",a);t.current=!1}},[e,t]);return a?(0,s.jsx)("iframe",{ref:l,src:"/mutabaah/rapor/?santri="+encodeURIComponent(a.id)+"&ym="+encodeURIComponent(a.ym),title:"Rapor Al-Quran semester",style:{width:"100%",height:i,border:0,display:"block"},referrerPolicy:"same-origin"}):null}';
+ code=code.slice(0,start)+component+code.slice(end);if(!code.includes('raport:tN,'))throw Error('Report navigation changed');code=code.replace('raport:tN,','raport:NurisSemesterReport,').replace('raport:"Raport santri"','raport:"Rapor semester"');
+}
+code=code.replace('\"Raport\"]','\"Rapor semester\"]');
+const file='page-nuris-semester-'+crypto.createHash('sha256').update(code).digest('hex').slice(0,12)+'.js';fs.writeFileSync(root+'/_next/static/chunks/app/'+file,code);fs.writeFileSync(htmlPath,html.replaceAll(old,file));console.log(file);

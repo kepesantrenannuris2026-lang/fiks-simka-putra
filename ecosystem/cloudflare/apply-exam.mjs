@@ -5,3 +5,5 @@ const headers=path.join(out,'_headers');let h=fs.readFileSync(headers,'utf8');if
 console.log('Cloudflare exam navigation enabled; Netlify output was not changed.');
 
 await import('./route-semester-exam.mjs');
+await import('../semester-report/build.mjs');
+await import('./route-semester-report.mjs');
