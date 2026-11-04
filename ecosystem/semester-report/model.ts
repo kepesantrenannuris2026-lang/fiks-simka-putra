@@ -1,3 +1,4 @@
+import {semesterTarget} from './targets';
 export const PAPER={name:'F5',width:165,height:210};
 export const HEAD_NAME='Abdul Fattah Ismail Farros, Lc., M.IRKH';
 export const ASPECTS=[['makhraj','Makhraj Huruf'],['tajwid','Hukum Tajwid'],['tahfidz','Tahfidz / Hafalan'],['kehadiran','Kehadiran dan Kedisiplinan'],['perkembangan','Perkembangan']];
@@ -11,9 +12,18 @@ const descriptions:any={makhraj:{A:'Semua huruf keluar dari makhraj yang tepat.'
 export function reportModel(raw:any){
  const p=raw.period,s=raw.student,w=raw.weeks||[],extra=raw.supplement?.data||{},legacy=raw.legacy||{};
  const ziyadah=uniqueZiyadah(w),tahsin=w.reduce((a:number,x:any)=>a+(Number(x.tahsin_baris)||0),0),murajaah=w.reduce((a:number,x:any)=>a+(Number(x.murajaah_baris)||0),0);
- const classNo=Number(s.tingkat)||({VII:7,VIII:8,IX:9,X:10,XI:11,XII:12} as any)[s.tingkat]||0,level=[7,10].includes(classNo)?0:[8,11].includes(classNo)?1:[9,12].includes(classNo)?2:null;
- const semesterNo=level==null?null:level*2+p.semester,targetJuz=semesterNo==null?null:[null,null,30,29,1,2,3][semesterNo],targetBars=semesterNo===1?0:targetJuz===30?330:targetJuz?300:null;
- const attendance=['hadir','sakit','izin','alfa'].map(k=>w.reduce((a:number,x:any)=>a+(Number(x[k])||0),0)),meetings=attendance.reduce((a,b)=>a+b,0);
+ const target=semesterTarget(s,p.semester),targetBars=target.bars;
+ const absence=extra.ketidakhadiran||Object.fromEntries([['sakit','sakit'],['alpa','alfa'],['izin','izin']].map(([k,source])=>[k,w.reduce((a:number,x:any)=>a+(Number(x[source])||0),0)]));
+ const attendance=[absence.sakit,absence.alpa,absence.izin];
+ const fullExam=raw.exam?.exam_type==='HAFALAN_5_SOAL'&&raw.exam?.coverage?.mode!=='partial';
+ const completedExamJuz=fullExam?(raw.exam.result?.juz_results||[]).filter((j:any)=>j.complete===true&&j.passed):[];
+ const certifiedJuz=[...new Set<number>((raw.certification||[]).map((c:any)=>Number(c.juz)))].filter(j=>[1,2,3,4].every(part=>(raw.certification||[]).some((c:any)=>Number(c.juz)===j&&Number(c.bagian)===part&&c.status==='lulus')));
+ const verified=new Set<number>([...certifiedJuz,...completedExamJuz.map((j:any)=>Number(j.juz))]);
+ const automaticHafalan=target.juz30?verified.has(30):verified.size>=target.juz;
+ const hafalanStatus=extra.status_hafalan||(automaticHafalan?'TUNTAS':'');
+ const tahsinStatus=extra.status_tahsin||'';
+ const targetDone=hafalanStatus==='TUNTAS'&&(!target.requireTahsin||tahsinStatus==='LULUS');
+ const progress=hafalanStatus==='TUNTAS'?Math.max(ziyadah,targetBars):ziyadah;
  const latest=[...(raw.tajwid||[])].reverse();
  const aspects=ASPECTS.map(([key,label])=>{
   const manual=extra.aspek?.[key]||{};let grade=manual.predikat||'',note=manual.keterangan||'',source=grade?'Isian rapor semester':'';
@@ -21,7 +31,7 @@ export function reportModel(raw:any){
   // Published exam grades measure test quality, not the guide's achievement/target ratio.
   if(!grade&&legacy[key]&&!(key==='tahfidz'&&legacy.tahfidz_ujian)){grade=legacy[key];source='Penilaian semester';note=note||legacy['ket_'+key]||'';}
   if(!grade&&['makhraj','tajwid'].includes(key)&&fromMonth){grade=fromMonth[key]||numericGrade(fromMonth[key+'_nilai']);source=`Penilaian ${fromMonth.ym}`;note=note||fromMonth['ket_'+key]||'';}
-  if(!grade&&key==='tahfidz'&&w.length&&targetBars!=null){grade=capaianGrade(ziyadah,targetBars);source='Capaian semester menurut panduan';note=note||(targetBars===0?(ziyadah>0?'Fokus tahsin/iqro; sudah mulai menghafal.':'Fokus tahsin/iqro; belum ada tambahan hafalan tercatat.'):`${pages(ziyadah)} dari ${pages(targetBars)} (${fmt(ziyadah/targetBars*100)}%).`);}
+  if(!grade&&key==='tahfidz'&&(w.length||hafalanStatus==='TUNTAS')){grade=capaianGrade(progress,targetBars);source='Capaian semester menurut target program';note=note||`${pages(progress)} dari ${pages(targetBars)} (${fmt(progress/targetBars*100)}%).${target.requireTahsin?' Ketuntasan Iqro/Tahsin dinilai terpisah.':''}`;}
   // Attendance alone cannot determine discipline/adab. Missing teacher assessments stay blank.
   if(grade&&!['A+','A','B+','B','C'].includes(grade))grade='';
   return {key,label,predikat:grade||'—',keterangan:note||descriptions[key]?.[grade]||'Belum dinilai.',source:source||'Perlu penilaian musyrif/ah'};
@@ -31,7 +41,13 @@ export function reportModel(raw:any){
  const exam=raw.exam,examRows=exam?(exam.result?.juz_results?.length?exam.result.juz_results.map((j:any)=>[`Juz ${j.juz}${exam.coverage?.mode==='partial'?' · '+(exam.coverage.quarters?.length||0)+'/4 bagian':''}`,String(j.question_count||5),fmt(j.score),j.passed?'Lulus':'Perlu remedial']):exam.exam_type==='UJI_KOMPETENSI_DASAR'?(exam.result?.components||[]).map((c:any)=>[c.q===1?'Al-Fatihah · hafalan':'An-Najm 1–18 · tilawah','1',fmt(c.score),c.completed&&Number(c.score)>=Number(exam.rules?.kkm??75)?'Lulus':'Perlu remedial']):[['Ujian hafalan','5',fmt(exam.score),exam.passed?'Lulus':'Perlu remedial']]):[];
  if(exam&&exam.exam_type==='UJI_KOMPETENSI_DASAR'&&!examRows.length)examRows.push(['Tahsin/dasar · Al-Fatihah & An-Najm','2',fmt(exam.score),exam.passed?'Lulus':'Perlu remedial']);
  const iqro=IQRO.filter(([page])=>extra.iqro?.[page]).map(([page,theme])=>[String(page),String(theme),extra.iqro[page]]);
- const summary=[['Hafalan awal semester',pages(opening)],['Ziyadah semester',pages(ziyadah)],['Target hafalan semester',targetBars==null?'Belum ditetapkan':targetBars===0?'Fokus tahsin / Iqro':`1 juz (Juz ${targetJuz}) · ${pages(targetBars)}`],['Target hafalan tahunan',level==null?'Belum ditetapkan':level===0?'1 juz (Juz 30)':'2 juz ('+(level===1?'Juz 29 dan 1':'Juz 2 dan 3')+')'],['Total hafalan',pages(total)],['Capaian target',targetBars==null?'Belum ditetapkan':targetBars===0?'Fokus tahsin / Iqro':w.length?(ziyadah>=targetBars?'Tuntas':'Belum tuntas'):'Belum ada catatan semester']];
+ const validScore=(n:any)=>n!==null&&n!==undefined&&n!==''&&Number.isFinite(Number(n))&&Number(n)>=0&&Number(n)<=100;
+ const examScore=validScore(exam?.score)?Number(exam.score):validScore(legacy.tahfidz_nilai)?Number(legacy.tahfidz_nilai):validScore(extra.nilai_ujian_semester)?Number(extra.nilai_ujian_semester):null;
+ const examSource=validScore(exam?.score)?'Hasil ujian final aplikasi':validScore(legacy.tahfidz_nilai)?'Nilai ujian semester tersimpan':validScore(extra.nilai_ujian_semester)?'Isian musyrif/ah (ujian luring)':'Belum diisi';
+ const canEnterExamScore=!validScore(exam?.score)&&!validScore(legacy.tahfidz_nilai);
+ const statusLabel=tahsinStatus==='LULUS'?'Lulus':tahsinStatus==='BELUM_LULUS'?'Belum lulus':'Belum dinilai';
+ const hafalanLabel=hafalanStatus==='TUNTAS'?'Tuntas':hafalanStatus==='BELUM_TUNTAS'?'Belum tuntas':'Belum diverifikasi';
+ const summary=[['Hafalan awal semester',pages(opening)],['Ziyadah semester',pages(ziyadah)],['Target semester',target.semesterLabel],['Target hafalan tahunan',target.annualLabel],['Total hafalan',pages(total)],['Ketuntasan Iqro/Tahsin',statusLabel],['Ketuntasan hafalan target',hafalanLabel],['Capaian target semester',targetDone?'Tuntas':hafalanStatus==='BELUM_TUNTAS'||target.requireTahsin&&tahsinStatus==='BELUM_LULUS'?'Belum tuntas':'Belum lengkap / perlu verifikasi']];
  const date=extra.tanggal||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
- return {...raw,extra,aspects,summary,examRows,iqro,opening,total,ziyadah,tahsin,murajaah,attendance,meetings,date,title:'RAPOR PERKEMBANGAN TAHSIN DAN TAHFIZH AL-QUR’AN',periodLabel:`${p.year} · ${p.semester===1?'Ganjil':'Genap'} (Semester ${p.semester})`,notes:extra.catatan||legacy.catatan||'',headName:HEAD_NAME,warnings:[...aspects.filter(x=>x.predikat==='—').map(x=>x.label+' belum dinilai.'),...(opening==null?['Hafalan awal semester belum ditetapkan; lengkapi dari data yang terverifikasi.']:[]),...(!exam?['Hasil ujian semester final belum tersedia.']:[]),...(!s.musyrif?['Musyrif/ah santri belum ditetapkan.']:[])]};
+ return {...raw,extra,aspects,summary,examRows,iqro,opening,total,ziyadah,tahsin,murajaah,attendance,absence,target,targetDone,tahsinStatus,hafalanStatus,examScore,examSource,canEnterExamScore,date,title:'RAPOR PERKEMBANGAN TAHSIN DAN TAHFIZH AL-QUR’AN',periodLabel:`${p.year} · ${p.semester===1?'Ganjil':'Genap'} (Semester ${p.semester})`,notes:extra.catatan||legacy.catatan||'',headName:HEAD_NAME,warnings:[...aspects.filter(x=>x.predikat==='—').map(x=>x.label+' belum dinilai.'),...(opening==null?['Hafalan awal semester belum ditetapkan; lengkapi dari data yang terverifikasi.']:[]),...(examScore==null?['Nilai ujian semester belum tersedia.']:[]),...(target.requireTahsin&&!tahsinStatus?['Ketuntasan Iqro/Tahsin belum dinilai.']:[]),...(!hafalanStatus?['Ketuntasan hafalan target belum diverifikasi.']:[]),...(!s.musyrif?['Musyrif/ah santri belum ditetapkan.']:[])]};
 }

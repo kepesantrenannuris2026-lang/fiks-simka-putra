@@ -14,8 +14,10 @@ Data mapping:
 | --- | --- |
 | Period | July–December (Ganjil), January–June (Genap) of selected school year |
 | Five aspects | Saved semester supplement; then existing semester assessment; then latest in-period makhraj/tajwid assessment |
-| Hafalan predicate fallback | Recorded new memorization / guide target: >100% A+, ≥90% A, ≥80% B+, ≥70% B, otherwise C. First semester grades 7/10 focuses on tahsin; recorded memorization gives A+. No records means no invented grade. |
-| Final exam | Latest FINAL attempt only, each juz score and question count retained; basic/partial exams labelled separately |
+| Hafalan predicate fallback | Recorded new memorization / guide target: >100% A+, ≥90% A, ≥80% B+, ≥70% B, otherwise C. Target program diperbarui sesuai arahan terbaru: reguler kelas 7/10 baru semester 1 wajib lulus Iqro/Tahsin dan tuntas Juz 30; tahunan 2 juz. Tahfidz/PK semester 1 wajib lulus Iqro/Tahsin dan 2 juz; tahunan 4 juz. Predikat memakai capaian dibanding target tersebut, bukan bonus A+ otomatis pada semester pertama. No records means no invented grade. |
+| Final exam | Nilai ujian semester ada di bagian utama rapor. Latest FINAL attempt, then legacy semester score, then optional offline teacher score (0–100). Each juz score/question count stays in the appendix; basic/partial exams labelled separately. |
+| Ketidakhadiran | Hanya Sakit, Alpa, Izin. Pelengkap semester dapat diisi musyrif/ah; jika ketiganya kosong, memakai rekap pekanan. Hadir tidak dicetak; data operasional lama tetap tersimpan. |
+| Ketuntasan | Status Iqro/Tahsin terpisah dari hafalan. Target semester 1 yang memerlukan keduanya baru tuntas jika keduanya terpenuhi. Ujian sebagian tidak dianggap satu juz penuh; musyrif/ah dapat memverifikasi hafalan secara eksplisit. |
 | Discipline / development | Existing teacher assessment or explicit supplement; never inferred just from attendance counts |
 | Iqro | Explicit teacher assessment per topic; basic exam does not fabricate 11 topic grades |
 | Ziyadah | Same normalized location counted at maximum recorded coverage; unlabelled records summed, matching the existing anti-repeat principle. All weekly records printed for review. |
@@ -25,3 +27,5 @@ Data mapping:
 The supplementary table is additive, private/RLS, and version-checked. Only the student's own musyrif/ah, unit coordinator, or administrator can edit it; same-unit examiners can read. Legacy grades, exams, weekly records, and certification are not overwritten. The report adds no background polling or Realtime subscriptions; PDF generation is lazy-loaded in the browser. Netlify output is untouched.
 
 Deploy: apply `schema.sql` once, deploy the existing `ujian-tahfidz` Edge Function with `semester-report.ts` and existing auth, build `node ecosystem/semester-report/build.mjs`, patch `node ecosystem/cloudflare/route-semester-report.mjs`, then upload the Cloudflare asset package. Future `apply-exam.mjs` runs include both steps automatically. Do not rebuild the legacy baseline from an older snapshot.
+
+`targets.ts` is the common policy for the report, exam context and Cloudflare target notices. `route-target-policy.mjs` updates the preserved Mutabaah dashboard/student screens without modifying Netlify bundles or the original shared RPC. Existing final exam grades and certification remain unchanged.

@@ -7,3 +7,5 @@ console.log('Cloudflare exam navigation enabled; Netlify output was not changed.
 await import('./route-semester-exam.mjs');
 await import('../semester-report/build.mjs');
 await import('./route-semester-report.mjs');
+
+await import('./route-target-policy.mjs');

@@ -13,6 +13,13 @@ export function validateSupplement(v:any){
  if(v.hafalan_awal_baris!=null&&v.hafalan_awal_baris!==''){const n=Number(v.hafalan_awal_baris);if(!Number.isInteger(n)||n<0||n>9060)fail('Hafalan awal harus 0–9060 baris.');data.hafalan_awal_baris=n;}
  for(const k of aspectKeys){const x=v.aspek?.[k]||{};const grade=str(x.predikat||'',2);if(grade&&!['A','B+','B','C',...(k==='tahfidz'?['A+']:[])].includes(grade))fail('Predikat tidak sesuai panduan rapor.');data.aspek[k]={predikat:grade,keterangan:str(x.keterangan||'',600)};}
  for(const page of iqroPages){const grade=v.iqro?.[page]||'';if(!['','A','B+','B','C'].includes(grade))fail('Predikat Iqro tidak valid.');data.iqro[page]=grade;}
+ const score=v.nilai_ujian_semester;if(score!=null&&score!==''&&!['number','string'].includes(typeof score))fail('Nilai ujian semester harus berupa angka.');data.nilai_ujian_semester=score==null||score===''?null:Number(score);
+ if(data.nilai_ujian_semester!=null&&(!Number.isFinite(data.nilai_ujian_semester)||data.nilai_ujian_semester<0||data.nilai_ujian_semester>100))fail('Nilai ujian semester harus 0–100.');
+ if(data.nilai_ujian_semester!=null)data.nilai_ujian_semester=Math.round(data.nilai_ujian_semester*100)/100;
+ data.status_tahsin=v.status_tahsin||'';data.status_hafalan=v.status_hafalan||'';
+ if(!['','LULUS','BELUM_LULUS'].includes(data.status_tahsin)||!['','TUNTAS','BELUM_TUNTAS'].includes(data.status_hafalan))fail('Status ketuntasan tidak valid.');
+ data.ketidakhadiran=null;
+ if(v.ketidakhadiran!=null){if(typeof v.ketidakhadiran!=='object'||Array.isArray(v.ketidakhadiran))fail('Isian ketidakhadiran tidak valid.');data.ketidakhadiran={};for(const key of ['sakit','alpa','izin']){const n=v.ketidakhadiran[key];if(typeof n!=='number'||!Number.isInteger(n)||n<0||n>400)fail('Sakit, alpa, dan izin harus bilangan bulat 0–400.');data.ketidakhadiran[key]=n;}}
  return data;
 }
 async function student(db:any,a:any,id:any){if(typeof id!=='string'||id.length>150)fail('Pilih santri.');const s=(await db.query('SELECT id,nama,unit,tingkat,halaqah,musyrif,program,keterangan FROM public.santri WHERE id=$1',[id])).rows[0];if(!s)fail('Santri tidak ditemukan.',404);if(!a.admin&&!a.units?.includes(s.unit))fail('Anda hanya dapat mengakses rapor dalam unit penugasan.',403);return s;}
