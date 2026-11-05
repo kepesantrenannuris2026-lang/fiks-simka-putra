@@ -1,0 +1,424 @@
+{
+  "version": 1,
+  "source_folder": "https://drive.google.com/drive/folders/1_RLxJyCeCTjmBU3RRT2bNRtegXx_wuLT",
+  "surahs": [
+    {
+      "id": 78,
+      "name": "An-Naba",
+      "juz": 30,
+      "source_column": "R"
+    },
+    {
+      "id": 79,
+      "name": "An-Nazi'at",
+      "juz": 30,
+      "source_column": "S"
+    },
+    {
+      "id": 80,
+      "name": "Abasa",
+      "juz": 30,
+      "source_column": "T"
+    },
+    {
+      "id": 81,
+      "name": "At-Takwir",
+      "juz": 30,
+      "source_column": "U"
+    },
+    {
+      "id": 82,
+      "name": "Al-Infithar",
+      "juz": 30,
+      "source_column": "V"
+    },
+    {
+      "id": 83,
+      "name": "Al-Muthaffifin",
+      "juz": 30,
+      "source_column": "W"
+    },
+    {
+      "id": 84,
+      "name": "AL-Insyiqaq",
+      "juz": 30,
+      "source_column": "X"
+    },
+    {
+      "id": 85,
+      "name": "Al-Buruj",
+      "juz": 30,
+      "source_column": "Y"
+    },
+    {
+      "id": 86,
+      "name": "At-Thariq",
+      "juz": 30,
+      "source_column": "Z"
+    },
+    {
+      "id": 87,
+      "name": "Al-A'la",
+      "juz": 30,
+      "source_column": "AA"
+    },
+    {
+      "id": 88,
+      "name": "Al-Ghasyiyah",
+      "juz": 30,
+      "source_column": "AB"
+    },
+    {
+      "id": 89,
+      "name": "Al-Fajr",
+      "juz": 30,
+      "source_column": "AC"
+    },
+    {
+      "id": 90,
+      "name": "Al-Balad",
+      "juz": 30,
+      "source_column": "AD"
+    },
+    {
+      "id": 91,
+      "name": "Asy-Syams",
+      "juz": 30,
+      "source_column": "AE"
+    },
+    {
+      "id": 92,
+      "name": "Al-Lail",
+      "juz": 30,
+      "source_column": "AF"
+    },
+    {
+      "id": 93,
+      "name": "Adh-Dhuha",
+      "juz": 30,
+      "source_column": "AG"
+    },
+    {
+      "id": 94,
+      "name": "Al-Insyirah",
+      "juz": 30,
+      "source_column": "AH"
+    },
+    {
+      "id": 95,
+      "name": "At-Tin",
+      "juz": 30,
+      "source_column": "AI"
+    },
+    {
+      "id": 96,
+      "name": "Al-'Alaq",
+      "juz": 30,
+      "source_column": "AJ"
+    },
+    {
+      "id": 97,
+      "name": "Al-Qadr",
+      "juz": 30,
+      "source_column": "AK"
+    },
+    {
+      "id": 98,
+      "name": "Al-Bayyinah",
+      "juz": 30,
+      "source_column": "AL"
+    },
+    {
+      "id": 99,
+      "name": "Al-Zalzalah",
+      "juz": 30,
+      "source_column": "AM"
+    },
+    {
+      "id": 100,
+      "name": "Al-Adiyat",
+      "juz": 30,
+      "source_column": "AN"
+    },
+    {
+      "id": 101,
+      "name": "Al-Qari'ah",
+      "juz": 30,
+      "source_column": "AO"
+    },
+    {
+      "id": 102,
+      "name": "At-Takatsur",
+      "juz": 30,
+      "source_column": "AP"
+    },
+    {
+      "id": 103,
+      "name": "Al-Ashr",
+      "juz": 30,
+      "source_column": "AQ"
+    },
+    {
+      "id": 104,
+      "name": "Al-Humazah",
+      "juz": 30,
+      "source_column": "AR"
+    },
+    {
+      "id": 105,
+      "name": "Al-Fil",
+      "juz": 30,
+      "source_column": "AS"
+    },
+    {
+      "id": 106,
+      "name": "Al-Quraisy",
+      "juz": 30,
+      "source_column": "AT"
+    },
+    {
+      "id": 107,
+      "name": "Al-Ma'un",
+      "juz": 30,
+      "source_column": "AU"
+    },
+    {
+      "id": 108,
+      "name": "Al-Kautsar",
+      "juz": 30,
+      "source_column": "AV"
+    },
+    {
+      "id": 109,
+      "name": "Al-Kafirun",
+      "juz": 30,
+      "source_column": "AW"
+    },
+    {
+      "id": 110,
+      "name": "Al-Nashr",
+      "juz": 30,
+      "source_column": "AX"
+    },
+    {
+      "id": 111,
+      "name": "Al-Lahab",
+      "juz": 30,
+      "source_column": "AY"
+    },
+    {
+      "id": 112,
+      "name": "Al-Ikhlas",
+      "juz": 30,
+      "source_column": "AZ"
+    },
+    {
+      "id": 113,
+      "name": "Al-Falaq",
+      "juz": 30,
+      "source_column": "BA"
+    },
+    {
+      "id": 114,
+      "name": "An-Nas",
+      "juz": 30,
+      "source_column": "BB"
+    },
+    {
+      "id": 67,
+      "name": "Al-Mulk",
+      "juz": 29,
+      "source_column": "BC"
+    },
+    {
+      "id": 68,
+      "name": "Al-Qalam",
+      "juz": 29,
+      "source_column": "BD"
+    },
+    {
+      "id": 69,
+      "name": "Al-Haqqah",
+      "juz": 29,
+      "source_column": "BE"
+    },
+    {
+      "id": 70,
+      "name": "Al-Ma'arij",
+      "juz": 29,
+      "source_column": "BF"
+    },
+    {
+      "id": 71,
+      "name": "Nuh",
+      "juz": 29,
+      "source_column": "BG"
+    },
+    {
+      "id": 72,
+      "name": "Al-Jinn",
+      "juz": 29,
+      "source_column": "BH"
+    },
+    {
+      "id": 73,
+      "name": "Al-Muzammil",
+      "juz": 29,
+      "source_column": "BI"
+    },
+    {
+      "id": 74,
+      "name": "Al-Muddatssir",
+      "juz": 29,
+      "source_column": "BJ"
+    },
+    {
+      "id": 75,
+      "name": "Al-Qiyamah",
+      "juz": 29,
+      "source_column": "BK"
+    },
+    {
+      "id": 76,
+      "name": "Al-Insan",
+      "juz": 29,
+      "source_column": "BL"
+    },
+    {
+      "id": 77,
+      "name": "Al-Mursalat",
+      "juz": 29,
+      "source_column": "BM"
+    },
+    {
+      "id": 58,
+      "name": "Al-Mujadalah",
+      "juz": 28,
+      "source_column": "BN"
+    },
+    {
+      "id": 59,
+      "name": "Al-Hasyr",
+      "juz": 28,
+      "source_column": "BO"
+    },
+    {
+      "id": 60,
+      "name": "Al-Mumtahanah",
+      "juz": 28,
+      "source_column": "BP"
+    },
+    {
+      "id": 61,
+      "name": "Ash-Shaff",
+      "juz": 28,
+      "source_column": "BQ"
+    },
+    {
+      "id": 62,
+      "name": "Al-Jum'ah",
+      "juz": 28,
+      "source_column": "BR"
+    },
+    {
+      "id": 63,
+      "name": "Al-Munafiqun",
+      "juz": 28,
+      "source_column": "BS"
+    },
+    {
+      "id": 64,
+      "name": "At-taghabun",
+      "juz": 28,
+      "source_column": "BT"
+    },
+    {
+      "id": 65,
+      "name": "At-Talaq",
+      "juz": 28,
+      "source_column": "BU"
+    },
+    {
+      "id": 66,
+      "name": "At-Tahrim",
+      "juz": 28,
+      "source_column": "BV"
+    },
+    {
+      "id": 51,
+      "name": "Adz-Dzariyat",
+      "juz": 27,
+      "source_column": "BW"
+    },
+    {
+      "id": 52,
+      "name": "Ath-Thur",
+      "juz": 27,
+      "source_column": "BX"
+    },
+    {
+      "id": 53,
+      "name": "An-Najm",
+      "juz": 27,
+      "source_column": "BY"
+    },
+    {
+      "id": 54,
+      "name": "Al-Qamar",
+      "juz": 27,
+      "source_column": "BZ"
+    },
+    {
+      "id": 55,
+      "name": "Ar-Rahman",
+      "juz": 27,
+      "source_column": "CA"
+    },
+    {
+      "id": 56,
+      "name": "Al-Waqi'ah",
+      "juz": 27,
+      "source_column": "CB"
+    },
+    {
+      "id": 57,
+      "name": "Al-Hadid",
+      "juz": 27,
+      "source_column": "CC"
+    },
+    {
+      "id": 46,
+      "name": "Al-Ahqaf",
+      "juz": 26,
+      "source_column": "CD"
+    },
+    {
+      "id": 47,
+      "name": "Muhammad",
+      "juz": 26,
+      "source_column": "CE"
+    },
+    {
+      "id": 48,
+      "name": "Al-Fath",
+      "juz": 26,
+      "source_column": "CF"
+    },
+    {
+      "id": 49,
+      "name": "Al-Hujurat",
+      "juz": 26,
+      "source_column": "CG"
+    },
+    {
+      "id": 50,
+      "name": "Qaaf",
+      "juz": 26,
+      "source_column": "CH"
+    }
+  ],
+  "notes": [
+    "Kolom AJ Excel berlabel Al-A'la kedua dipetakan ke Al-'Alaq (96), mengikuti baris surat pada Word.",
+    "Mad Silah pada Excel dan Mad Lin pada panduan disediakan terpisah agar makna penilaian tidak tertukar."
+  ]
+}

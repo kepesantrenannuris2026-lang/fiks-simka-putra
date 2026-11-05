@@ -6,3 +6,5 @@ for(const file of ['index.html','style.css'])fs.copyFileSync('ecosystem/semester
 const p='dist-cloudflare/_headers';let h=fs.readFileSync(p,'utf8');if(!h.includes('/mutabaah/rapor/*'))fs.writeFileSync(p,h+'\n/mutabaah/rapor/*\n  Cache-Control: no-cache\n');
 let hh=fs.readFileSync(p,'utf8');if(!hh.includes('/mutabaah/rapor/chunks/*'))fs.writeFileSync(p,hh+'\n/mutabaah/rapor/chunks/*\n  Cache-Control: public, max-age=31536000, immutable\n');
 console.log('Semester report built:',out);
+
+for(const file of ['drive-schema.ts','drive-catalog.json'])fs.copyFileSync('ecosystem/semester-report/'+file,'ecosystem/functions/ujian-tahfidz/'+file);

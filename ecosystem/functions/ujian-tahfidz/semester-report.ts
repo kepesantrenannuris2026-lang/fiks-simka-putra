@@ -1,3 +1,4 @@
+import {validateDriveFields} from './drive-schema.ts';
 import {fail,norm} from './engine.ts';
 export function reportPeriod(year:any,semester:any){
  if(typeof year!=='string'||!/^20\d{2}\/20\d{2}$/.test(year)||Number(year.slice(5))!==Number(year.slice(0,4))+1||![1,2].includes(semester))fail('Tahun ajaran atau semester tidak valid.');
@@ -20,6 +21,7 @@ export function validateSupplement(v:any){
  if(!['','LULUS','BELUM_LULUS'].includes(data.status_tahsin)||!['','TUNTAS','BELUM_TUNTAS'].includes(data.status_hafalan))fail('Status ketuntasan tidak valid.');
  data.ketidakhadiran=null;
  if(v.ketidakhadiran!=null){if(typeof v.ketidakhadiran!=='object'||Array.isArray(v.ketidakhadiran))fail('Isian ketidakhadiran tidak valid.');data.ketidakhadiran={};for(const key of ['sakit','alpa','izin']){const n=v.ketidakhadiran[key];if(typeof n!=='number'||!Number.isInteger(n)||n<0||n>400)fail('Sakit, alpa, dan izin harus bilangan bulat 0–400.');data.ketidakhadiran[key]=n;}}
+ if(Object.prototype.hasOwnProperty.call(v,'drive'))data.drive=validateDriveFields(v.drive,fail);
  return data;
 }
 async function student(db:any,a:any,id:any){if(typeof id!=='string'||id.length>150)fail('Pilih santri.');const s=(await db.query('SELECT id,nama,unit,tingkat,halaqah,musyrif,program,keterangan FROM public.santri WHERE id=$1',[id])).rows[0];if(!s)fail('Santri tidak ditemukan.',404);if(!a.admin&&!a.units?.includes(s.unit))fail('Anda hanya dapat mengakses rapor dalam unit penugasan.',403);return s;}
@@ -48,6 +50,8 @@ export async function saveSemesterReport(db:any,a:any,b:any){
  await db.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`rapor:${s.id}:${p.year}:${p.semester}`]);
  const old=(await db.query('SELECT * FROM tahfidz_exam.semester_reports WHERE santri_id=$1 AND tahun_ajaran=$2 AND semester=$3 FOR UPDATE',[s.id,p.year,p.semester])).rows[0];
  if((old?.version||0)!==b.version)fail('Rapor telah diubah pengguna lain. Muat ulang sebelum menyimpan.',409);
+ // A still-open older client must not erase newly added Drive fields.
+ if(!Object.prototype.hasOwnProperty.call(b.data,'drive')&&old?.data?.drive)data.drive=old.data.drive;
  const saved=(await db.query(`INSERT INTO tahfidz_exam.semester_reports(santri_id,tahun_ajaran,semester,data,updated_by) VALUES($1,$2,$3,$4,$5) ON CONFLICT(santri_id,tahun_ajaran,semester) DO UPDATE SET data=excluded.data,version=semester_reports.version+1,updated_by=excluded.updated_by,updated_at=now() RETURNING data,version,updated_at`,[s.id,p.year,p.semester,JSON.stringify(data),a.username])).rows[0];
  await db.query('INSERT INTO tahfidz_exam.audit(username,action,record_id,before_data,after_data) VALUES($1,\'SEMESTER_REPORT\',$2,$3,$4)',[a.username,`${s.id}:${p.year}:${p.semester}`,JSON.stringify(old?.data||null),JSON.stringify(data)]);return {ok:true,supplement:saved};
 }

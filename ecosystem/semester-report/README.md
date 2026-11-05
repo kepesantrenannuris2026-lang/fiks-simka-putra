@@ -29,3 +29,22 @@ The supplementary table is additive, private/RLS, and version-checked. Only the 
 Deploy: apply `schema.sql` once, deploy the existing `ujian-tahfidz` Edge Function with `semester-report.ts` and existing auth, build `node ecosystem/semester-report/build.mjs`, patch `node ecosystem/cloudflare/route-semester-report.mjs`, then upload the Cloudflare asset package. Future `apply-exam.mjs` runs include both steps automatically. Do not rebuild the legacy baseline from an older snapshot.
 
 `targets.ts` is the common policy for the report, exam context and Cloudflare target notices. `route-target-policy.mjs` updates the preserved Mutabaah dashboard/student screens without modifying Netlify bundles or the original shared RPC. Existing final exam grades and certification remain unchanged.
+
+
+## Full Drive template coverage (2026-11-05)
+
+The four original XLSX header sets and matching Word tables were inspected directly in the referenced folder; reference files were read only. Current report inputs cover:
+
+| Drive field family | App input / behavior |
+| --- | --- |
+| Nama, kamar, kelas, TA/semester, nomor | Student identity and selected period; optional printed class (7A/XI) and report number; room remains editable |
+| Five predicates + five descriptions + Catatan Muhafizh | Existing semester assessment inputs and notes |
+| 69 surat cells in grades 7/10 and 8/11 | Juz 30, 29, 28, 27, 26: separate 0–100 score and description for every surat |
+| Juz A–C / A–H / A–P, four cells each | Up to 30 configurable juz blocks, each with four independent scores and descriptions; block letters are presentation labels, actual juz number is explicitly selected |
+| Certification Juz 1–30, halves 1 and 2 (grade 9/12) | Separate per-half scores and descriptions, stored only in the semester report; no conversion into four-quarter operational certificates |
+| Iqro topics | Existing 11 grades plus per-topic descriptions; Excel's Mad Silah is a separate additional entry from the guide's Mad Lin |
+| Hafalan awal (juz), ziyadah (halaman), semester/year target (juz), total hafalan (juz), capaian | Optional native-unit recap inputs; unset fields use app calculations. Explicit recap fields are printed in their own units. A free-text recap does not automatically pass the app's Iqro/hafalan verification. |
+
+Source corrections: column AJ repeats Al-A'la in the Excel header, but the Word's corresponding row is Al-'Alaq, so the app uses Surat 96 (Al-'Alaq) there. Mad Silah and Mad Lin remain separate concepts and values. No sample placeholder numbers (1–81) from the Word templates are used as real grades.
+
+The report prints every filled item, including zero scores and notes without a score. Switching template or searching a surat does not erase entries. Empty fields do not become zero. Long tables paginate at the same F5 size. These are report supplements and do not overwrite weekly setoran, finalized exams, original Drive files, or operational certificates. A save from an already-open older client preserves the newly added Drive fields.
