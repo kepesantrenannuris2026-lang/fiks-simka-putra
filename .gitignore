@@ -10,4 +10,5 @@ coverage/
 .netlify/
 dist-ekosistem/
 dist-mutabaah/
+dist-cloudflare/
 ecosystem/mutabaah/
