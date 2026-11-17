@@ -395,3 +395,7 @@ export function narasiCatatan(p: Record<string, string>, _gender = "", info: { z
 export const BULAN_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 export const tanggalPanjang = (iso: string) => { const [y, m, d] = String(iso || "").split("-").map(Number); return y && m && d ? `${d} ${BULAN_ID[m - 1]} ${y}` : ""; };
 export const KEPALA_KEPESANTRENAN = { nama: "Abdul Fattah Ismail Farros, Lc., M.IRKH", jabatan: "Kepala Bidang Kepesantrenan" };
+
+/** Urutan hafalan santri Nuris: Juz 30, Juz 29, lalu Juz 1, 2, 3, … 28. */
+export const urutanJuz = (j: number) => (j === 30 ? 0 : j === 29 ? 1 : j + 1);
+export const urutkanJuz = (list: number[]) => [...list].sort((a, b) => urutanJuz(a) - urutanJuz(b));

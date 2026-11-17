@@ -1980,7 +1980,7 @@ async function susunRapor(list: any[], periode: any) {
     // Riwayat hafalan: ringkas per juz yang punya data (maks. 4 baris di cetakan).
     const riwayat: { judul: string; isi: string }[] = [];
     const juzSel: number[] = h?.juz_selesai || [], juzUji: number[] = h?.juz_diuji || [];
-    if (juzSel.length) riwayat.push({ judul: "Juz tuntas", isi: `${juzSel.length} juz: ${[...juzSel].sort((a, b) => b - a).join(", ")}${juzUji.length ? ` · sudah diuji: ${[...juzUji].sort((a, b) => b - a).join(", ")}` : ""}` });
+    if (juzSel.length) riwayat.push({ judul: "Juz tuntas", isi: `${juzSel.length} juz: ${T.urutkanJuz(juzSel).join(", ")}${juzUji.length ? ` · sudah diuji: ${T.urutkanJuz(juzUji).join(", ")}` : ""}` });
     T.JUZ_SURAT_RAPOR.forEach((j) => {
       const daftar = T.SURAT_RAPOR.filter((x) => x.juz === j), nilai = daftar.filter((x) => suratAll[x.id]?.n !== undefined && suratAll[x.id]?.n !== "");
       if (!nilai.length) return;
@@ -1988,7 +1988,7 @@ async function susunRapor(list: any[], periode: any) {
       const rentang = nilai.length === 1 ? nilai[0].nama : `${nilai[0].nama} s.d. ${nilai[nilai.length - 1].nama}`;
       riwayat.push({ judul: `Juz ${j}`, isi: `${nilai.length}/${daftar.length} surat dinilai (${rentang}); rerata ${rata}` });
     });
-    const juzSert = Object.keys(perempat).map(Number).sort((a, b) => b - a);
+    const juzSert = T.urutkanJuz(Object.keys(perempat).map(Number));
     if (juzSert.length) {
       const bagian = juzSert.reduce((a, j) => a + Object.keys(perempat[j]).length, 0);
       const semua = juzSert.flatMap((j) => Object.values(perempat[j]).map((x: any) => Number(x.n)).filter((x) => isFinite(x)));
