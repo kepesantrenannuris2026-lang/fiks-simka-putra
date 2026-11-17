@@ -1912,6 +1912,12 @@ async function susunRapor(list: any[], periode: any) {
   (await q(`SELECT santri_id, sum(sakit)::int s, sum(izin)::int i, sum(alfa)::int a, sum(murajaah_baris)::int mb,
       avg(nilai_murajaah)::float mr, count(nilai_murajaah)::int mn FROM setoran WHERE ym >= $1 AND ym <= $2 AND santri_id = ANY($3) GROUP BY santri_id`, [periode.dari, periode.sampai, ids]))
     .forEach((r: any) => { abs[r.santri_id] = r; mur[r.santri_id] = { baris: r.mb || 0, rata: r.mr == null ? null : Math.round(r.mr * 10) / 10, n: r.mn || 0 }; });
+  // Sertifikasi yang lulus dalam semester ini ikut dihitung sebagai murajaah (¼ juz = 5 halaman per bagian).
+  const sertSem: Record<string, { bagian: number; hal: number }> = {};
+  (await q(`SELECT santri_id, count(*)::int b, sum(coalesce(halaman_minimal, 5))::int h FROM (
+      SELECT DISTINCT ON (santri_id, juz, bagian) santri_id, halaman_minimal FROM sertifikasi
+      WHERE santri_id = ANY($1) AND status = 'lulus' AND tanggal_ujian >= $2 AND tanggal_ujian <= $3 ORDER BY santri_id, juz, bagian, tanggal_ujian DESC) t GROUP BY santri_id`,
+    [ids, periode.dari + "-01", akhir])).forEach((r: any) => (sertSem[r.santri_id] = { bagian: r.b || 0, hal: r.h || 0 }));
   if (periode.sampai < kini) (await q("SELECT santri_id, sum(ziyadah_baris)::int z FROM setoran WHERE ym > $1 AND santri_id = ANY($2) GROUP BY santri_id", [periode.sampai, ids])).forEach((r: any) => (zSesudah[r.santri_id] = r.z || 0));
   (await q("SELECT santri_id, ziyadah_surat, nilai_ziyadah FROM setoran WHERE ym >= $1 AND ym <= $2 AND santri_id = ANY($3) AND ziyadah_surat <> '' AND nilai_ziyadah IS NOT NULL", [periode.dari, periode.sampai, ids]))
     .forEach((r: any) => { const m = (surat[r.santri_id] = surat[r.santri_id] || {}); T.suratDariTeks(r.ziyadah_surat).forEach((id) => (m[id] = m[id] || []).push(Number(r.nilai_ziyadah))); });
@@ -1924,6 +1930,8 @@ async function susunRapor(list: any[], periode: any) {
     const semKe = T.semesterKe(s, periode.semester), tgt = T.targetRapor(s, semKe), gender = T.genderOf(s.unit);
     const hadirPct = p.pertemuan ? Math.round((p.hadir / p.pertemuan) * 100) : null;
     const m = mur[s.id] || { baris: 0, rata: null, n: 0 };
+    const ss = sertSem[s.id] || { bagian: 0, hal: 0 };
+    const murajaahHal = T.halamanBulat(m.baris) + ss.hal; // murajaah setoran + sertifikasi semester ini
     const otomatis: Record<string, string> = {
       makhraj: pn[s.id]?.makhraj || "", tajwid: pn[s.id]?.tajwid || "",
       tahfidz: tgt.semester ? T.predikatTahfidz(p.ziyadah, tgt.semester * T.BARIS_PER_JUZ, semKe) : "",
@@ -1973,7 +1981,7 @@ async function susunRapor(list: any[], periode: any) {
     const capaian = tgt.semester === 0 ? "" : tuntasHafalan ? "Tercapai" : "Belum tercapai";
     const rekapAuto = {
       hafalan_awal: angkaId(awal / T.BARIS_PER_JUZ), ziyadah: angkaId(p.ziyadah / 15), total: angkaId(totalAkhir / T.BARIS_PER_JUZ),
-      murajaah: String(T.halamanBulat(m.baris)), target_semester: String(tgt.semester), target_tahunan: String(tgt.tahunan), capaian,
+      murajaah: String(murajaahHal), target_semester: String(tgt.semester), target_tahunan: String(tgt.tahunan), capaian,
     };
     const rekap = { ...rekapAuto, ...Object.fromEntries(Object.entries(d.rekap || {}).filter(([, v]) => v !== "" && v != null)) };
 
@@ -2005,7 +2013,7 @@ async function susunRapor(list: any[], periode: any) {
       identitas: { kelas: d.kelas || T.romawi(s.tingkat), kamar: d.kamar || "", nomor: d.nomor || "" },
       templat: d.templat || T.templatOtomatis(s.tingkat, totalAkhir / T.BARIS_PER_JUZ),
       aspek, ujian, target: tgt, tahsin,
-      murajaah: { ...m, halaman: T.halamanBulat(m.baris), predikat: pred.murajaah || "" },
+      murajaah: { ...m, halaman: murajaahHal, halaman_setoran: T.halamanBulat(m.baris), sertifikasi_bagian: ss.bagian, sertifikasi_hal: ss.hal, predikat: pred.murajaah || "" },
       absen: { sakit: Number(pilih(abM.sakit, ab.s)) || 0, izin: Number(pilih(abM.izin, ab.i)) || 0, alpa: Number(pilih(abM.alpa, ab.a)) || 0, otomatis: { sakit: ab.s || 0, izin: ab.i || 0, alpa: ab.a || 0 } },
       surat: suratAll, surat_auto: suratAuto, perempat, iqro: d.iqro || {}, iqro_lulus: iqroLulus,
       rekap, rekap_auto: rekapAuto, riwayat,

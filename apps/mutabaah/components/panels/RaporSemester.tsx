@@ -217,7 +217,7 @@ function EditorRapor({ id, periode, onBack }: { id: string; periode: Periode; on
             </Field>
           ))}
         </div>
-        <p className="text-[12px] text-muted">Murajaah dihitung per halaman (15 baris = 1 halaman, dibulatkan) dari {r.murajaah.n} catatan setoran semester ini{r.murajaah.rata != null ? `, rerata nilai ${String(r.murajaah.rata).replace(".", ",")}` : ""}.</p>
+        <p className="text-[12px] text-muted">Total murajaah = murajaah setoran {r.murajaah.halaman_setoran ?? r.murajaah.halaman} hlm (15 baris = 1 halaman, dibulatkan{r.murajaah.rata != null ? `; rerata nilai ${String(r.murajaah.rata).replace(".", ",")} dari ${r.murajaah.n} penilaian` : ""}) + sertifikasi lulus semester ini {r.murajaah.sertifikasi_hal || 0} hlm ({r.murajaah.sertifikasi_bagian || 0} bagian ¼ juz).</p>
       </Bagian>
 
       <Bagian judul="B. Penilaian enam aspek" buka ringkas={r.aspek.map((a: any) => `${a.label.split(" ")[0]} ${a.predikat || "–"}`).join(" · ")}>

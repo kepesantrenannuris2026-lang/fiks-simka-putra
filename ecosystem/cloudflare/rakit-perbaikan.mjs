@@ -91,6 +91,8 @@ fs.writeFileSync(path.join(out, '_headers'), `/*
   Cache-Control: no-cache
 /fonts/*
   Cache-Control: public, max-age=604800
+/_k/*
+  Cache-Control: no-cache
 `);
 // Pastikan tidak ada sisa tambalan lama di paket.
 for (const bad of ['mutabaah-patch.js', 'liquid-glass.js', 'nuris-motion.js', 'monitor-groups.js']) if (fs.existsSync(path.join(out, bad))) fs.rmSync(path.join(out, bad));

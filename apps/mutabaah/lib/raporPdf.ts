@@ -92,7 +92,7 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
     { l: "Hafalan awal", v: `${angka(k.hafalan_awal)} juz` },
     { l: "Ziyadah semester", v: `${angka(k.ziyadah)} hlm` },
     { l: "Total hafalan", v: `${angka(k.total)} juz` },
-    { l: "Total murajaah", v: `${angka(k.murajaah)} hlm` },
+    { l: "Total murajaah", v: `${angka(k.murajaah)} hlm`, s: r.murajaah?.sertifikasi_hal ? `+ sertifikasi ${r.murajaah.sertifikasi_hal} hlm` : "" },
     { l: "Target semester", v: r.target.semester ? `${angka(k.target_semester)} juz` : "Sertifikasi", s: cap || "" },
   ];
   const wS = LEBAR / sel.length, hS = 12.6;
@@ -101,7 +101,7 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
     kotak(d, x, y, wS, hS, SOFT);
     teks(d, c.l, x + 2, y + 3.4, { size: 6.4, color: MUTED });
     teks(d, c.v, x + 2, y + (c.s ? 7.3 : 8.3), { size: 9.6, bold: true, color: PINE });
-    if (c.s) teks(d, c.s, x + 2, y + 10.1, { size: 5.8, bold: true, color: c.s === "Tercapai" ? LEAF : ROSE });
+    if (c.s) teks(d, c.s, x + 2, y + 10.1, { size: 5.8, bold: true, color: c.s === "Tercapai" ? LEAF : c.s === "Belum tercapai" ? ROSE : MUTED });
   });
   y += hS + sp(2.8);
 
