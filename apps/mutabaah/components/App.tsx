@@ -14,6 +14,7 @@ import Sertifikasi from "./panels/Sertifikasi";
 import Arbain from "./panels/Arbain";
 import UjianSemester from "./panels/UjianSemester";
 import NotifBell, { Badge } from "./NotifBell";
+import AplikasiNuris from "./AplikasiNuris";
 import { TombolPasang } from "./InstallApp";
 import Santri from "./panels/Santri";
 import RaporSemester from "./panels/RaporSemester";
@@ -230,10 +231,12 @@ function Shell({ user, logout }: { user: User; logout: () => void }) {
               openUjian={() => go("ujian")} openMonitor={() => go("monitor")}
               onDismiss={async (keys) => { try { await rpc("dismissNotif", keys); toast.success("Notifikasi dihapus"); setTick((t) => t + 1); } catch (e: any) { toast.error(e.message); } }}
               onRestore={async () => { try { const r = await rpc("restoreNotif"); toast.success(`${r.jumlah} notifikasi dimunculkan lagi`); setTick((t) => t + 1); } catch (e: any) { toast.error(e.message); } }} />
-            {PORTAL && (
+            {PORTAL ? (
               <button type="button" onClick={() => kePortal("beranda")} title="Aplikasi Kepesantrenan" aria-label="Aplikasi Kepesantrenan" className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-white text-leaf-deep">
                 <LayoutGrid className="size-4" />
               </button>
+            ) : (
+              <AplikasiNuris />
             )}
             <TombolPasang variant="pill" />
             <SyncPill tick={tick} />
