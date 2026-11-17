@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pine: #082E1A;
+  --color-leaf-deep: #0D4A28;
+  --color-leaf: #17873F;
+  --color-leaf-soft: #E3F2E8;
+  --color-saffron: #EE8A35;
+  --color-saffron-soft: #FDEEDF;
+  --color-sky: #2F6BD8;
+  --color-sky-soft: #E4ECFB;
+  --color-rose: #D14343;
+  --color-rose-soft: #FBE5E5;
+  --color-amber: #B7791F;
+  --color-amber-soft: #FDF3DC;
+  --color-mist: #F2F6F3;
+  --color-ink: #122219;
+  --color-muted: #5E6F65;
+  --color-line: #DCE5DF;
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-arab: var(--font-amiri), serif;
+  --radius-card: 18px;
+}
+
+html, body { background: var(--color-mist); color: var(--color-ink); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Motif belah ketupat dari logo — dipakai di area gelap */
+.kufi-pattern {
+  background-color: var(--color-pine);
+  background-image:
+    linear-gradient(45deg, rgba(255,255,255,.045) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.045) 75%),
+    linear-gradient(45deg, rgba(255,255,255,.045) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.045) 75%);
+  background-size: 28px 28px;
+  background-position: 0 0, 14px 14px;
+}
+
+input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+:focus-visible { outline: 2px solid var(--color-saffron); outline-offset: 2px; }
+
+.scroll-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: #c9d6cd; border-radius: 99px; }
+
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+  body { background: #fff !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .print-area { box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+  .print-area table { font-size: 9px; }
+  .print-area h3 { break-after: avoid; }
+  .print-area tr { break-inside: avoid; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ---------- Motion ringan untuk setiap tool (hanya transform/opacity; mati otomatis bila pengguna memilih kurangi gerak) ---------- */
+@keyframes nuris-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes nuris-pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+.anim-rise { animation: nuris-rise .42s cubic-bezier(.2,.8,.2,1) both; }
+.anim-pop { animation: nuris-pop .32s cubic-bezier(.2,.9,.3,1.2) both; }
+.stagger > * { animation: nuris-rise .4s cubic-bezier(.2,.8,.2,1) both; }
+.stagger > :nth-child(2) { animation-delay: 40ms; }
+.stagger > :nth-child(3) { animation-delay: 80ms; }
+.stagger > :nth-child(4) { animation-delay: 120ms; }
+.stagger > :nth-child(5) { animation-delay: 160ms; }
+.stagger > :nth-child(6) { animation-delay: 200ms; }
+.stagger > :nth-child(n+7) { animation-delay: 240ms; }
+button { -webkit-tap-highlight-color: transparent; transition: transform .14s, background-color .18s, color .18s, border-color .18s, box-shadow .18s; }
+.press:active, button:not(:disabled):active { transform: scale(.965); }
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise, .anim-pop, .stagger > * { animation: none !important; }
+  .press:active, button:active { transform: none !important; }
+}
+
+/* Bilah aksi melayang (Simpan/PDF) harus berada di atas tombol Setor yang menonjol di menu bawah HP. */
+:root { --fab-lift: 24px; }
+@media (min-width: 768px) { :root { --fab-lift: 0px; } }
