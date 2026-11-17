@@ -266,7 +266,7 @@ export function nilaiUjianApaSaja(v: any): number | null {
 }
 
 /* =====================================================================
- * RAPOR AL-QUR'AN SEMESTER (F5)
+ * RAPOR AL-QUR'AN SEMESTER (F4)
  * ===================================================================== */
 /** Surat Juz 26–30 (nomor, nama sesuai templat rapor, juz). */
 export const SURAT_RAPOR = ([

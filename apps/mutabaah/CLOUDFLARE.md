@@ -20,5 +20,5 @@ lalu rakit paket: `MUTABAAH_OUT=apps/mutabaah/out KODE_API=apps/mutabaah/edge/di
 Kunci TIDAK disimpan di repo.
 
 ## Rapor
-`lib/raporPdf.ts` — rapor Al-Qur'an satu lembar F5 (165 × 210 mm) per santri; data dari `susunRapor` di `lib/core.ts`.
+`lib/raporPdf.ts` — rapor Al-Qur'an satu lembar F4 (215 × 330 mm) per santri; data dari `susunRapor` di `lib/core.ts`.
 Ringkasan rapor ikut tersalin ke tab `UjianSemester` di spreadsheet (kolom murajaah, status ujian/tahsin, S/I/A, kamar).

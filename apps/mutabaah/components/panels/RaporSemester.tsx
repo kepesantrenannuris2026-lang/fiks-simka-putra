@@ -1,5 +1,5 @@
 "use client";
-/** Rapor Al-Qur'an semester — satu lembar F5 per santri, terisi otomatis dari data aplikasi.
+/** Rapor Al-Qur'an semester — satu lembar F4 per santri, terisi otomatis dari data aplikasi.
  *  Asatidz cukup melengkapi yang kosong lalu mengunduh PDF satu santri atau satu halaqah sekaligus (tanpa mail-merge Word). */
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -52,7 +52,7 @@ export default function RaporSemester() {
     setCetak(true);
     try {
       await (await pdf()).unduhRapor(list, `Rapor_${h?.halaqah || "halaqah"}_${h?.unit || ""}_kelas_${h?.tingkat || ""}`);
-      toast.success(`PDF ${list.length} rapor siap`, { description: "Satu lembar per santri. Cetak pada kertas F5 (165 × 210 mm), skala 100%." });
+      toast.success(`PDF ${list.length} rapor siap`, { description: "Satu lembar per santri. Cetak pada kertas F4 (215 × 330 mm), skala 100%." });
     } catch (e: any) { toast.error(e.message); } finally { setCetak(false); }
   };
 
@@ -61,7 +61,7 @@ export default function RaporSemester() {
       <div className="anim-rise">
         <p className="text-[11px] font-bold uppercase tracking-[.14em] text-leaf">Rapor Al-Qur'an</p>
         <h2 className="text-2xl font-extrabold tracking-tight">Rapor semester</h2>
-        <p className="text-[13px] text-muted">Satu lembar F5 per santri, terisi otomatis dari setoran, murajaah, penilaian, sertifikasi, dan ujian semester. Lengkapi yang kosong, lalu unduh PDF satu santri atau satu halaqah sekaligus — tanpa mail-merge Word.</p>
+        <p className="text-[13px] text-muted">Satu lembar F4 per santri, terisi otomatis dari setoran, murajaah, penilaian, sertifikasi, dan ujian semester. Lengkapi yang kosong, lalu unduh PDF satu santri atau satu halaqah sekaligus — tanpa mail-merge Word.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Select aria-label="Periode" className="w-auto" value={`${periode.tahun_ajaran}|${periode.semester}`} onChange={(e) => { const [ta, s] = e.target.value.split("|"); setPeriode(T.parseTa(ta, Number(s))); }}>
@@ -287,7 +287,7 @@ function EditorRapor({ id, periode, onBack }: { id: string; periode: Periode; on
 
       <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="no-print fixed inset-x-0 z-20 px-3 md:left-[84px] lg:left-[248px]" style={{ bottom: "calc(var(--nav-h, 0px) + 10px + var(--fab-lift, 0px))" }}>
         <div className="mx-auto flex max-w-[1180px] items-center gap-2 rounded-2xl bg-pine p-2 pl-4 text-white shadow-2xl shadow-pine/30">
-          <p className="min-w-0 flex-1 truncate text-[12px] text-white/75">F5 · 165 × 210 mm · 1 lembar</p>
+          <p className="min-w-0 flex-1 truncate text-[12px] text-white/75">F4 · 215 × 330 mm · 1 lembar</p>
           <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white" onClick={async () => { try { await (await pdf()).bukaRapor([r]); } catch (e: any) { toast.error(e.message); } }}><Eye className="size-4" /><span className="hidden sm:inline">Pratinjau</span></Button>
           <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white" onClick={async () => { try { await (await pdf()).unduhRapor([r], `Rapor_${r.santri.nama}_${r.periode.label}`); } catch (e: any) { toast.error(e.message); } }}><FileDown className="size-4" />PDF</Button>
           <Button size="sm" variant="accent" loading={simpan} onClick={kirim}><Save className="size-4" />Simpan</Button>

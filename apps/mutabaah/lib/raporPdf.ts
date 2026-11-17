@@ -1,5 +1,7 @@
 /**
- * Rapor Perkembangan Al-Qur'an — PDF vektor SATU LEMBAR F5 (165 × 210 mm) per santri.
+ * Rapor Perkembangan Al-Qur'an — PDF vektor SATU LEMBAR F4 (215 × 330 mm) per santri.
+ * Tata letak digambar dalam satuan logis selebar 165 lalu diskalakan ke kertas F4 (satuan jsPDF numerik), sehingga
+ * huruf, garis, dan jarak ikut membesar proporsional.
  * Sudut kotak tegas (tanpa rounded), garis tabel penuh, aman untuk printer hitam-putih.
  * Isi diambil dari getRaporSemester / getRaporHalaqah (lihat susunRapor di lib/core.ts).
  */
@@ -7,7 +9,9 @@ import type { jsPDF as JsPDF } from "jspdf";
 import * as T from "./target";
 import { asset } from "./base";
 
-export const F5 = { w: 165, h: 210 };
+export const F4 = { w: 215, h: 330 };
+const K = F4.w / 165; // satuan logis → mm
+const F5 = { w: 165, h: F4.h / K }; // halaman logis (nama lama dipertahankan agar perhitungan tata letak tetap sama)
 const M = { l: 9, r: 9, t: 9, b: 9 };
 const LEBAR = F5.w - M.l - M.r;
 type RGB = [number, number, number];
@@ -47,7 +51,7 @@ function judulBagian(d: JsPDF, y: number, s: string) {
 
 /** Satu halaman rapor. Tata letak tetap; teks panjang dibungkus dan, bila perlu, diperkecil agar tetap satu lembar. */
 function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
-  const sp = (n: number) => Math.max(n - rapat, n * 0.55); // jarak antarbagian, mengecil bila konten padat
+  const sp = (n: number) => Math.max(n + 1.4 - rapat, n * 0.55); // jarak antarbagian, mengecil bila konten padat
   let y = M.t;
 
   // ---------- Kop ----------
@@ -65,7 +69,7 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
   const cLbl = 17, cKls = 19, cVal2 = 24, cNama = LEBAR - cLbl - cKls - cVal2;
   d.setFont("helvetica", "bold"); d.setFontSize(9);
   const nama = d.splitTextToSize(aman(r.santri.nama.toUpperCase()), cNama - 4).slice(0, 2);
-  const h1 = nama.length > 1 ? 9.6 : 6.6, h2 = 6.6;
+  const h1 = nama.length > 1 ? 10.6 : 7.6, h2 = 7.6;
   const baris = [
     { y: y, h: h1, a: "NAMA", b: nama, c: "KELAS", d: r.identitas.kelas || "-" },
     { y: y + h1, h: h2, a: "KAMAR", b: [r.identitas.kamar || "-"], c: "SEMESTER", d: r.periode.nama },
@@ -91,7 +95,7 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
     { l: "Total murajaah", v: `${angka(k.murajaah)} hlm` },
     { l: "Target semester", v: r.target.semester ? `${angka(k.target_semester)} juz` : "Sertifikasi", s: cap || "" },
   ];
-  const wS = LEBAR / sel.length, hS = 11.2;
+  const wS = LEBAR / sel.length, hS = 12.6;
   sel.forEach((c, i) => {
     const x = M.l + i * wS;
     kotak(d, x, y, wS, hS, SOFT);
@@ -112,7 +116,7 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
   d.setFont("helvetica", "normal"); d.setFontSize(7.2);
   r.aspek.forEach((a: any, i: number) => {
     const ket = d.splitTextToSize(aman(a.keterangan || (a.predikat ? "" : "Belum ada predikat")), cK - 4).slice(0, 2);
-    const hR = ket.length > 1 ? 7.9 : 5.4;
+    const hR = ket.length > 1 ? 9 : 6.8;
     const bg: RGB | undefined = i % 2 ? [248, 251, 249] : undefined;
     kotak(d, M.l, y, cA, hR, bg, GARIS); kotak(d, M.l + cA, y, cN, hR, bg, GARIS); kotak(d, M.l + cA + cN, y, cK, hR, bg, GARIS);
     teks(d, a.label, M.l + 2.5, y + hR / 2 + 1.1, { size: 7.6 });
@@ -131,7 +135,7 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
     { j: "TAHSIN / IQRO'", v: th.lulus === true ? "Lulus" : th.lulus === false ? "Belum lulus" : "Belum ada hasil", s: th.materi ? `Materi: ${th.materi}` : th.sumber === "ujian" ? "Dari ujian tahsin semester" : th.wajib ? "Syarat target semester ini" : "Status kelulusan tahsin", warna: th.lulus === false ? ROSE : PINE },
     { j: "KETIDAKHADIRAN", v: `S: ${ab.sakit}   I: ${ab.izin}   A: ${ab.alpa}`, s: "Sakit · Izin · Alpa", warna: PINE },
   ];
-  const wE = LEBAR / 3, hE = 11.8;
+  const wE = LEBAR / 3, hE = 13;
   ev.forEach((e, i) => {
     const x = M.l + i * wE;
     kotak(d, x, y, wE, hE, SOFT);
@@ -164,14 +168,14 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
   y = judulBagian(d, y, "E. CATATAN PEMBINAAN");
   const kalimat = aman(r.catatan || "-").split(/(?<=[.!?])\s+(?=[A-Z0-9"'])/).filter(Boolean);
   // Sisakan ruang tetap untuk tanda tangan (± 30 mm) agar rapor selalu satu lembar.
-  const ruangTtd = 26, sisa = F5.h - M.b - ruangTtd - y - 3;
+  const ruangTtd = 32, sisa = F5.h - M.b - ruangTtd - y - 3;
   let fs = 7.8, baris2: string[] = [];
   for (; fs >= 6; fs -= 0.2) {
     d.setFont("helvetica", "normal"); d.setFontSize(fs);
     baris2 = kalimat.flatMap((s) => d.splitTextToSize(s, LEBAR - 5));
     if (baris2.length * fs * 0.42 + 4 <= sisa) break;
   }
-  const lh = fs * 0.42, hC = Math.min(sisa, Math.max(12, baris2.length * lh + 4));
+  const lh = fs * 0.42, hC = Math.min(sisa, Math.max(22, baris2.length * lh + 4));
   kotak(d, M.l, y, LEBAR, hC);
   d.setFont("helvetica", "normal"); d.setFontSize(fs); d.setTextColor(...INK);
   const muat = Math.floor((hC - 3) / lh), tampil = baris2.slice(0, muat);
@@ -183,9 +187,9 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
   const yT = Math.max(y, F5.h - M.b - ruangTtd + 2);
   const kiri = M.l + LEBAR * 0.25, kanan = M.l + LEBAR * 0.75;
   teks(d, `${r.ttd.tempat}, ${T.tanggalPanjang(r.ttd.tanggal)}`, kanan, yT, { size: 7.6, align: "center" });
-  teks(d, r.ttd.kepala.jabatan, kiri, yT + 4.2, { size: 7.6, align: "center" });
+  teks(d, r.ttd.kepala.jabatan, kiri, yT, { size: 7.6, align: "center" }); // sejajar dengan baris tempat & tanggal
   teks(d, r.ttd.label_muhaffiz, kanan, yT + 4.2, { size: 7.6, align: "center" });
-  const yN = yT + 19;
+  const yN = yT + 24;
   const ttd = (nama: string, x: number) => {
     d.setFont("helvetica", "bold"); d.setFontSize(7.8);
     const t = aman(nama || "........................................"), w = Math.max(d.getTextWidth(t), 40);
@@ -198,14 +202,16 @@ function halaman(d: JsPDF, r: any, lg: string | null, rapat = 0) {
   // ---------- Kaki ----------
   d.setDrawColor(...PINE); d.setLineWidth(0.4); d.line(M.l, F5.h - M.b + 1.5, F5.w - M.r, F5.h - M.b + 1.5);
   teks(d, `Rapor Al-Qur'an · ${String(r.santri.nama).slice(0, 48)} · ${r.periode.label}`, M.l, F5.h - M.b + 4.6, { size: 6, color: MUTED });
-  teks(d, "F5 · 1 lembar", F5.w - M.r, F5.h - M.b + 4.6, { size: 6, color: MUTED, align: "right" });
+  teks(d, "F4 · 1 lembar", F5.w - M.r, F5.h - M.b + 4.6, { size: 6, color: MUTED, align: "right" });
   return y;
 }
 
 /** Bangun PDF untuk satu atau banyak santri (satu lembar per santri). */
 export async function buatRaporPdf(list: any[], logoData?: string | null) {
   const { jsPDF } = await import("jspdf");
-  const d = new jsPDF({ unit: "mm", format: [F5.w, F5.h], orientation: "portrait", compress: true });
+  const d = new jsPDF({ unit: ((72 / 25.4) * K) as any, format: [F5.w, F5.h], orientation: "portrait", compress: true });
+  // Ukuran huruf (pt) ikut diskalakan agar proporsional dengan kertas F4.
+  const asli = d.setFontSize.bind(d); (d as any).setFontSize = (n: number) => asli(n * K);
   d.setProperties({ title: "Rapor Al-Qur'an", subject: "Rapor Perkembangan Al-Qur'an — Pesantren Nurul Islam Tengaran", creator: "Mutabaah Tahfidz Nurista" });
   const lg = logoData !== undefined ? logoData : await logo();
   list.forEach((r, i) => {

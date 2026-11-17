@@ -1746,7 +1746,7 @@ export async function triggerSync(_u: User, ctx: Ctx) {
 }
 
 /* =====================================================================
- * UJIAN SEMESTER v2 (Pedoman 2026/2027) & RAPOR AL-QUR'AN SATU LEMBAR F5
+ * UJIAN SEMESTER v2 (Pedoman 2026/2027) & RAPOR AL-QUR'AN SATU LEMBAR F4
  * ===================================================================== */
 const semDari = (ta?: any, sem?: any) => (ta && sem ? T.parseTa(String(ta), Number(sem) === 2 ? 2 : 1) : T.semesterOf(U.nowWib().ym));
 const statusUjian = (r: any) => (!r ? "belum" : r.ujian_status === "final" ? "final" : r.ujian_status === "draft" ? "draft" : "belum");
@@ -1963,11 +1963,14 @@ async function susunRapor(list: any[], periode: any) {
 
     // Ringkasan hafalan (halaman/juz)
     const totalBaris = h?.total?.baris_total || 0, totalAkhir = Math.max(0, totalBaris - (zSesudah[s.id] || 0)), awal = Math.max(0, totalAkhir - p.ziyadah);
-    const tuntasHafalan = tgt.semester ? p.ziyadah >= tgt.semester * T.BARIS_PER_JUZ : null;
+    // 20 halaman = 1 juz. Capaian dibandingkan dengan angka halaman yang tercetak (dibulatkan 0,1), agar "20 hlm" untuk target 1 juz = Tercapai.
+    const zHal = Math.round((p.ziyadah / 15) * 10) / 10;
+    const tuntasHafalan = tgt.semester ? zHal >= tgt.semester * 20 : null;
     // Status tahsin: isian pelengkap; bila kosong, dari ujian semester materi "Tahsin / dasar" yang sudah final.
     const tahsinUjian = v2?.mode === "tahsin" && r.ujian_status === "final" && r.tahfidz_nilai != null ? Number(r.tahfidz_nilai) >= T.KKM : null;
     const iqroLulus = d.iqro_lulus == null ? tahsinUjian : !!d.iqro_lulus;
-    const capaian = tgt.semester === 0 ? "" : tuntasHafalan && (!tgt.iqro || iqroLulus === true) ? "Tercapai" : "Belum tercapai";
+    // Status tahsin/Iqro' ditampilkan terpisah (bagian C), tidak memengaruhi capaian target hafalan.
+    const capaian = tgt.semester === 0 ? "" : tuntasHafalan ? "Tercapai" : "Belum tercapai";
     const rekapAuto = {
       hafalan_awal: angkaId(awal / T.BARIS_PER_JUZ), ziyadah: angkaId(p.ziyadah / 15), total: angkaId(totalAkhir / T.BARIS_PER_JUZ),
       murajaah: String(T.halamanBulat(m.baris)), target_semester: String(tgt.semester), target_tahunan: String(tgt.tahunan), capaian,
