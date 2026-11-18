@@ -1,0 +1,69 @@
+/* Nuris Liquid Glass v2. Kanvas netral, struktur pine/mint, aksi utama saffron (60/30/10). */
+:root{
+  --nuris-glass-fill:#f2f6f3c7;
+  --nuris-glass-edge:#ffffffe6;
+  --nuris-glass-text:#0d4a28;
+  --nuris-lens-tint:linear-gradient(180deg,#ffffffd9 0%,#ffffff8c 55%,#ffffffb3 100%);
+  --nuris-lens-ring:#ffffff;
+  --nuris-lens-shadow:0 1px 1.5px #082e1a1f,0 6px 16px -6px #082e1a40,0 14px 30px -18px #082e1a55;
+}
+:is(.dark,[data-nuris-theme=dark]){
+  --nuris-glass-fill:#14231bd9;
+  --nuris-glass-edge:#9fd8b333;
+  --nuris-glass-text:#f2f6f3;
+  --nuris-lens-tint:linear-gradient(180deg,#ffffff38 0%,#ffffff14 60%,#ffffff26 100%);
+  --nuris-lens-ring:#d6f5e126;
+  --nuris-lens-shadow:0 1px 1.5px #0007,0 8px 20px -8px #000a;
+}
+.nuris-glass-nav{isolation:isolate}
+.nuris-glass-nav:not([class~="fixed"],#mobile-nav,.nuris-bottom-nav){position:relative}
+.nuris-glass-nav::before{content:none!important}
+.nuris-glass-nav:is(#mobile-nav,.nuris-bottom-nav,[data-nuris-glass="mobile"]){
+  background:var(--nuris-glass-fill);
+  -webkit-backdrop-filter:blur(22px) saturate(185%);backdrop-filter:blur(22px) saturate(185%);
+  box-shadow:inset 0 1px 0 var(--nuris-glass-edge),0 -8px 30px -18px #082e1a40;
+}
+/* Lensa: kaca tebal dengan tepi bercahaya, highlight spekular di atas, dan bayangan lembut. */
+.nuris-lens{
+  position:absolute;top:0;left:0;z-index:-1;margin:0!important;padding:0!important;pointer-events:none;
+  width:0;height:0;opacity:0;border-radius:14px;transform-origin:50% 50%;will-change:transform,width,height;
+  background:var(--nuris-lens-tint);
+  -webkit-backdrop-filter:blur(2px) saturate(190%) brightness(1.04);backdrop-filter:blur(2px) saturate(190%) brightness(1.04);
+  box-shadow:
+    inset 0 1px 0.5px #fffffff2,
+    inset 0 -1px 1px #ffffff66,
+    inset 1px 0 1px #ffffff40,
+    inset -1px 0 1px #ffffff40,
+    inset 0 0 0 0.5px var(--nuris-lens-ring),
+    var(--nuris-lens-shadow);
+  transition:opacity .22s ease,box-shadow .25s ease;
+}
+:is(.dark,[data-nuris-theme=dark]) .nuris-lens{box-shadow:inset 0 1px .5px #ffffff59,inset 0 -1px 1px #ffffff1a,inset 0 0 0 .5px var(--nuris-lens-ring),var(--nuris-lens-shadow)}
+.nuris-refract .nuris-lens{-webkit-backdrop-filter:url(#nuris-refract) blur(1.5px) saturate(190%) brightness(1.04);backdrop-filter:url(#nuris-refract) blur(1.5px) saturate(190%) brightness(1.04)}
+.nuris-lens-shine{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.nuris-lens-shine::before{content:"";position:absolute;left:8%;right:8%;top:1px;height:46%;border-radius:999px;
+  background:radial-gradient(120% 100% at var(--shine-x,50%) 0%,#ffffffd0 0%,#ffffff40 45%,transparent 72%);opacity:calc(.75 + var(--press,0)*.25)}
+.nuris-lens-shine::after{content:"";position:absolute;inset:0;border-radius:inherit;
+  background:radial-gradient(80% 60% at 50% 120%,#17873f14,transparent 70%);mix-blend-mode:multiply}
+/* Di atas latar gelap (mis. sidebar Mutabaah) lensa lebih buram dan terang agar teks aktif tetap kontras. */
+html:not(.dark,[data-nuris-theme=dark]) .nuris-lens[data-tone=dark]{
+  background:linear-gradient(180deg,#fffffff2 0%,#ffffffcc 60%,#ffffffe0 100%);
+  box-shadow:inset 0 1px .5px #fff,inset 0 -1px 1px #ffffff80,inset 0 0 0 .5px #ffffff,0 1px 2px #0003,0 10px 24px -10px #000a;
+}
+/* Item aktif tampil di atas lensa tanpa latar sendiri. */
+.nuris-glass-nav:not([data-nuris-glass="mobile"]) :is([aria-current=page],[aria-selected=true]){
+  background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--nuris-glass-text)!important;
+}
+.nuris-glass-nav :is(a,button,[role=tab]){-webkit-tap-highlight-color:transparent}
+.nuris-glass-nav[data-nuris-glass="side"] [data-nuris-nav-highlight]{display:none}
+.nuris-glass-nav .nuris-record-tab>span,.nuris-glass-nav [data-nuris-primary]>span{background:#ee8a35;color:#25160a}
+html:not(.dark) .nuris-glass-nav[data-nuris-glass="side"] [aria-current=page]{color:#082e1a!important}
+@media (prefers-reduced-motion:reduce){.nuris-lens{transition:opacity .01s}}
+@media (prefers-reduced-transparency:reduce){
+  .nuris-glass-nav:is(#mobile-nav,.nuris-bottom-nav,[data-nuris-glass="mobile"]){background:#f2f6f3;-webkit-backdrop-filter:none;backdrop-filter:none}
+  :is(.dark,[data-nuris-theme=dark]) .nuris-glass-nav:is(#mobile-nav,.nuris-bottom-nav,[data-nuris-glass="mobile"]){background:#192621}
+  .nuris-lens,.nuris-refract .nuris-lens{background:#e3f2e8;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 1px 2px #082e1a26}
+  :is(.dark,[data-nuris-theme=dark]) .nuris-lens{background:#345941}
+  .nuris-lens-shine{display:none}
+}
+@media print{.nuris-lens{display:none}}
