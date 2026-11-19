@@ -120,9 +120,10 @@ export const RAPOR_CSS = `
 .rp-kabid .rp-nama{margin-top:3.2em!important}
 .rp-kosong{color:#9aa9a0;font-weight:400;font-style:italic}
 .rp-skala{margin:.35em 0 0;font-size:.8em;color:#3c4d43}
-.rp-sah{position:relative;height:4.4em;width:12em;margin:0 auto}
-.rp-cap{position:absolute;left:0;top:-.4em;width:5.4em;height:5.4em;object-fit:contain;opacity:.92}
-.rp-ttdimg{position:absolute;left:3.6em;top:-.2em;width:4.6em;height:5.1em;object-fit:contain}
+/* Cap & tanda tangan ukuran lazim rapor (cap ±32 mm, tanda tangan ±28 mm); boleh menimpa teks jabatan & nama seperti tinta asli. */
+.rp-sah{position:relative;height:18mm;width:64mm;margin:0 auto}
+.rp-cap{position:absolute;left:4mm;top:-7mm;width:32mm;height:32mm;object-fit:contain;opacity:.9;mix-blend-mode:multiply;z-index:1}
+.rp-ttdimg{position:absolute;left:24mm;top:-8mm;width:28mm;height:31.5mm;object-fit:contain;mix-blend-mode:multiply;z-index:2}
 .rp-kabid .rp-nama-sah{margin-top:.2em!important}
 `;
 

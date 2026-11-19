@@ -1,9 +1,10 @@
-/* Nuris Liquid Glass v2 — lensa kaca ala Apple untuk navigasi & tab.
+/* Nuris Liquid Glass v3 — lensa kaca ala Apple untuk navigasi & tab.
    Progressive enhancement: tidak mengubah rute, data, atau pilihan tab. Satu lensa per navigasi mengikuti elemen aktif
    dengan animasi pegas (regang-memantul), umpan balik tekan, dan seret pada tab bar. Hormati reduced-motion/transparency. */
 (() => {
-  if (window.__nurisGlass) return; window.__nurisGlass = 2;
-  const SEL = '[data-nuris-glass], [role="tablist"], .nuris-bottom-nav, #mobile-nav, #desktop-nav, .nuris-sidebar nav';
+  if (window.__nurisGlass) return; window.__nurisGlass = 3;
+  // v3: hanya navigasi. Kontrol segmen/chip ([role=tablist]) memakai sorotan aplikasinya sendiri agar teks tetap kontras.
+  const SEL = '[data-nuris-glass]:not([data-nuris-glass="off"]), .nuris-bottom-nav, #mobile-nav, #desktop-nav, .nuris-sidebar nav, aside.fixed.inset-y-0 > nav';
   const ACTIVE = '[aria-current="page"], [role="tab"][aria-selected="true"]';
   const ITEM = 'a, button, [role="tab"]';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
@@ -37,6 +38,7 @@
       this.root = root; this.el = document.createElement('span'); this.el.className = 'nuris-lens'; this.el.setAttribute('aria-hidden', 'true');
       this.el.innerHTML = '<i class="nuris-lens-shine"></i>';
       root.classList.add('nuris-glass-nav'); root.append(this.el);
+      if (!root.dataset.nurisGlass) root.dataset.nurisGlass = root.matches('.nuris-bottom-nav, #mobile-nav') ? 'mobile' : root.closest('aside, .nuris-sidebar') ? 'side' : 'bar';
       this.p = null; this.v = { x: 0, y: 0, w: 0, h: 0 }; this.t = null; this.press = 0; this.pressT = 0; this.raf = 0; this.drag = null;
       this.ro = new ResizeObserver(() => this.sync(true)); this.ro.observe(root);
       root.addEventListener('scroll', () => this.sync(true), { passive: true });

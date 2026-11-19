@@ -1,10 +1,11 @@
-/_k/rt-acad45640435773884f4.txt
+/_patch/mutabaah.json
+/apps.js
+/nuris-glass.css
+/nuris-glass.js
 /nuris-mutabaah.css
 /rapor-pesantren/app.css
 /rapor-pesantren/app.js
 /rapor-pesantren/index.html
-/rapor-tahfidz/app.css
-/rapor-tahfidz/app.js
 /rapor-tahfidz/index.html
 /ujian-praktik/app.css
 /ujian-praktik/app.js

@@ -1,0 +1,70 @@
+/* Nuris Liquid Glass v3 — mengikuti penyempurnaan material iOS 27:
+   latar di belakang kaca lebih tersebar (blur lebih kuat), tepi lebih gelap, highlight lebih terang, dan tint yang bisa diatur.
+   Hanya untuk navigasi (sidebar & bar bawah). Kontrol segmen/chip memakai desain aplikasinya sendiri: warna teks tidak diubah. */
+:root{
+  --nuris-glass-tint:.78;                       /* 0 = paling bening, 1 = penuh berwarna (setara slider iOS 27) */
+  --nuris-glass-fill:rgb(242 246 243 / var(--nuris-glass-tint));
+  --nuris-glass-blur:30px;
+  --nuris-glass-rim:#082e1a24;                  /* tepi luar lebih gelap */
+  --nuris-glass-hi:#ffffff;                     /* highlight atas lebih terang */
+  --nuris-lens-tint:linear-gradient(180deg,#ffffffee 0%,#ffffffb8 55%,#ffffffd6 100%);
+  --nuris-glass-text:#082e1a;
+  --nuris-lens-shadow:0 0 0 .5px #082e1a29,0 1px 1.5px #082e1a24,0 8px 18px -8px #082e1a4d;
+}
+:is(.dark,[data-nuris-theme=dark]){
+  --nuris-glass-fill:rgb(20 35 27 / calc(var(--nuris-glass-tint) + .1));
+  --nuris-glass-rim:#00000080;
+  --nuris-glass-hi:#ffffff40;
+  --nuris-lens-tint:linear-gradient(180deg,#ffffff3d 0%,#ffffff17 60%,#ffffff29 100%);
+  --nuris-glass-text:#f2f6f3;
+  --nuris-lens-shadow:0 0 0 .5px #0009,0 8px 20px -8px #000a;
+}
+.nuris-glass-nav{isolation:isolate}
+.nuris-glass-nav:not([class~="fixed"],#mobile-nav,.nuris-bottom-nav){position:relative}
+.nuris-glass-nav::before{content:none!important}
+.nuris-glass-nav:is(#mobile-nav,.nuris-bottom-nav,[data-nuris-glass="mobile"]){
+  background:var(--nuris-glass-fill);
+  -webkit-backdrop-filter:blur(var(--nuris-glass-blur)) saturate(170%);backdrop-filter:blur(var(--nuris-glass-blur)) saturate(170%);
+  box-shadow:inset 0 1px 0 var(--nuris-glass-hi),inset 0 0 0 .5px var(--nuris-glass-rim),0 -10px 30px -20px #082e1a59;
+}
+/* Lensa item aktif: kaca tebal, highlight spekular atas, tepi gelap tipis. */
+.nuris-lens{
+  position:absolute;top:0;left:0;z-index:-1;margin:0!important;padding:0!important;pointer-events:none;
+  width:0;height:0;opacity:0;border-radius:14px;transform-origin:50% 50%;will-change:transform,width,height;
+  background:var(--nuris-lens-tint);
+  -webkit-backdrop-filter:blur(6px) saturate(180%) brightness(1.05);backdrop-filter:blur(6px) saturate(180%) brightness(1.05);
+  box-shadow:inset 0 1px .5px var(--nuris-glass-hi),inset 0 -1px 1px #ffffff59,var(--nuris-lens-shadow);
+  transition:opacity .22s ease,box-shadow .25s ease;
+}
+.nuris-refract .nuris-lens{-webkit-backdrop-filter:url(#nuris-refract) blur(5px) saturate(180%) brightness(1.05);backdrop-filter:url(#nuris-refract) blur(5px) saturate(180%) brightness(1.05)}
+.nuris-lens-shine{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.nuris-lens-shine::before{content:"";position:absolute;left:6%;right:6%;top:1px;height:48%;border-radius:999px;
+  background:radial-gradient(120% 100% at var(--shine-x,50%) 0%,#ffffffe6 0%,#ffffff4d 45%,transparent 72%);opacity:calc(.8 + var(--press,0)*.2)}
+/* Di atas latar gelap (sidebar Mutabaah) lensa hampir pekat agar teks aktif tetap kontras. */
+html:not(.dark,[data-nuris-theme=dark]) .nuris-lens[data-tone=dark]{
+  background:linear-gradient(180deg,#fffffff7 0%,#ffffffde 60%,#ffffffeb 100%);
+  box-shadow:inset 0 1px .5px #fff,inset 0 -1px 1px #ffffff80,0 0 0 .5px #00000040,0 10px 24px -10px #000a;
+}
+/* Item aktif navigasi di atas lensa: latar aplikasinya disembunyikan dan teks mengikuti warna lensa (gelap di lensa terang). */
+.nuris-glass-nav:is([data-nuris-glass="side"],[data-nuris-glass="mobile"]) :is([aria-current=page],[aria-selected=true]){background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--nuris-glass-text)!important}
+.nuris-glass-nav:is([data-nuris-glass="side"],[data-nuris-glass="mobile"]) [data-nuris-nav-highlight]{display:none}
+.nuris-glass-nav :is(a,button,[role=tab]){-webkit-tap-highlight-color:transparent}
+.nuris-glass-nav .nuris-record-tab>span,.nuris-glass-nav [data-nuris-primary]>span{background:#ee8a35;color:#25160a}
+/* Sidebar Mutabaah: daftar menu dapat digulir di layar laptop pendek (menu Kelola > Akun tidak terpotong). */
+aside.fixed.inset-y-0{max-height:100dvh}
+aside.fixed.inset-y-0>nav{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#ffffff40 transparent;padding-bottom:12px}
+aside.fixed.inset-y-0>nav::-webkit-scrollbar{width:6px}
+aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-radius:6px}
+@media (prefers-contrast:more){
+  :root{--nuris-glass-tint:.96;--nuris-glass-rim:#082e1a66}
+  .nuris-lens{background:#fff}
+}
+@media (prefers-reduced-motion:reduce){.nuris-lens{transition:opacity .01s}}
+@media (prefers-reduced-transparency:reduce){
+  .nuris-glass-nav:is(#mobile-nav,.nuris-bottom-nav,[data-nuris-glass="mobile"]){background:#f2f6f3;-webkit-backdrop-filter:none;backdrop-filter:none}
+  :is(.dark,[data-nuris-theme=dark]) .nuris-glass-nav:is(#mobile-nav,.nuris-bottom-nav,[data-nuris-glass="mobile"]){background:#192621}
+  .nuris-lens,.nuris-refract .nuris-lens{background:#e3f2e8;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 1px 2px #082e1a26}
+  :is(.dark,[data-nuris-theme=dark]) .nuris-lens{background:#345941}
+  .nuris-lens-shine{display:none}
+}
+@media print{.nuris-lens{display:none}}
