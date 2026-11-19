@@ -1,5 +1,7 @@
 /_patch/mutabaah.json
 /apps.js
+/mutabaah/rapor-edit.css
+/mutabaah/rapor-edit.js
 /nuris-glass.css
 /nuris-glass.js
 /nuris-mutabaah.css

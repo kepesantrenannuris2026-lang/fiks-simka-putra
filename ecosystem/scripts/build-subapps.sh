@@ -9,7 +9,11 @@ for d in rapor-pesantren ujian-praktik yaumiyyah-app; do
   $E /tmp/$d.css --minify --outfile=ecosystem/$d/dist/app.css --log-level=warning
   $E ecosystem/$d/src/main.ts --bundle --format=iife --charset=utf8 --target=es2020 --minify --outfile=ecosystem/$d/dist/app.js --log-level=warning
 done
-rm -rf deploy && mkdir -p deploy/rapor-tahfidz deploy/_patch
+# Modul "Pratinjau & edit" Rapor Al-Qur'an yang dimuat di halaman Mutabaah.
+$E ecosystem/mutabaah-rapor/src/main.ts --bundle --format=iife --charset=ascii --target=es2020 --minify --outfile=ecosystem/mutabaah-rapor/dist/rapor-edit.js --log-level=warning
+$E ecosystem/mutabaah-rapor/src/style.css --minify --charset=ascii --outfile=ecosystem/mutabaah-rapor/dist/rapor-edit.css --log-level=warning
+rm -rf deploy && mkdir -p deploy/rapor-tahfidz deploy/_patch deploy/mutabaah
+cp ecosystem/mutabaah-rapor/dist/rapor-edit.js ecosystem/mutabaah-rapor/dist/rapor-edit.css deploy/mutabaah/
 for pair in rapor-pesantren:rapor-pesantren ujian-praktik:ujian-praktik yaumiyyah-app:yaumiyyah; do
   src=${pair%%:*}; dst=${pair##*:}; mkdir -p deploy/$dst
   cp ecosystem/$src/index.html ecosystem/$src/dist/app.js ecosystem/$src/dist/app.css deploy/$dst/
