@@ -1,11 +1,13 @@
 // Butir rapor pesantren sesuai Panduan Aplikasi Kepesantrenan & format "Rapor Santri" (Pembaharuan Raport).
+import { huruf, MAKNA } from '../../shared/skala';
+import { RUBRIK, materiOf, grupOf } from '../../ujian-praktik/src/materi';
 export type Item = { k: string; id: string; ar: string };
 export type Jenis = 'huruf' | 'angka';
 export type Bagian = { key: string; kode: string; judul: string; ar: string; jenis: Jenis | 'hadis'; skala: string };
 
 export const BAGIAN: Bagian[] = [
-  { key: 'ibadah', kode: 'A', judul: 'Ibadah', ar: 'العبادات', jenis: 'huruf', skala: 'A–D' },
-  { key: 'akhlak', kode: 'B', judul: 'Akhlak', ar: 'الأخلاق', jenis: 'huruf', skala: 'A–D' },
+  { key: 'ibadah', kode: 'A', judul: 'Ibadah', ar: 'العبادات', jenis: 'huruf', skala: 'A, B+, B, C' },
+  { key: 'akhlak', kode: 'B', judul: 'Akhlak', ar: 'الأخلاق', jenis: 'huruf', skala: 'A, B+, B, C' },
   { key: 'kitab', kode: 'C', judul: 'Kajian Kitab', ar: 'دراسة الكتب', jenis: 'angka', skala: '1–100' },
   { key: 'praktik', kode: 'D', judul: 'Praktik Ibadah', ar: 'التطبيق العملي للعبادات', jenis: 'angka', skala: '1–100' },
   { key: 'hadis', kode: 'E', judul: 'Hadis Arbain Nawawi', ar: 'الأحاديث الأربعون النووية', jenis: 'hadis', skala: 'hafalan' },
@@ -29,6 +31,39 @@ export const AKHLAK: Item[] = [
   { k: 'disiplin', id: 'Ketertiban dan Kedisiplinan', ar: 'النظام والانضباط' },
   { k: 'mandiri', id: 'Kemandirian', ar: 'الاعتماد على النفس' },
 ];
+// Panduan Penilaian Akhlak Santri: 5 aspek × 4 indikator, skor 1–4.
+export const INDIKATOR_AKHLAK: Record<string, string[]> = {
+  pergaulan: [
+    'Menghormati guru, musyrif, dan orang yang lebih tua serta bersikap ramah dan peduli kepada teman dan santri yang lebih muda.',
+    'Menjaga keamanan teman dengan menghindari perundungan, intimidasi, pemaksaan, dan tindakan fisik yang menyakiti.',
+    'Menghargai ruang pribadi teman, meminta izin sebelum meminjam, dan mengembalikan barang pinjaman.',
+    'Bekerja sama, menyelesaikan perselisihan dengan baik, dan meminta bantuan pembina bila diperlukan.',
+  ],
+  lisan: [
+    'Mengucapkan dan menjawab salam serta bertutur sopan kepada guru, musyrif, dan teman.',
+    'Menjaga ucapan dari berkata kasar, berkata buruk, ejekan, atau julukan yang tidak disukai teman.',
+    'Berkata jujur dan menjaga diri dari menyebarkan aib atau kabar yang belum jelas.',
+    'Menyampaikan pendapat atau keluhan dengan santun dan mendengarkan orang lain.',
+  ],
+  bersih: [
+    'Menjaga kebersihan diri dan pakaian serta berpenampilan rapi sesuai aturan pesantren.',
+    'Menata tempat tidur, lemari, sepatu, handuk, dan perlengkapan pribadi pada tempatnya.',
+    'Membersihkan alat makan, membuang sampah pada tempatnya, dan menjaga fasilitas bersama.',
+    'Menuntaskan piket sesuai jadwal dan menerapkan 5R (Ringkas, Rapi, Resik, Rawat, Rajin).',
+  ],
+  disiplin: [
+    'Hadir tepat waktu dan mengikuti kegiatan wajib, seperti salat berjamaah dan kajian.',
+    'Menjaga ketertiban saat antre, mengikuti kegiatan, dan menggunakan fasilitas bersama.',
+    'Mematuhi aturan keluar-masuk asrama, waktu istirahat, dan penggunaan barang atau fasilitas.',
+    'Mengikuti prosedur perizinan ketika berhalangan dan menindaklanjuti arahan pembina.',
+  ],
+  mandiri: [
+    'Menyiapkan pakaian, perlengkapan ibadah, dan kebutuhan belajar sesuai tanggung jawabnya.',
+    'Mengatur waktu belajar, ibadah, istirahat, dan tugas pribadi dengan semakin sedikit pengingat.',
+    'Menyelesaikan tugas pribadi dan merawat perlengkapan milik sendiri.',
+    'Mencoba mengatasi kendala sesuai kemampuan dan meminta bantuan bila diperlukan.',
+  ],
+};
 export const KITAB: Record<string, Item> = {
   tajwid: { k: 'tajwid', id: 'Ilmu Tajwid', ar: 'علم التجويد' },
   safinah: { k: 'safinah', id: 'Safinah An-Najah', ar: 'سفينة النجاة' },
@@ -43,6 +78,8 @@ export const PIDATO: Item[] = [
   { k: 'arab', id: 'Bahasa Arab', ar: 'الخطابة باللغة العربية' },
   { k: 'inggris', id: 'Bahasa Inggris', ar: 'الخطابة باللغة الإنجليزية' },
 ];
+// SMP Putri: satu nilai pidato (tanpa pembagian Arab/Inggris).
+export const PIDATO_TUNGGAL: Item = { k: 'pidato', id: 'Pidato', ar: 'الخطابة' };
 
 // Kitab yang diujikan per jenjang & kelas.
 export const KITAB_KELAS: Record<string, string[]> = {
@@ -51,25 +88,7 @@ export const KITAB_KELAS: Record<string, string[]> = {
   'MA-10': ['tajwid', 'yaqut', 'tafsir'], 'MA-11': ['yaqut', 'ayyuhal', 'tafsir'], 'MA-12': ['yaqut', 'ayyuhal', 'tafsir'],
 };
 
-// Materi Ujian Praktik Ibadah semester I per kelas & lingkungan (sama dengan aplikasi Ujian Praktik).
-const L = { id: 'Ujian Lisan', ar: 'الاختبار الشفهي' };
-const DARAH = { id: 'Lisan Fikih Darah', ar: 'الاختبار الشفهي في فقه الدماء' };
-const HAJI = { id: 'Praktik Manasik Haji', ar: 'تطبيق مناسك الحج' };
-export const PRAKTIK_KELAS: Record<string, { praktik: { id: string; ar: string }; lisan: { id: string; ar: string } }> = {
-  '7-putra': { praktik: { id: 'Praktik Wudhu dan Tayamum', ar: 'تطبيق الوضوء والتيمم' }, lisan: L },
-  '7-putri': { praktik: { id: 'Praktik Wudhu dan Tayamum', ar: 'تطبيق الوضوء والتيمم' }, lisan: L },
-  '8-putra': { praktik: { id: 'Praktik Azan dan Iqamah', ar: 'تطبيق الأذان والإقامة' }, lisan: L },
-  '8-putri': { praktik: { id: 'Praktik Mandi Wajib', ar: 'تطبيق الغسل' }, lisan: DARAH },
-  '9-putra': { praktik: HAJI, lisan: { id: 'Hafalan Al-Ma’tsurat', ar: 'حفظ المأثورات' } },
-  '9-putri': { praktik: HAJI, lisan: { id: 'Hafalan Al-Ma’tsurat', ar: 'حفظ المأثورات' } },
-  '10-putra': { praktik: { id: 'Praktik Wudhu, Tayamum, dan Mandi', ar: 'تطبيق الوضوء والتيمم والغسل' }, lisan: L },
-  '10-putri': { praktik: { id: 'Praktik Wudhu, Tayamum, dan Mandi', ar: 'تطبيق الوضوء والتيمم والغسل' }, lisan: L },
-  '11-putra': { praktik: { id: 'Praktik Azan dan Salat Jenazah', ar: 'تطبيق الأذان وصلاة الجنازة' }, lisan: L },
-  '11-putri': { praktik: { id: 'Praktik Salat Jenazah', ar: 'تطبيق صلاة الجنازة' }, lisan: DARAH },
-  '12-putra': { praktik: HAJI, lisan: { id: 'Doa Ba’da Salat', ar: 'الدعاء بعد الصلاة' } },
-  '12-putri': { praktik: HAJI, lisan: { id: 'Doa Ba’da Salat', ar: 'الدعاء بعد الصلاة' } },
-};
-
+// Materi Ujian Praktik Ibadah: satu baris per subujian (praktik & lisan dinilai terpisah), sesuai aplikasi Ujian Praktik.
 export type Santri = { id: string; nama: string; unit: string; tingkat: string; halaqah?: string; wali_nama?: string };
 export const jenjang = (s: Santri) => (s.unit || '').trim().split(/\s+/)[0].toUpperCase();
 export const gender = (s: Santri) => (/ikhwan|putra/i.test(s.unit) ? 'putra' : 'putri');
@@ -77,20 +96,23 @@ export const gender = (s: Santri) => (/ikhwan|putra/i.test(s.unit) ? 'putra' : '
 export function itemsFor(bagian: string, s: Santri, kur: any = {}): Item[] {
   if (bagian === 'ibadah') return IBADAH;
   if (bagian === 'akhlak') return AKHLAK;
-  if (bagian === 'pidato') return PIDATO;
+  if (bagian === 'pidato') {
+    // Putri: SMP satu nilai; SMA/MA kelas 12 tidak ada penilaian pidato.
+    if (gender(s) === 'putri') { if (jenjang(s) === 'SMP') return [PIDATO_TUNGGAL]; if (String(s.tingkat) === '12') return []; }
+    return PIDATO;
+  }
   if (bagian === 'kitab') {
     const keys: string[] = kur?.kitab?.[`${jenjang(s)}-${s.tingkat}`] || KITAB_KELAS[`${jenjang(s)}-${s.tingkat}`] || [];
     return keys.map((k) => KITAB[k]).filter(Boolean);
   }
   if (bagian === 'praktik') {
-    const p = { ...PRAKTIK_KELAS[`${s.tingkat}-${gender(s)}`], ...(kur?.praktik?.[`${s.tingkat}-${gender(s)}`] || {}) };
-    if (!p.praktik) return [];
-    return [{ k: 'praktik', ...p.praktik }, { k: 'lisan', ...p.lisan }];
+    return materiOf(kur?.materi_praktik, grupOf(s.unit, s.tingkat)).map((k) => RUBRIK[k]).filter(Boolean)
+      .map((r) => ({ k: r.key, id: r.jenis === 'praktik' ? `Praktik ${r.nama}` : r.nama, ar: r.jenis === 'praktik' ? `تطبيق ${r.ar.replace(/^ال/, 'ال')}` : r.ar }));
   }
   return [];
 }
 
-// Standar sama dengan Mutabaah Tahfidz: KKM 75; predikat angka A ≥90, B ≥80, C ≥70, D <70.
-export const predikatAngka = (n: number | null | undefined) => (n == null || isNaN(n as number) ? '' : n >= 90 ? 'A' : n >= 80 ? 'B' : n >= 70 ? 'C' : 'D');
-export const makna: Record<string, string> = { A: 'Sangat baik', B: 'Baik', C: 'Cukup', D: 'Perlu bimbingan' };
+// Standar sama dengan Mutabaah Tahfidz & Ujian Praktik: KKM 75; A 90–100, B+ 80–89, B 70–79, C < 70.
+export const predikatAngka = huruf;
+export const makna = MAKNA;
 export const hurufDariSkor = (skor: number) => predikatAngka(skor);

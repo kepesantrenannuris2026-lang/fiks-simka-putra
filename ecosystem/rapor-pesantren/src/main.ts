@@ -1,6 +1,8 @@
-import { BAGIAN, KITAB, KITAB_KELAS, itemsFor, Santri, Item } from './kurikulum';
-import { raporHTML, RAPOR_CSS, kelengkapan, nilaiButir, fitPage, Ctx } from './rapor';
-import { unduhPdf } from './pdf';
+import { BAGIAN, KITAB, KITAB_KELAS, AKHLAK, INDIKATOR_AKHLAK, itemsFor, Santri, Item } from './kurikulum';
+import { HURUF, normHuruf, hurufAkhlak, RUBRIK_AKHLAK } from '../../shared/skala';
+import { raporHTML, RAPOR_CSS, kelengkapan, nilaiButir, fitPage, rerataAkhlak, pageSize, Ctx } from './rapor';
+import { unduhPdf } from '../../shared/pdf';
+import { shell as nsShell } from '../../shared/ui';
 
 const API = 'https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/';
 const $ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector(s) as T | null;
@@ -45,10 +47,12 @@ const dataOf = (s: Student) => (s.data ??= {});
 /* ---------- Kerangka ---------- */
 const app = document.getElementById('app')!;
 function shell(inner: string) {
-  const crumbs = st.view === 'home' ? '' : `<button class="rp-iconbtn" data-act="home" aria-label="Kembali ke daftar kamar">${icon(I.back)}</button>`;
-  return `<header class="rp-top"><div class="rp-brand">${crumbs}<img src="/nuris-mark.svg" alt="" width="34" height="34"><div><small>Kepesantrenan Nuris</small><strong>Rapor Pesantren</strong></div></div>
-  <div class="nuris-toolbar-actions">${periodPicker()}<button class="rp-iconbtn" data-act="apps" aria-label="Aplikasi Nuris" aria-haspopup="menu">${icon(I.grid)}</button></div></header>
-  <main id="main" tabindex="-1">${inner}</main>`;
+  const nav = [{ id: 'home', label: 'Kamar', icon: I.bed }];
+  if (st.user?.admin) nav.push({ id: 'kelola', label: 'Kelola kamar', icon: I.users }, { id: 'atur', label: 'Pengaturan', icon: I.gear });
+  const k = st.kamar;
+  const title = st.view === 'kamar' && k ? `Kamar ${k.nama}` : st.view === 'kelola' ? 'Kelola kamar & wali' : st.view === 'atur' ? 'Pengaturan rapor' : 'Rapor Pesantren';
+  const peran = st.user?.admin ? 'Pimpinan · semua kamar' : st.user?.koordinator?.length ? `Koordinator ${st.user.koordinator.map((u: string) => u.replace('Ikhwan', 'Putra').replace('Akhwat', 'Putri')).join(', ')}` : 'Wali kamar';
+  return nsShell({ app: 'Rapor Pesantren', title, nav, active: st.view === 'kamar' ? 'home' : st.view, user: st.user && { nama: st.user.nama, peran }, actions: periodPicker(), back: st.view !== 'home' }, inner);
 }
 function periodPicker() {
   const [y] = st.ta.split('/').map(Number);
@@ -79,10 +83,10 @@ function homeView() {
       <span class="rp-meter" aria-label="${k.terisi} dari ${k.jumlah} santri sudah dinilai"><i style="width:${pct}%"></i></span><small>${k.terisi}/${k.jumlah} santri dinilai</small></span></button>`;
   }).join('')}</div></section>`).join('');
   return `<section class="rp-hero"><div><p class="rp-eyebrow">${st.sem === 1 ? 'Semester ganjil' : 'Semester genap'} ${esc(st.ta)}</p><h1>Assalamu’alaikum, ${esc(u.nama.replace(/^Ust(h)?\.\s*/, ''))}</h1>
-  <p>${u.admin ? 'Semua kamar dapat dibuka. Rekap nilai, periksa rapor, lalu cetak per kamar.' : 'Pilih kamar binaan untuk merekap nilai dan mencetak rapor.'}</p></div>
+  <p>${u.admin ? 'Semua kamar dapat dibuka. Rekap nilai, periksa rapor, lalu cetak per kamar.' : u.koordinator?.length ? `Koordinator ${esc(u.koordinator.join(', '))}: seluruh kamar unit ini dapat dibuka dan dinilai.` : 'Pilih kamar binaan untuk merekap nilai dan mencetak rapor.'}</p></div>
   <div class="rp-stat"><strong>${total ? Math.round((isi / total) * 100) : 0}%</strong><span>${isi} dari ${total} santri<br>sudah dinilai</span></div></section>
-  ${u.admin ? `<div class="rp-toolbar"><label class="rp-search"><span class="sr">Cari kamar</span><input type="search" placeholder="Cari kamar, wali, unit…" value="${esc(st.filter)}" data-act="filter"></label>
-    <button class="rp-btn ghost" data-act="kelola">${icon(I.users)}Kelola kamar</button><button class="rp-btn ghost" data-act="atur">${icon(I.gear)}Pengaturan rapor</button></div>` : ''}
+  ${u.admin || u.koordinator?.length ? `<div class="rp-toolbar"><label class="rp-search"><span class="sr">Cari kamar</span><input type="search" placeholder="Cari kamar, wali, unit…" value="${esc(st.filter)}" data-act="filter"></label>
+    ${u.admin ? `<button class="rp-btn ghost" data-act="kelola">${icon(I.users)}Kelola kamar</button><button class="rp-btn ghost" data-act="atur">${icon(I.gear)}Pengaturan rapor</button>` : ''}</div>` : ''}
   ${cards || `<div class="rp-empty"><b>Belum ada kamar binaan.</b><p>Akun ini belum ditetapkan sebagai wali kamar. Hubungi Kasi Kepesantrenan untuk penugasan kamar.</p></div>`}`;
 }
 
@@ -111,7 +115,7 @@ function inputView() {
   const helper = st.tab === 'ibadah' ? `<button class="rp-btn soft" data-act="auto">${icon(I.spark)}Isi kosong dari Mutabaah Yaumiyyah</button>`
     : st.tab === 'praktik' ? `<button class="rp-btn soft" data-act="auto">${icon(I.spark)}Isi kosong dari Ujian Praktik Ibadah</button>`
     : st.tab === 'hadis' ? `<button class="rp-btn soft" data-act="auto">${icon(I.spark)}Isi dari setoran Hadis Arbain</button>` : '';
-  const fill = st.tab === 'catatan' ? '' : `<label class="rp-fill"><span>Isi semua yang kosong</span><select data-act="fill"><option value="">pilih…</option>${huruf ? ['A', 'B', 'C', 'D'].map((x) => `<option>${x}</option>`).join('') : [95, 90, 85, 80, 75].map((x) => `<option>${x}</option>`).join('')}</select></label>`;
+  const fill = st.tab === 'catatan' ? '' : `<label class="rp-fill"><span>Isi semua yang kosong</span><select data-act="fill"><option value="">pilih…</option>${huruf ? HURUF.map((x) => `<option>${x}</option>`).join('') : [95, 90, 85, 80, 75].map((x) => `<option>${x}</option>`).join('')}</select></label>`;
   const head = st.tab === 'catatan' ? '<th>Catatan wali kamar (tampil di rapor)</th>' : cols.map((c) => `<th><span>${esc(c.id)}</span>${c.ar ? `<small lang="ar" dir="rtl">${esc(c.ar)}</small>` : ''}</th>`).join('');
   const rows = st.students.map((s: Student, r: number) => {
     const auto = st.auto[s.id] || {};
@@ -124,15 +128,17 @@ function inputView() {
         const saran = nilaiButir(st.tab, c.k, {}, auto).v;
         const hint = saran != null && (isi == null || isi === '') ? `<em title="Saran otomatis">${esc(saran)}</em>` : '';
         const extra = st.tab === 'ibadah' && auto.yaumiyyah?.skor?.[c.k] != null ? ` title="Yaumiyyah: ${auto.yaumiyyah.skor[c.k]}%"` : '';
-        return `<td${extra}><input class="${huruf ? 'huruf' : 'angka'}" data-cell="${st.tab}.${c.k}" data-s="${esc(s.id)}" data-r="${r}" data-c="${ci}" value="${esc(isi ?? '')}" ${huruf ? 'maxlength="1" inputmode="text" autocapitalize="characters"' : 'inputmode="decimal"'} aria-label="${esc(c.id)} ${esc(s.nama)}" autocomplete="off">${hint}</td>`;
+        return `<td${extra}><input class="${huruf ? 'huruf' : 'angka'}" data-cell="${st.tab}.${c.k}" data-s="${esc(s.id)}" data-r="${r}" data-c="${ci}" value="${esc(isi ?? '')}" ${huruf ? 'maxlength="2" inputmode="text" autocapitalize="characters"' : 'inputmode="decimal"'} aria-label="${esc(c.id)} ${esc(s.nama)}" autocomplete="off">${hint}</td>`;
       }).join('');
     const kl = kelengkapan(s, s.data, auto, kurikulum());
-    return `<tr><th scope="row"><span class="rp-nm">${esc(s.nama)}</span><small>${kl.isi}/${kl.total} butir${st.dirty.has(s.id) ? ' · <b>belum disimpan</b>' : ''}</small></th>${cells}</tr>`;
+    const ind = st.tab === 'akhlak' ? `<button class="rp-mini" data-act="indikator" data-id="${esc(s.id)}" title="Isi skor 20 indikator akhlak (1–4)">Indikator${s.data?.akhlak_skor ? ' ✓' : ''}</button>` : '';
+    return `<tr><th scope="row"><span class="rp-nm">${esc(s.nama)}</span><small>${kl.isi}/${kl.total} butir${st.dirty.has(s.id) ? ' · <b>belum disimpan</b>' : ''}</small>${ind}</th>${cells}</tr>`;
   }).join('');
   return `<div class="rp-tabs" role="tablist" aria-label="Kelompok nilai" data-nuris-glass>${tabs.map(([k, t]) => `<button role="tab" aria-selected="${st.tab === k}" data-act="tab" data-v="${k}">${t}</button>`).join('')}</div>
-  <div class="rp-gridbar"><p>${b ? `${esc(b.judul)} <span lang="ar" dir="rtl">${b.ar}</span> · skala ${b.skala}${huruf ? ' — ketik A, B, C, atau D' : b.jenis === 'hadis' ? ' — jumlah hadis yang sudah disetorkan hafal' : ''}` : 'Catatan singkat wali kamar untuk setiap santri.'}</p>
+  <div class="rp-gridbar"><p>${b ? `${esc(b.judul)} <span lang="ar" dir="rtl">${b.ar}</span> · skala ${b.skala}${huruf ? ' — ketik A, B+, B, atau C' : b.jenis === 'hadis' ? ' — jumlah hadis yang sudah disetorkan hafal' : st.tab === 'praktik' ? ' — tiap subujian dinilai terpisah (A 90–100, B+ 80–89, B 70–79, C &lt;70)' : ''}` : 'Catatan singkat wali kamar untuk setiap santri.'}</p>
   <div>${helper}${fill}<button class="rp-btn ghost" data-act="csv">${icon(I.down)}Leger CSV</button></div></div>
   <div class="rp-gridwrap"><table class="rp-grid"><thead><tr><th>Santri</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  ${st.tab === 'akhlak' ? akhlakLegend() : ''}
   <p class="rp-tip">Tip: tempel (Ctrl+V) blok nilai dari Excel/Google Sheets langsung ke kotak pertama. Enter atau panah untuk pindah. Nilai miring abu-abu adalah saran otomatis; rapor memakainya bila kotak dibiarkan kosong.</p>`;
 }
 
@@ -183,7 +189,7 @@ function editPopover(target: HTMLElement) {
     const bag = BAGIAN.find((x) => x.key === b)!;
     const cur = s.data?.[b]?.[k] ?? '';
     const saran = nilaiButir(b, k, {}, st.auto[s.id]).v;
-    pop.innerHTML = `<label>${esc(bag.judul)}${bag.jenis === 'huruf' ? `<span class="rp-choice">${['A', 'B', 'C', 'D'].map((x) => `<button type="button" data-v="${x}" class="${cur === x ? 'on' : ''}">${x}</button>`).join('')}</span>` : `<input type="number" min="0" max="100" step="1" value="${esc(cur)}" placeholder="${saran != null ? 'saran ' + saran : '0–100'}">`}</label>
+    pop.innerHTML = `<label>${esc(bag.judul)}${bag.jenis === 'huruf' ? `<span class="rp-choice">${HURUF.map((x) => `<button type="button" data-v="${x}" class="${cur === x ? 'on' : ''}">${x}</button>`).join('')}</span>` : `<input type="number" min="0" max="100" step="1" value="${esc(cur)}" placeholder="${saran != null ? 'saran ' + saran : '0–100'}">`}</label>
       ${saran != null ? `<small>Saran otomatis: <b>${esc(saran)}</b> (dipakai bila dikosongkan)</small>` : ''}<div><button class="rp-btn ghost" data-x="kosong">Kosongkan</button><button class="rp-btn primary" data-x="ok">Simpan</button></div>`;
   }
   document.body.append(pop);
@@ -207,6 +213,40 @@ function editPopover(target: HTMLElement) {
   setTimeout(() => document.addEventListener('pointerdown', function out(ev) { if (!pop.contains(ev.target as Node)) { pop.remove(); document.removeEventListener('pointerdown', out); } }), 0);
 }
 
+/* ---------- Akhlak: rubrik & 20 indikator ---------- */
+const KOOR_UNITS = ['SMP Ikhwan', 'SMA Ikhwan', 'MA Ikhwan', 'SMP Akhwat', 'SMA Akhwat', 'MA Akhwat'];
+function akhlakLegend() {
+  return `<details class="rp-legend" open><summary>Rubrik penilaian akhlak (Panduan Penilaian Akhlak Santri)</summary>
+  <table><thead><tr><th>Skor</th><th>Predikat</th><th>Pedoman pemberian skor</th><th>Rentang rerata aspek</th></tr></thead><tbody>
+  ${RUBRIK_AKHLAK.map((r) => `<tr><td>${r.skor}</td><td><b>${r.huruf}</b> ${r.label}</td><td>${r.pedoman}</td><td>${r.rentang}</td></tr>`).join('')}</tbody></table>
+  <p>Nilai aspek = jumlah skor indikator yang teramati ÷ banyaknya indikator yang teramati (dua angka di belakang koma), lalu dicocokkan dengan rentang. Sakit atau udzur syar'i tidak dihitung sebagai pelanggaran. Gunakan tombol <b>Indikator</b> pada nama santri, atau ketik langsung huruf A, B+, B, C.</p></details>`;
+}
+function indikatorDialog(s: Student) {
+  $('.rp-modal')?.remove();
+  const d = dataOf(s); const skor = { ...(d.akhlak_skor || {}) };
+  const m = document.createElement('div'); m.className = 'rp-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', 'Skor indikator akhlak');
+  const body = () => AKHLAK.map((a, ai) => {
+    const avg = rerataAkhlak({ akhlak_skor: skor }, a.k);
+    return `<fieldset><legend>Aspek ${ai + 1}. ${esc(a.id)} <span lang="ar" dir="rtl">${a.ar}</span><b class="rp-avg">${avg == null ? 'belum teramati' : `${String(avg.toFixed(2)).replace('.', ',')} → ${hurufAkhlak(avg)}`}</b></legend>
+    ${INDIKATOR_AKHLAK[a.k].map((t, i) => { const key = `${a.k}_${i + 1}`; return `<div class="rp-ind"><span><small>${ai + 1}.${i + 1}</small> ${esc(t)}</span><span class="rp-choice">${[4, 3, 2, 1].map((n) => `<button type="button" data-k="${key}" data-n="${n}" class="${skor[key] === n ? 'on' : ''}" aria-label="Skor ${n}">${n}</button>`).join('')}<button type="button" data-k="${key}" data-n="0" class="${skor[key] == null ? 'on soft' : 'soft'}" title="Belum cukup teramati">–</button></span></div>`; }).join('')}</fieldset>`;
+  }).join('');
+  const draw = () => { m.innerHTML = `<div class="rp-modal-box"><header><div><small>Akhlak · skor 1–4 per indikator</small><h2>${esc(s.nama)}</h2></div><button class="rp-iconbtn" data-x="tutup" aria-label="Tutup">✕</button></header>
+    <div class="rp-modal-body">${body()}</div><footer><small>4 Sangat Baik · 3 Baik · 2 Cukup · 1 Perlu Pembinaan · – belum teramati</small><span class="rp-grow"></span><button class="rp-btn ghost" data-x="tutup">Batal</button><button class="rp-btn primary" data-x="ok">Terapkan ke rapor</button></footer></div>`; };
+  draw(); document.body.append(m); (m.querySelector('[data-n]') as HTMLElement)?.focus();
+  m.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest('button') as HTMLElement | null; if (!t) { if (e.target === m) m.remove(); return; }
+    if (t.dataset.k) { const n = Number(t.dataset.n); if (n) skor[t.dataset.k] = n; else delete skor[t.dataset.k]; const y = (m.querySelector('.rp-modal-body') as HTMLElement).scrollTop; draw(); (m.querySelector('.rp-modal-body') as HTMLElement).scrollTop = y; return; }
+    if (t.dataset.x === 'tutup') return m.remove();
+    if (t.dataset.x === 'ok') {
+      d.akhlak_skor = Object.keys(skor).length ? skor : undefined; if (!d.akhlak_skor) delete d.akhlak_skor;
+      d.akhlak ??= {};
+      for (const a of AKHLAK) { const avg = rerataAkhlak(d, a.k); if (avg != null) d.akhlak[a.k] = hurufAkhlak(avg); }
+      markDirty(s.id); m.remove(); render(); toast('Skor indikator diterapkan ke predikat akhlak.');
+    }
+  });
+  m.addEventListener('keydown', (e) => { if (e.key === 'Escape') m.remove(); });
+}
+
 /* ---------- Nilai ---------- */
 function setValue(s: Student, key: string, raw: string): boolean {
   const d = dataOf(s);
@@ -216,7 +256,7 @@ function setValue(s: Student, key: string, raw: string): boolean {
   const v = raw.trim().toUpperCase().replace(',', '.');
   d[b] ??= {};
   if (v === '') delete d[b][k];
-  else if (bag.jenis === 'huruf') { if (!/^[ABCD]$/.test(v)) { toast('Predikat hanya A, B, C, atau D.', 'err'); return false; } d[b][k] = v; }
+  else if (bag.jenis === 'huruf') { const h = normHuruf(v); if (!h) { toast('Predikat hanya A, B+, B, atau C.', 'err'); return false; } d[b][k] = h; }
   else { const n = Number(v); if (!Number.isFinite(n) || n < 0 || n > 100 || (b === 'hadis' && (!Number.isInteger(n) || n > 42))) { toast(b === 'hadis' ? 'Jumlah hadis 0–42.' : 'Nilai harus 0–100.', 'err'); return false; } d[b][k] = n; }
   markDirty(s.id); return true;
 }
@@ -300,7 +340,7 @@ async function pdf(ids: string[]) {
     await document.fonts.ready;
     $$('.rp-page', host).forEach(fitPage);
     const nama = ids.length === 1 ? `Rapor ${studentById(ids[0]).nama} ${st.ta.replace('/', '-')} S${st.sem}` : `Rapor Kamar ${st.kamar.nama} ${st.ta.replace('/', '-')} S${st.sem}`;
-    await unduhPdf($$('.rp-page', host), st.paper, nama, (i, n) => { bar.textContent = `Menyusun PDF ${i + 1} dari ${n}…`; });
+    await unduhPdf($$('.rp-page', host), pageSize(st.paper), RAPOR_CSS, nama, (i, n) => { bar.textContent = `Menyusun PDF ${i + 1} dari ${n}…`; });
     bar.textContent = 'PDF siap diunduh.';
   } catch (e) {
     bar.textContent = 'Browser ini belum bisa menyusun PDF langsung. Membuka dialog cetak: pilih “Simpan sebagai PDF”.';
@@ -343,7 +383,9 @@ function aturView() {
     <label>Sekolah SMP<input name="sekolah.SMP" value="${esc(u.sekolah?.SMP)}"></label><label>Sekolah SMA<input name="sekolah.SMA" value="${esc(u.sekolah?.SMA)}"></label><label>Sekolah MA<input name="sekolah.MA" value="${esc(u.sekolah?.MA)}"></label>
     <h3>Ketuntasan</h3><label>KKM nilai angka<input type="number" name="kkm" min="0" max="100" value="${esc(u.kkm)}"></label>
     ${[7, 8, 9, 10, 11, 12].map((t) => `<label>Target hadis kelas ${t}<input type="number" min="0" max="42" name="hadis.${t}" value="${esc(u.hadis_target?.[t] ?? '')}"></label>`).join('')}
-    <p class="rp-muted span">Predikat angka mengikuti Mutabaah Tahfidz: A ≥ 90, B ≥ 80, C ≥ 70, D &lt; 70. Saran Ibadah dari Mutabaah Yaumiyyah memakai batas yang sama atas persentase capaian.</p>
+    <p class="rp-muted span">Predikat mengikuti Mutabaah Tahfidz dan Ujian Praktik Ibadah: A 90–100, B+ 80–89, B 70–79, C &lt; 70. Saran Ibadah dari Mutabaah Yaumiyyah memakai batas yang sama atas persentase capaian. Akhlak memakai rubrik 20 indikator (skor 1–4).</p>
+    <h3>Koordinator unit</h3><p class="rp-muted span">Koordinator dapat membuka dan menilai seluruh kamar di unitnya (juga di Ujian Praktik dan Rapor Tahfidz).</p>
+    ${KOOR_UNITS.map((un) => `<label>${un.replace('Ikhwan', 'Putra').replace('Akhwat', 'Putri')}<select name="koor.${un}"><option value="">— belum ditetapkan —</option>${st.akun.map((a: any) => `<option value="${esc(a.username)}" ${(st.settings.koordinator?.[a.username] || []).includes(un) ? 'selected' : ''}>${esc(a.nama)}</option>`).join('')}</select></label>`).join('')}
     <h3>Kitab yang diujikan</h3><table class="rp-kitab span"><tbody>${kitabRows}</tbody></table>
     <div class="span"><button class="rp-btn primary">Simpan pengaturan</button></div></form>`;
 }
@@ -381,10 +423,12 @@ async function reloadBoot() { const r = await api('boot', { ta: st.ta, sem: st.s
 
 /* ---------- Peristiwa ---------- */
 document.addEventListener('click', async (e) => {
+  const nv = (e.target as HTMLElement).closest<HTMLElement>('[data-nav]');
+  if (nv) { e.preventDefault(); await save(); const v = nv.dataset.nav!; if (v === 'home') { st.view = 'home'; history.replaceState(null, '', location.pathname); await reloadBoot().catch(() => {}); } else st.view = v; render(); return; }
   const t = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-edit]'); if (!t) return;
   if (t.dataset.edit && t.closest('#preview')) return editPopover(t);
   const a = t.dataset.act;
-  if (a === 'home') { await save(); st.view = 'home'; history.replaceState(null, '', location.pathname); await reloadBoot().catch(() => {}); render(); }
+  if (a === 'home' || a === 'back') { await save(); st.view = 'home'; history.replaceState(null, '', location.pathname); await reloadBoot().catch(() => {}); render(); }
   else if (a === 'open') openKamar(t.dataset.id!);
   else if (a === 'mode') { st.mode = t.dataset.v; render(); }
   else if (a === 'tab') { st.tab = t.dataset.v; render(); ($('.rp-grid input,.rp-grid textarea') as HTMLElement)?.focus(); }
@@ -401,6 +445,7 @@ document.addEventListener('click', async (e) => {
   else if (a === 'atur') { st.view = 'atur'; render(); }
   else if (a === 'reload') location.reload();
   else if (a === 'apps') appsMenu(t);
+  else if (a === 'indikator') indikatorDialog(studentById(t.dataset.id!));
 });
 document.addEventListener('keydown', (e) => {
   const t = e.target as HTMLElement;
@@ -420,10 +465,10 @@ document.addEventListener('input', (e) => {
   if (!t.dataset.cell) return;
   const s = studentById(t.dataset.s!);
   if (t.classList.contains('huruf')) {
-    t.value = t.value.toUpperCase();
-    if (t.value && !/^[ABCD]$/.test(t.value)) { t.value = ''; t.classList.add('bad'); setTimeout(() => t.classList.remove('bad'), 500); return; }
+    t.value = t.value.toUpperCase().replace(/\s/g, '');
+    if (t.value && !/^(A|B\+?|C)$/.test(t.value)) { t.value = ''; t.classList.add('bad'); setTimeout(() => t.classList.remove('bad'), 500); return; }
     setValue(s, t.dataset.cell, t.value); t.nextElementSibling?.remove();
-    if (t.value) { const n = $<HTMLInputElement>(`.rp-grid input[data-r="${Number(t.dataset.r) + 1}"][data-c="${t.dataset.c}"]`); n?.focus(); n?.select(); }
+    if (t.value && t.value !== 'B') { const n = $<HTMLInputElement>(`.rp-grid input[data-r="${Number(t.dataset.r) + 1}"][data-c="${t.dataset.c}"]`); n?.focus(); n?.select(); }
   } else if (t.tagName === 'TEXTAREA') setValue(s, 'catatan', t.value);
 });
 document.addEventListener('change', async (e) => {
@@ -464,13 +509,16 @@ document.addEventListener('submit', async (e) => {
     } else if (f.dataset.form === 'umum') {
       const u: any = { sekolah: {}, hadis_target: {} };
       for (const [k, v] of fd) {
-        if (k.startsWith('kitab:')) continue;
+        if (k.startsWith('kitab:') || k.startsWith('koor.')) continue;
         if (k.startsWith('sekolah.')) u.sekolah[k.slice(8)] = v; else if (k.startsWith('hadis.')) u.hadis_target[k.slice(6)] = Number(v) || 0;
         else u[k] = k === 'kkm' ? Number(v) || 75 : v;
       }
       const kitab: Record<string, string[]> = {};
       for (const kk of Object.keys(KITAB_KELAS)) kitab[kk] = fd.getAll('kitab:' + kk).map(String);
       await api('settings-save', { key: 'umum', value: u });
+      const koor: Record<string, string[]> = {};
+      for (const un of KOOR_UNITS) { const who = String(fd.get('koor.' + un) || ''); if (who) (koor[who] ??= []).push(un); }
+      await api('settings-save', { key: 'koordinator', value: koor });
       const r = await api('settings-save', { key: 'kurikulum', value: { ...kurikulum(), kitab } });
       st.settings = r.settings; toast('Pengaturan rapor disimpan.');
     }

@@ -12,3 +12,7 @@ dist-ekosistem/
 dist-mutabaah/
 dist-cloudflare/
 ecosystem/mutabaah/
+
+# Pemuat Rapor Tahfidz berisi kunci dekripsi — jangan di-commit
+ecosystem/rapor-tahfidz/edge/loader.ts
+ecosystem/rapor-tahfidz/edge/dist/app.js

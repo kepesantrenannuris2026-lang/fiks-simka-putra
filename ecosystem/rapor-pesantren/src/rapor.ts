@@ -1,4 +1,6 @@
-import { BAGIAN, itemsFor, predikatAngka, makna, jenjang, Santri } from './kurikulum';
+import { BAGIAN, itemsFor, predikatAngka, makna, jenjang, Santri, INDIKATOR_AKHLAK } from './kurikulum';
+import { hurufAkhlak } from '../../shared/skala';
+import { CAP, TTD_KABID, KABID } from '../../shared/pengesahan';
 
 export type Ctx = { ta: string; sem: number; kamar: any; settings: any; logo: string; paper: 'A4' | 'F4' };
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -13,9 +15,16 @@ export function nilaiButir(bagian: string, k: string, data: any, auto: any): { v
   const isi = data?.[bagian]?.[k];
   if (isi !== undefined && isi !== null && isi !== '') return { v: isi, auto: false };
   if (bagian === 'ibadah' && auto?.yaumiyyah?.skor?.[k] != null) return { v: predikatAngka(auto.yaumiyyah.skor[k]), auto: true };
-  if (bagian === 'praktik' && auto?.praktik && auto.praktik[k === 'praktik' ? 'practice' : 'oral'] != null) return { v: Number(auto.praktik[k === 'praktik' ? 'practice' : 'oral']), auto: true };
+  if (bagian === 'praktik' && auto?.praktik?.nilai?.[k] != null) return { v: Number(auto.praktik.nilai[k]), auto: true };
+  if (bagian === 'akhlak') { const r = rerataAkhlak(data, k); if (r != null) return { v: hurufAkhlak(r), auto: true }; }
   if (bagian === 'hadis' && k === 'jumlah' && auto?.hadis?.hafal != null) return { v: auto.hadis.hafal, auto: true };
   return { v: null, auto: false };
+}
+
+// Rerata skor indikator (1–4) satu aspek akhlak; indikator yang belum teramati tidak dihitung.
+export function rerataAkhlak(data: any, aspek: string): number | null {
+  const n = (INDIKATOR_AKHLAK[aspek] || []).map((_, i) => data?.akhlak_skor?.[`${aspek}_${i + 1}`]).filter((v) => typeof v === 'number' && v >= 1 && v <= 4) as number[];
+  return n.length ? Math.round((n.reduce((a, b) => a + b, 0) / n.length) * 100) / 100 : null;
 }
 
 export function keterangan(bagian: string, v: any, s: Santri, settings: any) {
@@ -25,7 +34,7 @@ export function keterangan(bagian: string, v: any, s: Santri, settings: any) {
     const target = Number(settings?.umum?.hadis_target?.[s.tingkat]) || 0;
     return target ? (Number(v) >= target ? `Tuntas (target ${target})` : `Belum tuntas (target ${target})`) : '';
   }
-  if (typeof v === 'number') return `${predikatAngka(v)} · ${v >= kkm ? 'Tuntas' : 'Belum tuntas'}`;
+  if (typeof v === 'number') return bagian === 'praktik' ? `${predikatAngka(v)} · ${makna[predikatAngka(v)] || ''}` : `${predikatAngka(v)} · ${v >= kkm ? 'Tuntas' : 'Belum tuntas'}`;
   return makna[String(v)] || '';
 }
 
@@ -57,6 +66,7 @@ export function raporHTML(s: Santri, data: any, auto: any, c: Ctx, editable = fa
       continue;
     }
     const items = itemsFor(b.key, s, kur);
+    if (!items.length && b.key === 'pidato') continue; // tidak ada penilaian pidato untuk santri ini
     rows += `<tr class="rp-bag"><td class="rp-no">${b.kode}</td><td>${esc(b.judul)}</td><td class="rp-ar" dir="rtl" lang="ar">${b.ar}</td><td></td><td></td></tr>`;
     items.forEach((it, i) => {
       rows += `<tr><td></td><td class="rp-item">${i + 1}. ${esc(it.id)}</td><td class="rp-ar" dir="rtl" lang="ar">${esc(it.ar)}</td>${cell(b.key, it.k)}</tr>`;
@@ -71,10 +81,11 @@ export function raporHTML(s: Santri, data: any, auto: any, c: Ctx, editable = fa
   <tr><td>Sekolah</td><td>: ${esc(sekolah)}</td><td>Semester</td><td>: ${c.sem === 1 ? 'Ganjil' : 'Genap'}</td></tr>
   <tr><td>Kamar Asrama</td><td>: ${esc(c.kamar?.nama || '-')}</td><td>Kelas</td><td>: ${esc(kamar.split(' / ')[0])}</td></tr></table>
   <table class="rp-tab"><thead><tr><th class="rp-no">No</th><th colspan="2">Kurikulum Pesantren <span class="rp-ar" lang="ar">المنهج</span></th><th>Nilai</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>
+  <p class="rp-skala"><b>Predikat:</b> A = Sangat baik (90–100) · B+ = Baik (80–89) · B = Cukup (70–79) · C = Perlu pembinaan (&lt;70). KKM ${esc(u.kkm || 75)}.</p>
   <section class="rp-catatan"${editable ? ' data-edit="catatan" tabindex="0" role="button" aria-label="Ubah catatan"' : ''}><b>Catatan Wali Kamar</b><p>${esc(catatan) || (editable ? '<span class="rp-kosong">Tulis catatan…</span>' : '&nbsp;')}</p></section>
   <footer class="rp-ttd"><div><p>&nbsp;</p><p>Orang Tua/Wali</p><p class="rp-nama">……………………………</p></div>
   <div><p>${esc(u.tempat || '')}, ${esc(tgl)}</p><p>Wali Kamar</p><p class="rp-nama">${esc(s.wali_nama || c.kamar?.wali_nama || '……………………………')}</p></div>
-  <div class="rp-kabid"><p>Mengetahui,</p><p>${esc(u.kabid_jabatan || 'Kabid Kepesantrenan')}</p><p class="rp-nama">${esc(u.kabid_nama || '')}</p></div></footer>
+  <div class="rp-kabid"><p>Mengetahui,</p><p>${esc(u.kabid_jabatan || KABID.jabatan)}</p><div class="rp-sah"><img class="rp-cap" src="${CAP}" alt=""><img class="rp-ttdimg" src="${TTD_KABID}" alt=""></div><p class="rp-nama rp-nama-sah">${esc(u.kabid_nama || KABID.nama)}</p></div></footer>
 </article>`;
 }
 
@@ -108,6 +119,11 @@ export const RAPOR_CSS = `
 .rp-ttd p{margin:0}.rp-nama{margin-top:3.6em!important;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .rp-kabid .rp-nama{margin-top:3.2em!important}
 .rp-kosong{color:#9aa9a0;font-weight:400;font-style:italic}
+.rp-skala{margin:.35em 0 0;font-size:.8em;color:#3c4d43}
+.rp-sah{position:relative;height:4.4em;width:12em;margin:0 auto}
+.rp-cap{position:absolute;left:0;top:-.4em;width:5.4em;height:5.4em;object-fit:contain;opacity:.92}
+.rp-ttdimg{position:absolute;left:3.6em;top:-.2em;width:4.6em;height:5.1em;object-fit:contain}
+.rp-kabid .rp-nama-sah{margin-top:.2em!important}
 `;
 
 export const pageSize = (paper: 'A4' | 'F4') => (paper === 'F4' ? { w: 210, h: 330 } : { w: 210, h: 297 });

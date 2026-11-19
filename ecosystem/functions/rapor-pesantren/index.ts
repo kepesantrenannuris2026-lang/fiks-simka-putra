@@ -1,7 +1,7 @@
 // Rapor Pesantren (per kamar). Sesi & akun = Mutabaah (public.sesi/public.akun). Data di skema privat rapor_pesantren.
 // Wali kamar hanya melihat/menyimpan santri kamarnya; pimpinan/admin semua kamar dan pengaturan.
 import pg from 'npm:pg@8.13.1';
-import { semesterMonths, semesterReport } from './yaumiyyahModel.ts';
+import { semesterMonths, semesterReport, validateEntry, daysOfMonth } from './yaumiyyahModel.ts';
 
 const origins = ['https://kepesantrenan-nuris.kepesantrenannuris.workers.dev', 'https://kepesantrenannuris.netlify.app', 'http://localhost:4173', 'http://localhost:3400'];
 const direct = new URL(Deno.env.get('SUPABASE_DB_URL')!);
@@ -28,25 +28,39 @@ const reply = (req: Request, data: unknown, status = 200) => Response.json(data,
 async function identity(req: Request) {
   const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (!token || token.length > 512) throw fail('Sesi berakhir. Silakan masuk kembali.', 401);
-  const { rows } = await q(`SELECT a.username,a.nama,a.role FROM public.sesi s JOIN public.akun a ON a.username=s.data->>'username'
+  const { rows } = await q(`SELECT a.username,a.nama,a.role,a.musyrif_master FROM public.sesi s JOIN public.akun a ON a.username=s.data->>'username'
     WHERE s.token=$1 AND s.expires_at>now() AND upper(a.aktif)<>'N'`, [token]);
   if (!rows.length) throw fail('Sesi berakhir atau akun dinonaktifkan. Silakan masuk kembali.', 401);
   const a = rows[0];
-  return { username: a.username as string, nama: a.nama as string, admin: ['pimpinan', 'admin'].includes(String(a.role).toLowerCase()) };
+  const admin = ['pimpinan', 'admin'].includes(String(a.role).toLowerCase());
+  const koor = admin ? [] : (await koordinatorMap())[a.username] || [];
+  return { username: a.username as string, nama: a.nama as string, admin, koordinator: koor as string[], musyrif: String(a.musyrif_master || '') };
 }
+// Koordinator unit (Pengaturan > Koordinator): username → ['MA Ikhwan', ...]. Bawaan sesuai daftar koordinator SIMKA.
+export const KOOR_UNITS = ['SMP Ikhwan', 'SMA Ikhwan', 'MA Ikhwan', 'SMP Akhwat', 'SMA Akhwat', 'MA Akhwat'];
+const KOOR_DEFAULT: Record<string, string[]> = { 'arif.haryadi': ['SMP Ikhwan'], 'muh.hisom': ['SMA Ikhwan'], muhlisin: ['MA Ikhwan'], 'lubna.nadiyatuz': ['SMP Akhwat'], 'hajar.nur': ['SMA Akhwat'], 'siti.muawanah': ['MA Akhwat'] };
+let koorCache: { at: number; map: Record<string, string[]> } | null = null;
+async function koordinatorMap() {
+  if (koorCache && Date.now() - koorCache.at < 30000) return koorCache.map;
+  const row = (await q(`SELECT value FROM rapor_pesantren.pengaturan WHERE key='koordinator'`)).rows[0];
+  koorCache = { at: Date.now(), map: row?.value || KOOR_DEFAULT };
+  return koorCache.map;
+}
+// Unit kamar ('MA' + 'PUTRA') dalam penamaan santri ('MA Ikhwan').
+const KAMAR_UNIT = `(k.unit||' '||CASE k.lingkungan WHEN 'PUTRA' THEN 'Ikhwan' ELSE 'Akhwat' END)`;
 type Actor = Awaited<ReturnType<typeof identity>>;
 
 // Santri yang boleh diakses: wali efektif = wali anggota (bila ada) atau wali kamar.
 const scopeSql = (a: Actor, args: unknown[]) => {
   if (a.admin) return 'true';
-  args.push(a.username);
-  return `coalesce(g.wali_username,k.wali_username)=$${args.length}`;
+  args.push(a.username, a.koordinator);
+  return `(coalesce(g.wali_username,k.wali_username)=$${args.length - 1} OR ${KAMAR_UNIT}=ANY($${args.length}::text[]))`;
 };
 
 const DEFAULTS = {
   umum: {
     judul: 'RAPOR SANTRI', sub: 'PESANTREN NURUL ISLAM TENGARAN', tempat: 'Tengaran', tanggal: '',
-    kabid_nama: 'Abdul Fattah Ismail Farras, Lc., M.IRKH', kabid_jabatan: 'Kabid Kepesantrenan', kkm: 75,
+    kabid_nama: 'Abdul Fattah Ismail Farros, Lc., M.IRKH', kabid_jabatan: 'Kepala Bidang Kepesantrenan', kkm: 75,
     sekolah: { SMP: 'SMP IT NURUL ISLAM TENGARAN', SMA: 'SMA IT NURUL ISLAM TENGARAN', MA: 'MA NURUL ISLAM TENGARAN' },
     hadis_target: { '7': 10, '8': 20, '9': 30, '10': 10, '11': 20, '12': 30 },
   },
@@ -58,7 +72,7 @@ function periodOf(body: any) {
   return { ta, sem };
 }
 
-const LETTER = /^(A|B|C|D)$/;
+const LETTER = /^(A|B\+|B|C)$/;
 const KEY = /^[a-z0-9_]{1,24}$/;
 function cleanData(input: any) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw fail('Data nilai tidak valid.');
@@ -76,7 +90,7 @@ function cleanData(input: any) {
     for (const [k, v] of Object.entries(val as any)) {
       if (!KEY.test(k)) throw fail('Butir nilai tidak dikenal.');
       if (v === '' || v == null) continue;
-      if (typeof v === 'string') { const s = v.trim().toUpperCase(); if (!LETTER.test(s)) throw fail('Predikat harus A, B, C, atau D.'); g[k] = s; }
+      if (typeof v === 'string') { const s = v.trim().toUpperCase(); if (!LETTER.test(s)) throw fail('Predikat harus A, B+, B, atau C.'); g[k] = s; }
       else if (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100) g[k] = Math.round(v * 100) / 100;
       else throw fail('Nilai angka harus 0–100.');
     }
@@ -102,14 +116,10 @@ async function autoSources(ids: string[], ta: string, sem: number) {
     for (const row of rep.rows) if (yaumMap[row.id] && row.score != null) ibadah[yaumMap[row.id]] = row.score;
     out[id].yaumiyyah = { skor: ibadah, hari: entries.length, sementara: rep.provisional };
   }
-  // Ujian Praktik Ibadah → nilai praktik & lisan (periode yang namanya memuat semester & tahun ajaran, bila tidak ada: terbaru).
-  const periods = (await q('SELECT id,name,configs,created_at FROM ibadah.periods ORDER BY created_at DESC')).rows;
-  const match = periods.find((p: any) => p.name.includes(ta) && new RegExp(`semester\\s*${sem}\\b|${sem === 1 ? 'ganjil' : 'genap'}`, 'i').test(p.name));
-  const period = match || null;
-  if (period) {
-    const ent = (await q('SELECT santri_id,result FROM ibadah.entries WHERE period_id=$1 AND santri_id=ANY($2::text[])', [period.id, ids])).rows;
-    for (const e of ent) out[e.santri_id].praktik = { ...e.result, periode: period.name };
-  }
+  // Ujian Praktik Ibadah → nilai tiap subujian (wudhu, tayamum, lisan, …) pada periode tahun ajaran & semester yang sama.
+  const ent = (await q(`SELECT n.santri_id,n.nilai,p.nama FROM ujian_praktik.nilai n JOIN ujian_praktik.periode p ON p.id=n.periode_id
+      WHERE p.tahun_ajaran=$1 AND p.semester=$2 AND n.santri_id=ANY($3::text[]) ORDER BY p.dibuat_pada`, [ta, sem, ids])).rows;
+  for (const e of ent) out[e.santri_id].praktik = { nilai: { ...(out[e.santri_id].praktik?.nilai || {}), ...(e.nilai || {}) }, periode: e.nama };
   // Hadis Arbain (Mutabaah) → jumlah hadis yang sudah disetorkan hafal.
   const hadis = (await q(`SELECT santri_id,count(*) FILTER (WHERE status='hafal')::int AS hafal,
       array_agg(nomor ORDER BY nomor) FILTER (WHERE status='hafal') AS nomor FROM public.hadis_arbain WHERE santri_id=ANY($1::text[]) GROUP BY 1`, [ids])).rows;
@@ -121,6 +131,8 @@ async function settings() {
   const rows = (await q('SELECT key,value FROM rapor_pesantren.pengaturan')).rows;
   const s: Record<string, any> = { ...DEFAULTS };
   for (const r of rows) s[r.key] = r.key === 'umum' ? { ...DEFAULTS.umum, ...r.value } : r.value;
+  s.koordinator ??= KOOR_DEFAULT;
+  if (/Farras/.test(s.umum.kabid_nama || '')) s.umum.kabid_nama = DEFAULTS.umum.kabid_nama;
   return s;
 }
 
@@ -129,13 +141,13 @@ async function handle(path: string, a: Actor, body: any) {
     let ta = '', sem = 0;
     try { ({ ta, sem } = periodOf(body)); } catch { /* tanpa periode: jumlah terisi tidak dihitung */ }
     const kamars = (await q(`SELECT k.id,k.nama,k.unit,k.lingkungan,k.tingkat,k.wali_username,coalesce(w.nama,k.wali_label) AS wali_nama,k.urut,
-        count(s.id) FILTER (WHERE $2 OR coalesce(g.wali_username,k.wali_username)=$1)::int AS jumlah,
-        count(n.santri_id) FILTER (WHERE $2 OR coalesce(g.wali_username,k.wali_username)=$1)::int AS terisi
+        count(s.id) FILTER (WHERE $2 OR coalesce(g.wali_username,k.wali_username)=$1 OR ${KAMAR_UNIT}=ANY($5::text[]))::int AS jumlah,
+        count(n.santri_id) FILTER (WHERE $2 OR coalesce(g.wali_username,k.wali_username)=$1 OR ${KAMAR_UNIT}=ANY($5::text[]))::int AS terisi
         FROM rapor_pesantren.kamar k LEFT JOIN public.akun w ON w.username=k.wali_username
         LEFT JOIN rapor_pesantren.anggota g ON g.kamar_id=k.id LEFT JOIN public.santri s ON s.id=g.santri_id AND s.aktif
         LEFT JOIN rapor_pesantren.nilai n ON n.santri_id=s.id AND n.tahun_ajaran=$3 AND n.semester=$4
-        WHERE k.aktif AND ($2 OR k.wali_username=$1 OR EXISTS (SELECT 1 FROM rapor_pesantren.anggota x WHERE x.kamar_id=k.id AND x.wali_username=$1))
-        GROUP BY k.id,w.nama ORDER BY k.lingkungan,array_position(ARRAY['SMP','SMA','MA'],k.unit),k.tingkat::int,k.urut`, [a.username, a.admin, ta, sem || 0])).rows;
+        WHERE k.aktif AND ($2 OR k.wali_username=$1 OR ${KAMAR_UNIT}=ANY($5::text[]) OR EXISTS (SELECT 1 FROM rapor_pesantren.anggota x WHERE x.kamar_id=k.id AND x.wali_username=$1))
+        GROUP BY k.id,w.nama ORDER BY k.lingkungan,array_position(ARRAY['SMP','SMA','MA'],k.unit),k.tingkat::int,k.urut`, [a.username, a.admin, ta, sem || 0, a.koordinator])).rows;
     const extra: any = {};
     if (a.admin) {
       extra.akun = (await q(`SELECT username,nama FROM public.akun WHERE upper(aktif)<>'N' ORDER BY nama`)).rows;
@@ -158,7 +170,7 @@ async function handle(path: string, a: Actor, body: any) {
         LEFT JOIN public.akun gw ON gw.username=g.wali_username LEFT JOIN public.akun kw ON kw.username=k.wali_username
         LEFT JOIN rapor_pesantren.nilai n ON n.santri_id=s.id AND n.tahun_ajaran=$${args.length - 1} AND n.semester=$${args.length}
         WHERE g.kamar_id=$1 AND ${scope} ORDER BY s.nama`, args)).rows;
-    if (!a.admin && !students.length) throw fail('Kamar ini bukan binaan akun Anda.', 403);
+    if (!a.admin && !students.length) throw fail('Kamar ini bukan binaan atau unit koordinasi akun Anda.', 403);
     return { kamar, students, auto: await autoSources(students.map((s: any) => s.id), ta, sem) };
   }
   if (path === 'save') {
@@ -188,6 +200,8 @@ async function handle(path: string, a: Actor, body: any) {
     } catch (e) { await client.query('ROLLBACK'); throw e; } finally { client.release(); }
     return { saved, conflicts };
   }
+  // Mutabaah Yaumiyyah (aplikasi baru): binaan musyrif, anggota kamar yang diwalikan, atau seluruh unit koordinator.
+  if (path.startsWith('yaum-')) return yaumiyyah(path, a, body);
   if (!a.admin) throw fail('Hanya pimpinan yang dapat mengatur kamar dan rapor.', 403);
   if (path === 'kamar-save') {
     const k = body.kamar || {};
@@ -218,9 +232,58 @@ async function handle(path: string, a: Actor, body: any) {
     return { santri: (await q(`SELECT s.id,s.nama,s.unit,s.tingkat,g.kamar_id FROM public.santri s LEFT JOIN rapor_pesantren.anggota g ON g.santri_id=s.id WHERE s.aktif AND s.nama ILIKE $1 ORDER BY s.nama LIMIT 20`, ['%' + s.replace(/[%_]/g, '') + '%'])).rows };
   }
   if (path === 'settings-save') {
-    if (!['umum', 'kurikulum'].includes(body.key) || !body.value || typeof body.value !== 'object' || JSON.stringify(body.value).length > 20000) throw fail('Pengaturan tidak valid.');
+    if (!['umum', 'kurikulum', 'koordinator'].includes(body.key) || !body.value || typeof body.value !== 'object' || Array.isArray(body.value) || JSON.stringify(body.value).length > 20000) throw fail('Pengaturan tidak valid.');
+    if (body.key === 'koordinator') {
+      for (const [u, units] of Object.entries(body.value)) if (!/^[\w.@-]{1,120}$/.test(u) || !Array.isArray(units) || (units as any[]).some((x) => !KOOR_UNITS.includes(x))) throw fail('Daftar koordinator tidak valid.');
+      koorCache = null;
+    }
     await q(`INSERT INTO rapor_pesantren.pengaturan(key,value,updated_by) VALUES($1,$2::jsonb,$3) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_by=excluded.updated_by,updated_at=now()`, [body.key, JSON.stringify(body.value), a.username]);
     return { settings: await settings() };
+  }
+  throw fail('Rute tidak dikenal.', 404);
+}
+
+function yaumScope(a: Actor, args: unknown[]) {
+  if (a.admin) return 'true';
+  args.push(a.musyrif, a.koordinator, a.username);
+  const m = args.length - 2, k = args.length - 1, w = args.length;
+  return `((trim($${m})<>'' AND lower(trim(s.musyrif))=lower(trim($${m}))) OR s.unit=ANY($${k}::text[])
+    OR EXISTS (SELECT 1 FROM rapor_pesantren.anggota g JOIN rapor_pesantren.kamar k ON k.id=g.kamar_id WHERE g.santri_id=s.id AND coalesce(g.wali_username,k.wali_username)=$${w}))`;
+}
+async function yaumiyyah(path: string, a: Actor, body: any) {
+  if (path === 'yaum-students') {
+    const args: unknown[] = [];
+    const students = (await q(`SELECT s.id,s.nama,s.tingkat AS kelas,s.unit,s.halaqah,s.musyrif,coalesce(k.nama,'') AS kamar FROM public.santri s
+      LEFT JOIN rapor_pesantren.anggota g ON g.santri_id=s.id LEFT JOIN rapor_pesantren.kamar k ON k.id=g.kamar_id
+      WHERE s.aktif AND ${yaumScope(a, args)} ORDER BY array_position(ARRAY['SMP Ikhwan','SMA Ikhwan','MA Ikhwan','SMP Akhwat','SMA Akhwat','MA Akhwat'],s.unit),s.tingkat,s.nama LIMIT 5000`, args)).rows;
+    return { user: { username: a.username, nama: a.nama, admin: a.admin, koordinator: a.koordinator }, students };
+  }
+  const id = String(body.santri_id || '');
+  if (!id || id.length > 150) throw fail('Pilih santri.');
+  const args: unknown[] = [id];
+  const student = (await q(`SELECT s.id,s.nama,s.tingkat AS kelas,s.unit,s.musyrif FROM public.santri s WHERE s.id=$1 AND s.aktif AND ${yaumScope(a, args)}`, args)).rows[0];
+  if (!student) throw fail('Santri tidak termasuk binaan atau unit Anda.', 403);
+  if (path === 'yaum-load') {
+    if (!Array.isArray(body.months) || body.months.length < 1 || body.months.length > 6 || new Set(body.months).size !== body.months.length) throw fail('Pilih maksimal enam bulan.');
+    for (const m of body.months) daysOfMonth(m);
+    const entries = (await q(`SELECT to_char(tanggal,'YYYY-MM-DD') AS date,aktivitas AS values,izin AS excused,catatan AS note,version FROM yaumiyyah.daily WHERE santri_id=$1 AND to_char(tanggal,'YYYY-MM')=ANY($2::text[]) ORDER BY tanggal`, [id, body.months])).rows;
+    return { student, entries };
+  }
+  if (path === 'yaum-save') {
+    let entry;
+    try { entry = validateEntry(body.entry || {}); } catch (e: any) { throw fail(e.message); }
+    const version = body.entry?.version ?? null;
+    if (version !== null && !/^[0-9a-f-]{36}$/i.test(version)) throw fail('Versi data tidak valid.');
+    const vals: unknown[] = [id, entry.date, JSON.stringify(entry.values), JSON.stringify(entry.excused), entry.note, a.username, version];
+    const scope = yaumScope(a, vals);
+    const rows = (await q(`WITH saved AS (INSERT INTO yaumiyyah.daily(santri_id,tanggal,aktivitas,izin,catatan,updated_by)
+        SELECT $1,$2::date,$3::jsonb,$4::jsonb,$5,$6 FROM public.santri s WHERE s.id=$1 AND s.aktif AND ${scope}
+        ON CONFLICT(santri_id,tanggal) DO UPDATE SET aktivitas=excluded.aktivitas,izin=excluded.izin,catatan=excluded.catatan,updated_by=excluded.updated_by,updated_at=now(),version=gen_random_uuid()
+        WHERE $7::uuid IS NOT NULL AND yaumiyyah.daily.version=$7::uuid RETURNING *),
+      audit AS (INSERT INTO yaumiyyah.audit(username,santri_id,tanggal) SELECT updated_by,santri_id,tanggal FROM saved)
+      SELECT to_char(tanggal,'YYYY-MM-DD') AS date,aktivitas AS values,izin AS excused,catatan AS note,version FROM saved`, vals)).rows;
+    if (!rows.length) throw fail('Catatan telah berubah di perangkat lain atau penugasan diperbarui. Muat ulang sebelum menyimpan.', 409);
+    return { entry: rows[0] };
   }
   throw fail('Rute tidak dikenal.', 404);
 }

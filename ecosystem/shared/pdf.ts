@@ -1,5 +1,5 @@
-// PDF tanpa pustaka luar: tiap halaman rapor (HTML) digambar ke kanvas lewat SVG foreignObject, lalu disusun sebagai JPEG dalam PDF.
-import { RAPOR_CSS, pageSize } from './rapor';
+// PDF tanpa pustaka luar (dipakai Rapor Pesantren & Rapor Tahfidz): tiap halaman rapor (HTML) digambar ke kanvas lewat SVG foreignObject, lalu disusun sebagai JPEG dalam PDF.
+export type Size = { w: number; h: number }; // mm
 
 let fontCss: Promise<string> | null = null;
 const toDataURL = (blob: Blob) => new Promise<string>((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = no; r.readAsDataURL(blob); });
@@ -8,15 +8,15 @@ function fonts() {
     .then((u) => `@font-face{font-family:NurisJakarta;src:url(${u}) format("woff2");font-weight:100 900}`).catch(() => '');
 }
 
-async function pageToJpeg(el: HTMLElement, paper: 'A4' | 'F4', scale = 2.2): Promise<{ bytes: Uint8Array; w: number; h: number }> {
-  const { w, h } = pageSize(paper);
+async function pageToJpeg(el: HTMLElement, size: Size, css: string, scale = 2.2): Promise<{ bytes: Uint8Array; w: number; h: number }> {
+  const { w, h } = size;
   const pxW = Math.round((w / 25.4) * 96), pxH = Math.round((h / 25.4) * 96);
   const clone = el.cloneNode(true) as HTMLElement;
   clone.querySelectorAll('[data-edit]').forEach((n) => n.removeAttribute('data-edit'));
-  clone.querySelectorAll('.rp-kosong').forEach((n) => n.remove());
+  clone.querySelectorAll('.rp-kosong,.rt-kosong').forEach((n) => n.remove());
   clone.classList.remove('rp-auto');
   const xhtml = new XMLSerializer().serializeToString(clone);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pxW}" height="${pxH}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${await fonts()}${RAPOR_CSS}</style>${xhtml}</div></foreignObject></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pxW}" height="${pxH}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${await fonts()}${css}</style>${xhtml}</div></foreignObject></svg>`;
   const img = new Image();
   img.decoding = 'sync';
   const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -31,8 +31,8 @@ async function pageToJpeg(el: HTMLElement, paper: 'A4' | 'F4', scale = 2.2): Pro
   return { bytes: new Uint8Array(await blob.arrayBuffer()), w: canvas.width, h: canvas.height };
 }
 
-function buildPdf(pages: { bytes: Uint8Array; w: number; h: number }[], paper: 'A4' | 'F4') {
-  const { w, h } = pageSize(paper);
+function buildPdf(pages: { bytes: Uint8Array; w: number; h: number }[], size: Size) {
+  const { w, h } = size;
   const W = (w / 25.4) * 72, H = (h / 25.4) * 72;
   const enc = new TextEncoder();
   const chunks: Uint8Array[] = []; const offsets: number[] = []; let len = 0;
@@ -56,10 +56,10 @@ function buildPdf(pages: { bytes: Uint8Array; w: number; h: number }[], paper: '
   return new Blob(chunks as BlobPart[], { type: 'application/pdf' });
 }
 
-export async function unduhPdf(els: HTMLElement[], paper: 'A4' | 'F4', nama: string, progress?: (i: number, n: number) => void) {
+export async function unduhPdf(els: HTMLElement[], size: Size, css: string, nama: string, progress?: (i: number, n: number) => void) {
   const pages = [];
-  for (let i = 0; i < els.length; i++) { progress?.(i, els.length); pages.push(await pageToJpeg(els[i], paper)); }
-  const blob = buildPdf(pages, paper);
+  for (let i = 0; i < els.length; i++) { progress?.(i, els.length); pages.push(await pageToJpeg(els[i], size, css)); }
+  const blob = buildPdf(pages, size);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = nama.replace(/[\\/:*?"<>|]+/g, ' ').trim() + '.pdf';
   document.body.append(a); a.click(); a.remove();
