@@ -10,6 +10,7 @@
 /nuris-glass.js
 /nuris-install.js
 /nuris-mutabaah.css
+/nuris-pindah.js
 /offline.html
 /rapor-pesantren/app.css
 /rapor-pesantren/app.js

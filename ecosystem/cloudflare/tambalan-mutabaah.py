@@ -36,6 +36,9 @@ out = {
         {'path': '/mutabaah/index.html', 'find': '<head>', 'replace': '<head><script src="/mutabaah/nuris-cache.js"></script>', 'marker': 'nuris-cache.js'},
         # Antrean simpan offline (IndexedDB) untuk Simpan setoran pekanan; dimuat sesudah cache.
         {'path': '/mutabaah/index.html', 'find': '<script src="/mutabaah/nuris-cache.js"></script>', 'replace': '<script src="/mutabaah/nuris-cache.js"></script><script src="/mutabaah/nuris-offline.js"></script>', 'marker': 'nuris-offline.js'},
+        # Pemberitahuan pindah ke alamat Cloudflare (hanya tampil di *.netlify.app).
+        {'path': '/index.html', 'find': '<script defer src="/nuris-install.js"></script>', 'replace': '<script defer src="/nuris-install.js"></script><script defer src="/nuris-pindah.js"></script>', 'marker': 'nuris-pindah.js'},
+        {'path': '/mutabaah/index.html', 'find': '<script src="/mutabaah/nuris-offline.js"></script>', 'replace': '<script src="/mutabaah/nuris-offline.js"></script><script defer src="/nuris-pindah.js"></script>', 'marker': 'nuris-pindah.js'},
         # Halaman Mutabaah memuat modul Pratinjau & edit Rapor Al-Qur'an (ecosystem/mutabaah-rapor).
         {'path': '/mutabaah/index.html', 'find': '<script defer src="/nuris-glass.js"></script>', 'replace': '<script defer src="/nuris-glass.js"></script><link rel="stylesheet" href="/mutabaah/rapor-edit.css"><script defer src="/mutabaah/rapor-edit.js"></script>', 'marker': 'rapor-edit.js'},
         # Infrastructure Manager: hanya pimpinan/admin (hak akses tetap diperiksa server di Edge Function "cadangan").

@@ -15,13 +15,13 @@ a{display:inline-block;background:#0d4a28;color:#fff;text-decoration:none;font-w
 <main>
  <h1>Mutabaah Tahfidz sudah pindah</h1>
  <p id="status">Membuka Kepesantrenan Nuris…</p>
- <a id="lanjut" href="https://kepesantrenannuris.netlify.app/#mutabaah">Buka Kepesantrenan Nuris</a>
+ <a id="lanjut" href="https://kepesantrenan-nuris.kepesantrenannuris.workers.dev/#mutabaah">Buka Kepesantrenan Nuris</a>
 </main>
 <script>
 // Situs lama Mutabaah: alihkan ke portal baru. Bila masih masuk di sini, sesi dipindahkan lewat kode sekali pakai
 // (berlaku 90 detik, fitur "handoff" yang sama dengan perpindahan antar-aplikasi) sehingga musyrif tidak perlu masuk ulang.
 (function () {
-  var BARU = 'https://kepesantrenannuris.netlify.app/';
+  var BARU = 'https://kepesantrenan-nuris.kepesantrenannuris.workers.dev/';
   var API = 'https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/kepesantrenan/handoff';
   function pergi(url) { location.replace(url); }
   var token = '';

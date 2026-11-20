@@ -28,7 +28,7 @@ cp ecosystem/portal/apps.js deploy/
 # Infrastructure Manager (khusus pimpinan/admin).
 mkdir -p deploy/infrastruktur && cp ecosystem/portal/infrastruktur/index.html deploy/infrastruktur/
 # Beranda Kepesantrenan sebagai aplikasi terpasang (PWA, cakupan "/").
-cp ecosystem/portal/manifest.webmanifest ecosystem/portal/sw.js ecosystem/portal/offline.html ecosystem/portal/nuris-install.js deploy/
+cp ecosystem/portal/manifest.webmanifest ecosystem/portal/sw.js ecosystem/portal/offline.html ecosystem/portal/nuris-install.js ecosystem/portal/nuris-pindah.js deploy/
 # Alamat lama Rapor Tahfidz dialihkan ke menu Rapor semester di Mutabaah.
 printf '%s' '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Mengalihkan…</title><script>location.replace("/mutabaah/?tool=raport")</script><meta http-equiv="refresh" content="0;url=/mutabaah/?tool=raport"><a href="/mutabaah/?tool=raport">Lanjutkan ke Rapor semester</a>' > deploy/rapor-tahfidz/index.html
 # Tambalan build Mutabaah aktif (cap & tanda tangan Kabid pada PDF Rapor Al-Qur'an).
