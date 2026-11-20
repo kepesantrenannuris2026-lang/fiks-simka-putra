@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mutabaah Tahfidz sudah pindah · Kepesantrenan Nuris</title>
+<style>
+body{margin:0;min-height:100dvh;display:grid;place-items:center;background:#f2f6f3;color:#172c23;font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px;text-align:center}
+main{max-width:420px}h1{font-size:21px;margin:0 0 8px}p{margin:0 0 18px;color:#63736a}
+a{display:inline-block;background:#0d4a28;color:#fff;text-decoration:none;font-weight:650;padding:11px 18px;border-radius:12px}
+</style>
+</head>
+<body>
+<main>
+ <h1>Mutabaah Tahfidz sudah pindah</h1>
+ <p id="status">Membuka Kepesantrenan Nuris…</p>
+ <a id="lanjut" href="https://kepesantrenannuris.netlify.app/#mutabaah">Buka Kepesantrenan Nuris</a>
+</main>
+<script>
+// Situs lama Mutabaah: alihkan ke portal baru. Bila masih masuk di sini, sesi dipindahkan lewat kode sekali pakai
+// (berlaku 90 detik, fitur "handoff" yang sama dengan perpindahan antar-aplikasi) sehingga musyrif tidak perlu masuk ulang.
+(function () {
+  var BARU = 'https://kepesantrenannuris.netlify.app/';
+  var API = 'https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/kepesantrenan/handoff';
+  function pergi(url) { location.replace(url); }
+  var token = '';
+  try { token = localStorage.getItem('mut_token') || ''; } catch (e) {}
+  if (!token) return pergi(BARU + '#mutabaah');
+  var selesai = false;
+  var batas = setTimeout(function () { if (!selesai) { selesai = true; pergi(BARU + '#mutabaah'); } }, 8000);
+  fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: '{}' })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (selesai) return; selesai = true; clearTimeout(batas);
+      // Sesi lama di alamat ini dihapus; sesi berlanjut di alamat baru.
+      try { localStorage.removeItem('mut_token'); localStorage.removeItem('mut_user'); } catch (e) {}
+      pergi(j && j.ok && j.code ? BARU + '#transfer=' + encodeURIComponent(j.code) + '&app=mutabaah' : BARU + '#mutabaah');
+    })
+    .catch(function () { if (!selesai) { selesai = true; clearTimeout(batas); pergi(BARU + '#mutabaah'); } });
+})();
+</script>
+</body>
+</html>

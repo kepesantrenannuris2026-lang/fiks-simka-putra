@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tambalan untuk build Mutabaah yang sedang aktif di Cloudflare (sumber build f73a8f1 tidak tersedia, jadi build tidak diganti).
 
-1. Chunk lazy yang hilang dari deployment (jsPDF & dependensinya) diambil dari build Netlify lama dengan nama-hash yang sama
+1. Chunk lazy yang hilang dari deployment (jsPDF & dependensinya) diambil dari situs Netlify kepesantrenannuris (semula build Netlify lama; situs lama kini hanya pengalih) dengan nama-hash yang sama
    (nama berisi hash isi, jadi isinya identik). Tanpa ini Pratinjau/PDF Rapor semester tidak menampilkan apa pun.
 2. PDF Rapor Al-Qur'an: cap & tanda tangan Kabid (Ust. Farros) dicetak di atas nama, ukuran lazim rapor
    (cap ±32 mm, tanda tangan ±28 mm). Satuan PDF = 215/165 mm.
@@ -26,7 +26,7 @@ inject = (f'e.addImage({json.dumps(CAP)},"PNG",$-{cap*0.86:.2f},X-{cap*0.9:.2f},
 CH = '/mutabaah/_next/static/chunks/'
 out = {
     'fetch': [
-        {'from': 'https://mutabaahtahfidznurista.netlify.app/_next/static/chunks/' + n, 'to': CH + n}
+        {'from': 'https://kepesantrenannuris.netlify.app/mutabaah/_next/static/chunks/' + n, 'to': CH + n}
         for n in ('164f4fb6.8af40f7df63a03b3.js', 'bc98253f.d6fc8a0138855acd.js')
     ],
     'patch': [
