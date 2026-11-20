@@ -14,6 +14,8 @@ $E ecosystem/mutabaah-rapor/src/main.ts --bundle --format=iife --charset=ascii -
 $E ecosystem/mutabaah-rapor/src/style.css --minify --charset=ascii --outfile=ecosystem/mutabaah-rapor/dist/rapor-edit.css --log-level=warning
 rm -rf deploy && mkdir -p deploy/rapor-tahfidz deploy/_patch deploy/mutabaah
 cp ecosystem/mutabaah-rapor/dist/rapor-edit.js ecosystem/mutabaah-rapor/dist/rapor-edit.css deploy/mutabaah/
+# Cache terkontrol panggilan API Mutabaah (dimuat paling awal di <head> halaman Mutabaah).
+cp ecosystem/mutabaah-rapor/src/cache.js deploy/mutabaah/nuris-cache.js
 for pair in rapor-pesantren:rapor-pesantren ujian-praktik:ujian-praktik yaumiyyah-app:yaumiyyah; do
   src=${pair%%:*}; dst=${pair##*:}; mkdir -p deploy/$dst
   cp ecosystem/$src/index.html ecosystem/$src/dist/app.js ecosystem/$src/dist/app.css deploy/$dst/
