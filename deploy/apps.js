@@ -6,5 +6,7 @@ window.NURIS_APPS=[
  {id:'yaumiyyah',name:'Mutabaah Yaumiyyah',short:'Yaumiyyah',path:'/yaumiyyah/',icon:'calendar',description:'Ibadah dan kebiasaan harian, rekap bulanan serta rapor semester yang dapat diunduh.',label:'Ibadah & kebiasaan harian'},
  {id:'rapor-pesantren',name:'Rapor Pesantren',short:'Rapor Pesantren',path:'/rapor-pesantren/',requires:'mutabaah',nav:false,icon:'award',description:'Rekap nilai ibadah, akhlak, kajian kitab, praktik ibadah, hadis arbain, dan pidato per kamar. Pratinjau dan ubah rapor, lalu cetak atau unduh PDF.',label:'Rapor kepesantrenan'},
  {id:'simka',name:'SIMKA Putra',short:'Putra',path:'/simka/',icon:'shield',description:'Catat pelanggaran, pantau karakter, dan tindak lanjuti pembinaan santri.',label:'Karakter & kedisiplinan'},
- {id:'simka-putri',name:'SIMKA Putri',short:'Putri',path:'/simka-putri/',icon:'shield',description:'Pencatatan kedisiplinan dan pembinaan santriwati SMP, SMA, dan MA.',label:'Karakter & kedisiplinan putri'}
+ {id:'simka-putri',name:'SIMKA Putri',short:'Putri',path:'/simka-putri/',icon:'shield',description:'Pencatatan kedisiplinan dan pembinaan santriwati SMP, SMA, dan MA.',label:'Karakter & kedisiplinan putri'},
+ {id:'infrastruktur',name:'Infrastructure Manager',short:'Infrastruktur',path:'/infrastruktur/',admin:true,nav:false,icon:'server',description:'Kapasitas Supabase dan Cloudflare D1, cadangan harian, pengaman kuota otomatis, dan arsip tahun ajaran. Khusus pimpinan.',label:'Pemeliharaan sistem'}
+
 ];

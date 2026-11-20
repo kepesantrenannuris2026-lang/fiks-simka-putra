@@ -16,6 +16,8 @@ rm -rf deploy && mkdir -p deploy/rapor-tahfidz deploy/_patch deploy/mutabaah
 cp ecosystem/mutabaah-rapor/dist/rapor-edit.js ecosystem/mutabaah-rapor/dist/rapor-edit.css deploy/mutabaah/
 # Cache terkontrol panggilan API Mutabaah (dimuat paling awal di <head> halaman Mutabaah).
 cp ecosystem/mutabaah-rapor/src/cache.js deploy/mutabaah/nuris-cache.js
+# Antrean simpan offline setoran (IndexedDB).
+cp ecosystem/mutabaah-rapor/src/offline.js deploy/mutabaah/nuris-offline.js
 for pair in rapor-pesantren:rapor-pesantren ujian-praktik:ujian-praktik yaumiyyah-app:yaumiyyah; do
   src=${pair%%:*}; dst=${pair##*:}; mkdir -p deploy/$dst
   cp ecosystem/$src/index.html ecosystem/$src/dist/app.js ecosystem/$src/dist/app.css deploy/$dst/
@@ -23,6 +25,8 @@ done
 cp ecosystem/simka-theme/nuris-mutabaah.css deploy/
 cp ecosystem/glass/nuris-glass.css ecosystem/glass/nuris-glass.js deploy/
 cp ecosystem/portal/apps.js deploy/
+# Infrastructure Manager (khusus pimpinan/admin).
+mkdir -p deploy/infrastruktur && cp ecosystem/portal/infrastruktur/index.html deploy/infrastruktur/
 # Beranda Kepesantrenan sebagai aplikasi terpasang (PWA, cakupan "/").
 cp ecosystem/portal/manifest.webmanifest ecosystem/portal/sw.js ecosystem/portal/offline.html ecosystem/portal/nuris-install.js deploy/
 # Alamat lama Rapor Tahfidz dialihkan ke menu Rapor semester di Mutabaah.

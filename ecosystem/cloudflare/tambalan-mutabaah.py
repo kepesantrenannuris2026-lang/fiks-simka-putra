@@ -34,8 +34,14 @@ out = {
         {'path': '/index.html', 'find': '<link rel="manifest" href="/manifest.webmanifest">', 'replace': '<link rel="manifest" href="/manifest.webmanifest?v=20261120"><link rel="apple-touch-icon" href="/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Kepesantrenan"><meta name="apple-mobile-web-app-status-bar-style" content="default"><script defer src="/nuris-install.js"></script>', 'marker': 'nuris-install.js'},
         # Cache terkontrol API Mutabaah: dimuat sebelum skrip aplikasi agar membungkus fetch sejak awal.
         {'path': '/mutabaah/index.html', 'find': '<head>', 'replace': '<head><script src="/mutabaah/nuris-cache.js"></script>', 'marker': 'nuris-cache.js'},
+        # Antrean simpan offline (IndexedDB) untuk Simpan setoran pekanan; dimuat sesudah cache.
+        {'path': '/mutabaah/index.html', 'find': '<script src="/mutabaah/nuris-cache.js"></script>', 'replace': '<script src="/mutabaah/nuris-cache.js"></script><script src="/mutabaah/nuris-offline.js"></script>', 'marker': 'nuris-offline.js'},
         # Halaman Mutabaah memuat modul Pratinjau & edit Rapor Al-Qur'an (ecosystem/mutabaah-rapor).
         {'path': '/mutabaah/index.html', 'find': '<script defer src="/nuris-glass.js"></script>', 'replace': '<script defer src="/nuris-glass.js"></script><link rel="stylesheet" href="/mutabaah/rapor-edit.css"><script defer src="/mutabaah/rapor-edit.js"></script>', 'marker': 'rapor-edit.js'},
+        # Infrastructure Manager: hanya pimpinan/admin (hak akses tetap diperiksa server di Edge Function "cadangan").
+        {'path': '/portal.js', 'find': "function mount() {\n  $('login').hidden=true;", 'replace': "function mount() {\n  session.apps.infrastruktur=['pimpinan','admin'].includes(String(session.mutabaahUser.role||'').toLowerCase());$('login').hidden=true;", 'marker': 'apps.infrastruktur'},
+        {'path': '/portal.js', 'find': "for(const app of window.NURIS_APPS){\n   const allowed=", 'replace': "for(const app of window.NURIS_APPS.filter(a=>!a.admin||session.apps[a.id])){\n   const allowed=", 'marker': 'a=>!a.admin'},
+        {'path': '/portal.js', 'find': "const icons={", 'replace': "const icons={server:'<rect x=\"3\" y=\"4\" width=\"18\" height=\"7\" rx=\"2\"/><rect x=\"3\" y=\"13\" width=\"18\" height=\"7\" rx=\"2\"/><path d=\"M7 7.5h.01M7 16.5h.01\"/>',", 'marker': 'icons={server:'},
         {'path': CH + '443.c56b9f41dc7a083f.js', 'find': 'ee(a.ttd.kepala.nama,$),', 'replace': 'ee(a.ttd.kepala.nama,$),' + inject, 'marker': 'nuris-cap'},
     ],
 }

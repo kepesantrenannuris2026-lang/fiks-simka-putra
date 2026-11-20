@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Infrastruktur · Kepesantrenan Nuris</title>
+<style>
+@font-face{font-family:NurisJakarta;src:url(/fonts/nuris-jakarta.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{--pine:#0d4a28;--ink:#172c23;--muted:#63736a;--line:#dce5df;--canvas:#f2f6f3;--leaf:#17873f;--soft:#edf6ef;--amber:#a86400;--amber-soft:#fdf3e2;--red:#b3261e;--red-soft:#fceeed;
+ font-family:NurisJakarta,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--canvas);font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;padding:28px clamp(16px,4vw,40px) 60px;max-width:1180px;margin-inline:auto}
+h1{font-size:26px;letter-spacing:-.5px;margin:0}h2{font-size:15px;margin:0 0 14px}p{margin:0}
+.muted{color:var(--muted);font-size:13px}.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.eyebrow{font-size:10px;font-weight:750;letter-spacing:1.8px;color:var(--leaf);margin-bottom:6px}
+button{font:inherit;font-size:13px;font-weight:650;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:9px 14px;cursor:pointer}
+button.primary{background:var(--pine);border-color:var(--pine);color:#fff}button:disabled{opacity:.55;cursor:wait}
+button:focus-visible,input:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.wide{grid-column:1/-1}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.big{font-size:28px;font-weight:750;letter-spacing:-.8px;font-variant-numeric:tabular-nums}.big small{font-size:14px;font-weight:600;color:var(--muted);letter-spacing:0}
+.meter{position:relative;height:10px;border-radius:99px;background:var(--soft);margin:12px 0 8px;overflow:hidden}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--leaf)}
+.meter b{position:absolute;top:0;bottom:0;width:1px;background:#0002}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--soft);color:var(--leaf)}
+.badge.warn{background:var(--amber-soft);color:var(--amber)}.badge.bad{background:var(--red-soft);color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{font-size:11px;color:var(--muted);font-weight:650}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}tr:last-child td{border-bottom:0}
+.rows{display:grid;gap:6px;font-size:13px}.rows div{display:flex;justify-content:space-between;gap:12px}.rows span:last-child{font-weight:650;text-align:right}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}.steps div{font-size:11px;padding:8px;border-radius:10px;background:var(--canvas);color:var(--muted)}
+.steps div.on{background:var(--pine);color:#fff}.steps strong{display:block;font-size:12px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}input{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:120px}
+.msg{margin-top:10px;font-size:13px}.msg.err{color:var(--red)}.center{min-height:70vh;display:grid;place-content:center;text-align:center;gap:8px}
+svg.spark{width:100%;height:56px;display:block}
+@media (max-width:640px){.steps{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="blok" class="center" hidden><h1>Khusus pimpinan</h1><p class="muted" id="blok-msg">Halaman ini hanya untuk akun pimpinan atau admin.</p></div>
+<main id="isi" hidden>
+ <div class="head">
+  <div><div class="eyebrow">INFRASTRUCTURE MANAGER</div><h1>Kapasitas & cadangan</h1><p class="muted" id="waktu"></p></div>
+  <button id="muat">Muat ulang</button>
+ </div>
+ <div class="grid">
+  <section class="card"><h2>Database Supabase</h2><div class="big" id="db"></div><div class="meter" id="db-m"></div><p class="muted" id="db-t"></p></section>
+  <section class="card"><h2>Penyimpanan Supabase</h2><div class="big" id="st"></div><div class="meter" id="st-m"></div><p class="muted">Cadangan & arsip (batas paket gratis 1 GB)</p></section>
+  <section class="card"><h2>Salinan luar · Cloudflare D1</h2><div class="big" id="d1"></div><div class="meter" id="d1-m"></div><p class="muted" id="d1-t"></p></section>
+  <section class="card wide"><h2>Pengaman kuota otomatis</h2><p class="muted">Diperiksa setiap hari pukul 03:20 WIB. Data hanya dihapus dari Supabase setelah tersalin ke Storage dan D1.</p>
+   <div class="steps" id="tingkat"></div><svg class="spark" id="spark" viewBox="0 0 300 56" preserveAspectRatio="none" aria-label="Riwayat kapasitas database"></svg></section>
+  <section class="card"><h2>Cadangan harian</h2><div class="rows" id="cad"></div></section>
+  <section class="card"><h2>Antrean & audit</h2><div class="rows" id="aq"></div></section>
+  <section class="card"><h2>Arsip tahun ajaran</h2><div class="rows" id="ta"></div></section>
+  <section class="card wide"><h2>Tindakan</h2>
+   <div class="actions"><button class="primary" data-tugas="harian">Cadangkan sekarang</button><button data-tugas="arsip">Arsipkan audit &gt; 90 hari</button>
+    <span class="muted" style="margin-left:8px">Salin tahun ajaran selesai:</span><input id="ta-in" placeholder="2025/2026" inputmode="numeric" aria-label="Tahun ajaran"><button data-tugas="arsip_ta">Salin & verifikasi</button></div>
+   <p class="msg" id="msg" role="status"></p></section>
+  <section class="card wide"><h2>Tabel terbesar</h2><table><thead><tr><th>Tabel</th><th class="n">Baris</th><th class="n">Ukuran</th></tr></thead><tbody id="tab"></tbody></table></section>
+  <section class="card wide"><h2>Jadwal otomatis</h2><table><thead><tr><th>Jadwal</th><th>Cron (UTC)</th><th>Terakhir</th><th>Status</th></tr></thead><tbody id="jad"></tbody></table></section>
+  <section class="card wide"><h2>Catatan sistem</h2><table><tbody id="log"></tbody></table></section>
+ </div>
+</main>
+<div id="muatan" class="center"><p class="muted">Memuat…</p></div>
+<script>
+(()=>{'use strict';
+const API='https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/cadangan';
+const $=id=>document.getElementById(id);
+const mb=b=>b==null?'–':b>=1073741824?(b/1073741824).toFixed(2)+' GB':(b/1048576).toFixed(1)+' MB';
+const wkt=t=>t?new Date(t).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'–';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LV=[['normal','0–50%','Operasional normal'],['evaluasi','50–60%','Evaluasi arsip'],['arsip','60–70%','Arsip audit > 30 hari'],['intensif','70–80%','Arsip > 14 hari, bersihkan antrean'],['kritis','> 80%','Peringatan pimpinan']];
+async function call(body){
+ const token=localStorage.getItem('mut_token')||'';
+ const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
+ const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw Object.assign(new Error(j.error||'Gagal terhubung.'),{status:r.status});return j;
+}
+function meter(el,p,marks=[50,60,70,80]){const c=p>=80?'var(--red)':p>=60?'var(--amber)':'var(--leaf)';el.innerHTML='<i style="width:'+Math.min(100,p)+'%;background:'+c+'"></i>'+marks.map(m=>'<b style="left:'+m+'%"></b>').join('');}
+function rows(el,list){el.innerHTML=list.map(([k,v])=>'<div><span class="muted">'+esc(k)+'</span><span>'+v+'</span></div>').join('');}
+function render(s){
+ const sb=s.supabase;$('waktu').textContent='Diperbarui '+wkt(s.waktu);
+ $('db').innerHTML=sb.persen+'% <small>'+mb(sb.db_bytes)+' dari '+mb(sb.db_batas)+'</small>';meter($('db-m'),sb.persen);
+ const lvIdx=LV.findIndex(l=>l[0]===sb.tingkat);$('db-t').innerHTML='Tingkat: <span class="badge '+(lvIdx>=3?'bad':lvIdx>=1?'warn':'')+'">'+esc(LV[lvIdx]?.[2]||sb.tingkat)+'</span>';
+ const sp=sb.storage_bytes*100/sb.storage_batas;$('st').innerHTML=sp.toFixed(1)+'% <small>'+mb(sb.storage_bytes)+'</small>';meter($('st-m'),sp,[]);
+ const d=s.d1||{};if(d.ok){const dp=d.db_bytes*100/d.batas_bytes;$('d1').innerHTML=dp.toFixed(1)+'% <small>'+mb(d.db_bytes)+' dari 500 MB</small>';meter($('d1-m'),dp,[]);$('d1-t').textContent=d.berkas+' berkas · '+d.harian+' cadangan harian · terakhir '+wkt(d.terakhir&&d.terakhir.replace(' ','T')+'Z');}
+ else{$('d1').innerHTML='<span class="badge bad">Tidak terjangkau</span>';$('d1-t').textContent=d.error||'';}
+ $('tingkat').innerHTML=LV.map((l,i)=>'<div class="'+(i===lvIdx?'on':'')+'"><strong>'+l[1]+'</strong>'+l[2]+'</div>').join('');
+ const h=(s.riwayat||[]).map(x=>+x.persen);if(h.length>1){const mx=Math.max(100,...h);const pts=h.map((v,i)=>(i*300/(h.length-1)).toFixed(1)+','+(56-v*56/mx).toFixed(1)).join(' ');$('spark').innerHTML='<polyline points="'+pts+'" fill="none" stroke="#17873f" stroke-width="2" vector-effect="non-scaling-stroke"/>';}
+ else $('spark').innerHTML='<text x="0" y="34" font-size="11" fill="#63736a">Riwayat harian akan muncul mulai besok.</text>';
+ const c=s.cadangan||{},t=c.terakhir;const dd=t&&t.salinan_d1||{};
+ rows($('cad'),[['Terakhir',t?esc(t.tanggal)+' · '+wkt(t.dibuat):'<span class="badge bad">Belum ada</span>'],['Isi',t?t.tabel+' tabel · '+(t.baris||0).toLocaleString('id-ID')+' baris':'–'],['Ukuran (gzip)',t?mb(t.gzip):'–'],
+  ['Salinan D1',t?(dd.d1_gagal?'<span class="badge warn">'+dd.d1_gagal+' berkas gagal</span>':'<span class="badge">'+(dd.d1||0)+' berkas</span>'):'–'],['Tersimpan',(c.harian||[]).length+' hari']]);
+ const q=s.antrean||{},a=s.audit||{};
+ rows($('aq'),[['Antrean menunggu',q.menunggu?'<span class="badge warn">'+q.menunggu+'</span>':'0'],['Antrean gagal',q.gagal?'<span class="badge bad">'+q.gagal+'</span>':'0'],['Antrean selesai (≤ 7 hari)',(q.selesai||0).toLocaleString('id-ID')],
+  ['Baris audit',(a.baris||0).toLocaleString('id-ID')+' ('+(a.ringkas||0).toLocaleString('id-ID')+' ringkas)'],['Audit tertua',wkt(a.tertua)]]);
+ rows($('ta'),(s.arsip_ta||[]).length?s.arsip_ta.map(x=>[x.ta,(x.total||0).toLocaleString('id-ID')+' baris '+(x.cocok?'<span class="badge">terverifikasi</span>':'<span class="badge bad">tidak cocok</span>')]):[['Belum ada','Tahun ajaran aktif tetap di Supabase']]);
+ $('tab').innerHTML=(sb.tabel||[]).map(x=>'<tr><td>'+esc(x.tabel)+'</td><td class="n">'+(x.baris||0).toLocaleString('id-ID')+'</td><td class="n">'+mb(x.bytes)+'</td></tr>').join('');
+ $('jad').innerHTML=(s.jadwal||[]).map(j=>'<tr><td>'+esc(j.nama)+(j.aktif?'':' <span class="badge warn">nonaktif</span>')+'</td><td>'+esc(j.jadwal)+'</td><td>'+wkt(j.terakhir)+'</td><td>'+(j.status==='succeeded'?'<span class="badge">berhasil</span>':j.status?'<span class="badge bad">'+esc(j.status)+'</span>':'–')+'</td></tr>').join('');
+ $('log').innerHTML=(s.log||[]).map(l=>'<tr><td style="white-space:nowrap">'+wkt(l.waktu)+'</td><td><span class="badge '+(l.jenis==='gagal'?'bad':'')+'">'+esc(l.jenis)+'</span></td><td class="muted">'+esc(ringkas(l)).slice(0,220)+'</td></tr>').join('')||'<tr><td class="muted">Belum ada catatan.</td></tr>';
+}
+function ringkas(l){const i=l.isi||{};if(l.jenis==='harian')return i.selesai+': '+i.tabel+' tabel, '+(i.baris||0).toLocaleString('id-ID')+' baris, '+mb(i.gzip)+(i.d1?.d1_gagal?' · D1 gagal '+i.d1.d1_gagal:'');
+ if(l.jenis==='arsip')return 'audit > '+i.hari+' hari: '+((i.hasil||[]).reduce((n,x)=>n+x.diarsipkan,0))+' baris diarsipkan';
+ if(l.jenis==='arsip_ta')return i.selesai+': '+i.total+' baris disalin, '+(i.cocok?'cocok':'TIDAK cocok');
+ if(l.jenis==='salin')return i.selesai+': '+(i.cocok?'cocok':'TIDAK cocok');if(l.jenis==='manual')return i.oleh+' menjalankan '+i.tugas+(i.ta?' '+i.ta:'');return JSON.stringify(i);}
+async function muat(){$('muat').disabled=true;try{const s=await call({tugas:'status'});render(s);$('muatan').hidden=true;$('isi').hidden=false;}
+ catch(e){$('muatan').hidden=true;if(e.status===403||e.status===401){$('blok').hidden=false;$('isi').hidden=true;}else{$('isi').hidden=false;$('msg').className='msg err';$('msg').textContent=e.message;}}finally{$('muat').disabled=false;}}
+$('muat').addEventListener('click',muat);
+document.querySelectorAll('[data-tugas]').forEach(b=>b.addEventListener('click',async()=>{
+ const tugas=b.dataset.tugas,body={tugas};if(tugas==='arsip_ta'){body.ta=$('ta-in').value.trim();if(!/^\d{4}\/\d{4}$/.test(body.ta)){$('msg').className='msg err';$('msg').textContent='Tulis tahun ajaran seperti 2025/2026.';return;}}
+ b.disabled=true;$('msg').className='msg';$('msg').textContent='Menjalankan…';
+ try{await call(body);$('msg').textContent='Dimulai. Proses berjalan di server; muat ulang dalam 1–2 menit untuk melihat hasilnya.';}catch(e){$('msg').className='msg err';$('msg').textContent=e.message;}finally{b.disabled=false;}}));
+muat();
+})();
+</script>
+</body>
+</html>

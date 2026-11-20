@@ -537,7 +537,7 @@ function appsMenu(btn: HTMLElement) {
   const apps: any[] = (window as any).NURIS_APPS || [];
   const m = document.createElement('div'); m.className = 'rp-apps'; m.setAttribute('role', 'menu');
   const framed = window.parent !== window;
-  m.innerHTML = `<a role="menuitem" href="/" target="_top" data-app="beranda">Beranda portal</a>` + apps.filter((x) => x.id !== 'rapor-pesantren').map((x) => `<a role="menuitem" href="${esc(x.path)}" target="_top" data-app="${esc(x.id)}">${esc(x.name)}</a>`).join('');
+  m.innerHTML = `<a role="menuitem" href="/" target="_top" data-app="beranda">Beranda portal</a>` + apps.filter((x) => x.id !== 'rapor-pesantren' && (!x.admin || (() => { try { return ['pimpinan', 'admin'].includes(String(JSON.parse(localStorage.getItem('mut_user') || '{}').role || '').toLowerCase()); } catch { return false; } })())).map((x) => `<a role="menuitem" href="${esc(x.path)}" target="_top" data-app="${esc(x.id)}">${esc(x.name)}</a>`).join('');
   if (framed) m.addEventListener('click', (e) => { const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-app]'); if (!a) return; e.preventDefault(); parent.postMessage({ type: 'nuris:navigate', app: a.dataset.app }, location.origin); m.remove(); });
   document.body.append(m);
   const r = btn.getBoundingClientRect(); m.style.top = r.bottom + 8 + 'px'; m.style.right = Math.max(8, innerWidth - r.right) + 'px';
