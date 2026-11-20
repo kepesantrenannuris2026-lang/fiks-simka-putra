@@ -30,6 +30,8 @@ out = {
         for n in ('164f4fb6.8af40f7df63a03b3.js', 'bc98253f.d6fc8a0138855acd.js')
     ],
     'patch': [
+        # Beranda Kepesantrenan dapat dipasang sebagai aplikasi (manifest, ikon iOS, tombol Pasang aplikasi).
+        {'path': '/index.html', 'find': '<link rel="manifest" href="/manifest.webmanifest">', 'replace': '<link rel="manifest" href="/manifest.webmanifest?v=20261120"><link rel="apple-touch-icon" href="/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Kepesantrenan"><meta name="apple-mobile-web-app-status-bar-style" content="default"><script defer src="/nuris-install.js"></script>', 'marker': 'nuris-install.js'},
         # Halaman Mutabaah memuat modul Pratinjau & edit Rapor Al-Qur'an (ecosystem/mutabaah-rapor).
         {'path': '/mutabaah/index.html', 'find': '<script defer src="/nuris-glass.js"></script>', 'replace': '<script defer src="/nuris-glass.js"></script><link rel="stylesheet" href="/mutabaah/rapor-edit.css"><script defer src="/mutabaah/rapor-edit.js"></script>', 'marker': 'rapor-edit.js'},
         {'path': CH + '443.c56b9f41dc7a083f.js', 'find': 'ee(a.ttd.kepala.nama,$),', 'replace': 'ee(a.ttd.kepala.nama,$),' + inject, 'marker': 'nuris-cap'},

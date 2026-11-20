@@ -1,0 +1,30 @@
+{
+  "id": "/",
+  "name": "Kepesantrenan Nuris",
+  "short_name": "Kepesantrenan",
+  "description": "Ruang kerja Kepesantrenan Pesantren Nurul Islam Tengaran: Mutabaah Tahfidz, Mutabaah Yaumiyyah, Ujian Praktik Ibadah, Rapor Pesantren, SIMKA Putra & Putri.",
+  "lang": "id",
+  "dir": "ltr",
+  "start_url": "/?sumber=aplikasi",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#f7faf8",
+  "theme_color": "#0d4a28",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Mutabaah Tahfidz", "short_name": "Mutabaah", "url": "/mutabaah/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Rapor Al-Qur'an", "short_name": "Rapor Qur'an", "url": "/mutabaah/?tool=raport", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Mutabaah Yaumiyyah", "short_name": "Yaumiyyah", "url": "/yaumiyyah/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Rapor Pesantren", "short_name": "Rapor", "url": "/rapor-pesantren/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Ujian Praktik Ibadah", "short_name": "Praktik", "url": "/ujian-praktik/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "SIMKA Putra", "short_name": "SIMKA Putra", "url": "/simka/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "SIMKA Putri", "short_name": "SIMKA Putri", "url": "/simka-putri/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
