@@ -24,10 +24,10 @@ const AUDIT: [string, string][] = [['public.audit', 'waktu'], ['rapor_pesantren.
   ['simka.audit', 'waktu'], ['simka_putri.audit', 'waktu'], ['tahfidz_exam.audit', 'created_at'], ['ibadah.audit', 'created_at']];
 // Data per tahun ajaran. $1 = awal (YYYY-07-01), $2 = akhir (YYYY+1-07-01), $3 = 'YYYY/YYYY+1'.
 const TA: [string, string][] = [
-  ['public.setoran', `make_date(tahun, bulan, 1) >= $1::date AND make_date(tahun, bulan, 1) < $2::date`],
-  ['public.hm_catatan', `(ym || '-01')::date >= $1::date AND (ym || '-01')::date < $2::date`],
-  ['public.keanggotaan_histori', `(ym || '-01')::date >= $1::date AND (ym || '-01')::date < $2::date`],
-  ['public.penilaian_tajwid', `(ym || '-01')::date >= $1::date AND (ym || '-01')::date < $2::date`],
+  ['public.setoran', `make_date(tahun, bulan, 1) >= $1::text::date AND make_date(tahun, bulan, 1) < $2::text::date`],
+  ['public.hm_catatan', `(ym || '-01')::date >= $1::text::date AND (ym || '-01')::date < $2::text::date`],
+  ['public.keanggotaan_histori', `(ym || '-01')::date >= $1::text::date AND (ym || '-01')::date < $2::text::date`],
+  ['public.penilaian_tajwid', `(ym || '-01')::date >= $1::text::date AND (ym || '-01')::date < $2::text::date`],
   ['public.hadis_arbain', `tanggal >= $1::text AND tanggal < $2::text`],
   ['public.rapor_semester', `tahun_ajaran = $3`],
   ['public.ujian_semester', `tahun_ajaran = $3`],
@@ -38,11 +38,11 @@ const TA: [string, string][] = [
   ['tahfidz_exam.attempts', `assignment_id IN (SELECT a.id FROM tahfidz_exam.assignments a JOIN tahfidz_exam.periods p ON p.id = a.period_id WHERE p.tahun_ajaran = $3)`],
   ['ujian_praktik.periode', `tahun_ajaran = $3`],
   ['ujian_praktik.nilai', `periode_id IN (SELECT id FROM ujian_praktik.periode WHERE tahun_ajaran = $3)`],
-  ['yaumiyyah.daily', `tanggal >= $1::date AND tanggal < $2::date`],
-  ['simka.pelanggaran', `tanggal_waktu >= $1::date AND tanggal_waktu < $2::date`],
-  ['simka.pembinaan', `created_at >= $1::date AND created_at < $2::date`],
-  ['simka_putri.pelanggaran', `tanggal_waktu >= $1::date AND tanggal_waktu < $2::date`],
-  ['simka_putri.pembinaan', `created_at >= $1::date AND created_at < $2::date`],
+  ['yaumiyyah.daily', `tanggal >= $1::text::date AND tanggal < $2::text::date`],
+  ['simka.pelanggaran', `tanggal_waktu >= $1::text::date AND tanggal_waktu < $2::text::date`],
+  ['simka.pembinaan', `created_at >= $1::text::date AND created_at < $2::text::date`],
+  ['simka_putri.pelanggaran', `tanggal_waktu >= $1::text::date AND tanggal_waktu < $2::text::date`],
+  ['simka_putri.pembinaan', `created_at >= $1::text::date AND created_at < $2::text::date`],
 ];
 const ROWS = 4000, BUDGET_MS = 25000, BUDGET_BYTES = 12_000_000;
 const ORIGINS = ['https://kepesantrenan-nuris.kepesantrenannuris.workers.dev', 'https://kepesantrenannuris.netlify.app'];
@@ -198,7 +198,7 @@ async function arsipTA(body: any, t0: number) {
   const hasil: any[] = body.hasil || [];
   const args = [awal, akhir, ta];
   while (antre.length && Date.now() - t0 < BUDGET_MS) {
-    const it = antre[0]; const where = TA[Number(it.col)][1];
+    const it = antre[0]; const where = `(${TA[Number(it.col)][1]}) AND $1::text <> '' AND $2::text <> '' AND $3::text <> ''`; // semua parameter selalu dirujuk
     if (it.part === 0 && !hasil.find((x) => x.t === it.t)) hasil.push({ t: it.t, sumber: (await q(`SELECT count(*)::int n FROM ${ident(it.t)} WHERE ${where}`, args)).rows[0].n, baris: 0, berkas: 0 });
     const h = hasil.find((x) => x.t === it.t);
     if (!h.sumber) { antre.shift(); continue; }
