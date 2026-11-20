@@ -47,7 +47,7 @@ svg.spark{width:100%;height:56px;display:block}
   <section class="card"><h2>Penyimpanan Supabase</h2><div class="big" id="st"></div><div class="meter" id="st-m"></div><p class="muted">Cadangan & arsip (batas paket gratis 1 GB)</p></section>
   <section class="card"><h2>Salinan luar · Cloudflare D1</h2><div class="big" id="d1"></div><div class="meter" id="d1-m"></div><p class="muted" id="d1-t"></p></section>
   <section class="card wide"><h2>Pengaman kuota otomatis</h2><p class="muted">Diperiksa setiap hari pukul 03:20 WIB. Data hanya dihapus dari Supabase setelah tersalin ke Storage dan D1.</p>
-   <div class="steps" id="tingkat"></div><svg class="spark" id="spark" viewBox="0 0 300 56" preserveAspectRatio="none" aria-label="Riwayat kapasitas database"></svg></section>
+   <div class="steps" id="tingkat"></div><svg class="spark" id="spark" viewBox="0 0 300 56" preserveAspectRatio="none" aria-label="Riwayat kapasitas database"></svg><p class="muted" id="spark-kosong" hidden>Grafik riwayat harian muncul setelah dua hari pemeriksaan.</p></section>
   <section class="card"><h2>Cadangan harian</h2><div class="rows" id="cad"></div></section>
   <section class="card"><h2>Antrean & audit</h2><div class="rows" id="aq"></div></section>
   <section class="card"><h2>Arsip tahun ajaran</h2><div class="rows" id="ta"></div></section>
@@ -65,7 +65,7 @@ svg.spark{width:100%;height:56px;display:block}
 (()=>{'use strict';
 const API='https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/cadangan';
 const $=id=>document.getElementById(id);
-const mb=b=>b==null?'–':b>=1073741824?(b/1073741824).toFixed(2)+' GB':(b/1048576).toFixed(1)+' MB';
+const mb=b=>b==null?'–':b>=1073741824?(b/1073741824).toFixed(2)+' GB':(b/1048576).toFixed(b>=104857600?0:1)+' MB';
 const wkt=t=>t?new Date(t).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'–';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LV=[['normal','0–50%','Operasional normal'],['evaluasi','50–60%','Evaluasi arsip'],['arsip','60–70%','Arsip audit > 30 hari'],['intensif','70–80%','Arsip > 14 hari, bersihkan antrean'],['kritis','> 80%','Peringatan pimpinan']];
@@ -84,8 +84,8 @@ function render(s){
  const d=s.d1||{};if(d.ok){const dp=d.db_bytes*100/d.batas_bytes;$('d1').innerHTML=dp.toFixed(1)+'% <small>'+mb(d.db_bytes)+' dari 500 MB</small>';meter($('d1-m'),dp,[]);$('d1-t').textContent=d.berkas+' berkas · '+d.harian+' cadangan harian · terakhir '+wkt(d.terakhir&&d.terakhir.replace(' ','T')+'Z');}
  else{$('d1').innerHTML='<span class="badge bad">Tidak terjangkau</span>';$('d1-t').textContent=d.error||'';}
  $('tingkat').innerHTML=LV.map((l,i)=>'<div class="'+(i===lvIdx?'on':'')+'"><strong>'+l[1]+'</strong>'+l[2]+'</div>').join('');
- const h=(s.riwayat||[]).map(x=>+x.persen);if(h.length>1){const mx=Math.max(100,...h);const pts=h.map((v,i)=>(i*300/(h.length-1)).toFixed(1)+','+(56-v*56/mx).toFixed(1)).join(' ');$('spark').innerHTML='<polyline points="'+pts+'" fill="none" stroke="#17873f" stroke-width="2" vector-effect="non-scaling-stroke"/>';}
- else $('spark').innerHTML='<text x="0" y="34" font-size="11" fill="#63736a">Riwayat harian akan muncul mulai besok.</text>';
+ const h=(s.riwayat||[]).map(x=>+x.persen);if(h.length>1){$('spark-kosong').hidden=true;const mx=Math.max(100,...h);const pts=h.map((v,i)=>(i*300/(h.length-1)).toFixed(1)+','+(56-v*56/mx).toFixed(1)).join(' ');$('spark').innerHTML='<polyline points="'+pts+'" fill="none" stroke="#17873f" stroke-width="2" vector-effect="non-scaling-stroke"/>';}
+ else{$('spark').innerHTML='';$('spark-kosong').hidden=false;}
  const c=s.cadangan||{},t=c.terakhir;const dd=t&&t.salinan_d1||{};
  rows($('cad'),[['Terakhir',t?esc(t.tanggal)+' · '+wkt(t.dibuat):'<span class="badge bad">Belum ada</span>'],['Isi',t?t.tabel+' tabel · '+(t.baris||0).toLocaleString('id-ID')+' baris':'–'],['Ukuran (gzip)',t?mb(t.gzip):'–'],
   ['Salinan D1',t?(dd.d1_gagal?'<span class="badge warn">'+dd.d1_gagal+' berkas gagal</span>':'<span class="badge">'+(dd.d1||0)+' berkas</span>'):'–'],['Tersimpan',(c.harian||[]).length+' hari']]);
