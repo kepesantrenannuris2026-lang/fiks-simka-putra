@@ -29,24 +29,36 @@ export function validateEntry(input:any){
  if(typeof input.note!=='string'||input.note.length>2000)throw new Error('Catatan maksimal 2.000 karakter.');
  return {date:input.date,values,excused:input.excused,note:input.note};
 }
+/** Nilai satu aktivitas dari isian yang TERISI saja (hari kosong tidak dihitung), dengan memperhatikan target periodenya:
+ *  - harian/hari sekolah: tiap hari terisi = min(isian, target)/target; nilai = rata-rata hari terisi.
+ *  - pekanan: per pekan yang punya isian, target disesuaikan jumlah hari terisi (target × hari terisi / 7, dibulatkan ke atas);
+ *    nilai pekan = min(jumlah, target pekan)/target pekan; nilai = rata-rata pekan.
+ *  - bulanan: sama per bulan (target × hari terisi / jumlah hari bulan itu, minimal 1).
+ *  Satu isian saja dalam satu semester → nilai isian itu yang dipakai; dua atau lebih → dirata-rata. */
+function scoreActivity(a:typeof activities[number],eligible:string[],map:Map<string,Entry>){
+ const filled=eligible.filter(d=>map.get(d)?.values[a.id]!=null);const val=(d:string)=>Number(map.get(d)!.values[a.id]);
+ const actual=filled.reduce((s,d)=>s+val(d),0);let parts:number[]=[];let target=0;
+ if(a.period==='day'||a.period==='school'){parts=filled.map(d=>Math.min(val(d),a.target)/a.target);target=filled.length*a.target;}
+ else{const groups=new Map<string,string[]>();for(const d of filled){let k:string;if(a.period==='week'){const t=new Date(d+'T00:00:00Z');t.setUTCDate(t.getUTCDate()-(t.getUTCDay()+6)%7);k=t.toISOString().slice(0,10);}else k=d.slice(0,7);groups.set(k,[...(groups.get(k)||[]),d]);}
+  for(const [k,g] of groups){const len=a.period==='week'?7:daysOfMonth(k).length;const goal=Math.max(1,Math.ceil(a.target*g.length/len));target+=goal;parts.push(Math.min(g.reduce((s,d)=>s+val(d),0),goal)/goal);}}
+ const score=parts.length?Math.round(parts.reduce((s,x)=>s+x,0)/parts.length*10000)/100:null;
+ return {eligible:eligible.length,observed:filled.length,actual,target,score,predikat:grade(score)};
+}
+function eligibleDays(a:typeof activities[number],days:string[],map:Map<string,Entry>){return days.filter(d=>!map.get(d)?.excused?.includes(a.id)&&(a.period!=='school'||![0,6].includes(new Date(d+'T00:00:00Z').getUTCDay())));}
+/** Nilai keseluruhan = rata-rata aktivitas yang sudah punya isian (aktivitas tanpa isian tidak menurunkan nilai). */
+function overall(rows:{score:number|null}[]){const s=rows.filter(r=>r.score!==null);return s.length?Math.round(s.reduce((n,r)=>n+r.score!,0)/s.length*100)/100:null;}
 export function monthlyReport(month:string,entries:Entry[],asOf=todayWIB()){
  const days=daysOfMonth(month).filter(d=>d<=asOf);const map=new Map(entries.map(e=>[e.date,e]));
- const rows=activities.map(a=>{const eligible=days.filter(d=>!map.get(d)?.excused?.includes(a.id)&&(a.period!=='school'||![0,6].includes(new Date(d+'T00:00:00Z').getUTCDay())));let observed=0,actual=0,earned=0,target=0;
- for(const d of eligible){const v=map.get(d)?.values[a.id];if(v!=null){observed++;actual+=v;}}
- if(a.period==='day'||a.period==='school'){target=eligible.length*a.target;earned=eligible.reduce((s,d)=>s+Math.min(map.get(d)?.values[a.id]??0,a.target),0);}
- if(a.period==='month'){target=eligible.length?Math.max(1,Math.ceil(a.target*eligible.length/daysOfMonth(month).length)):0;earned=Math.min(actual,target);}
- if(a.period==='week'){const weeks=new Map<string,string[]>();for(const d of eligible){const t=new Date(d+'T00:00:00Z');t.setUTCDate(t.getUTCDate()-(t.getUTCDay()+6)%7);const k=t.toISOString().slice(0,10);weeks.set(k,[...(weeks.get(k)||[]),d]);}for(const group of weeks.values()){const goal=Math.ceil(a.target*group.length/7);target+=goal;earned+=Math.min(goal,group.reduce((s,d)=>s+(map.get(d)?.values[a.id]??0),0));}}
- const score=target&&observed?Math.round(earned/target*10000)/100:null;
- return {...a,eligible:eligible.length,observed,actual,target,score,predikat:grade(score)};
- });
- const scored=rows.filter(r=>r.score!==null);const observed=rows.reduce((n,r)=>n+r.observed,0),eligible=rows.reduce((n,r)=>n+r.eligible,0);
- // Missing activity is zero in the provisional overall average; fully excused activity is omitted.
- const applicable=rows.filter(r=>r.target>0);const score=observed&&applicable.length?Math.round(applicable.reduce((n,r)=>n+(r.score??0),0)/applicable.length*100)/100:null;
+ const rows=activities.map(a=>({...a,...scoreActivity(a,eligibleDays(a,days,map),map)}));
+ const observed=rows.reduce((n,r)=>n+r.observed,0),eligible=rows.reduce((n,r)=>n+r.eligible,0);const score=overall(rows);
  return {month,rows,score,predikat:grade(score),observed,eligible,coverage:eligible?Math.round(observed/eligible*100):0,provisional:observed<eligible||asOf<daysOfMonth(month).at(-1)!,notes:entries.filter(e=>e.note).map(e=>({date:e.date,note:e.note!}))};
 }
-export function semesterMonths(year:number,semester:number){if(!Number.isInteger(year)||year<2000||year>2100||![1,2].includes(semester))throw new Error('Semester tidak valid.');return Array.from({length:6},(_,i)=>(semester===1?year:year+1)+'-'+String((semester===1?7:1)+i).padStart(2,'0'));}
 export function semesterReport(months:string[],entries:Entry[],asOf=todayWIB()){
- const reports=months.map(m=>monthlyReport(m,entries.filter(e=>e.date.startsWith(m)),asOf));const available=reports.filter(r=>r.observed>0);const score=available.length?Math.round(available.reduce((s,r)=>s+(r.score??0),0)/available.length*100)/100:null;
- const rows=activities.map(a=>{const vals=available.map(r=>r.rows.find(x=>x.id===a.id)!).filter(r=>r.target>0);const score=vals.length?Math.round(vals.reduce((s,r)=>s+(r.score??0),0)/vals.length*100)/100:null;return {...a,months:reports.map(r=>r.rows.find(x=>x.id===a.id)!.score),score,predikat:grade(score)};});
- return {reports,rows,score,predikat:grade(score),provisional:available.length<6||reports.some(r=>r.provisional),observed:reports.reduce((n,r)=>n+r.observed,0),eligible:reports.reduce((n,r)=>n+r.eligible,0)};
+ const reports=months.map(m=>monthlyReport(m,entries.filter(e=>e.date.startsWith(m)),asOf));
+ const days=months.flatMap(m=>daysOfMonth(m)).filter(d=>d<=asOf);const map=new Map(entries.map(e=>[e.date,e]));
+ // Nilai semester dihitung langsung dari semua isian semester (bukan rata-rata nilai bulanan), agar bulan dengan sedikit isian tidak berbobot sama.
+ const rows=activities.map(a=>({...a,...scoreActivity(a,eligibleDays(a,days,map),map),months:reports.map(r=>r.rows.find(x=>x.id===a.id)!.score)}));
+ const score=overall(rows);
+ return {reports,rows,score,predikat:grade(score),provisional:reports.filter(r=>r.observed>0).length<6||reports.some(r=>r.provisional),observed:reports.reduce((n,r)=>n+r.observed,0),eligible:reports.reduce((n,r)=>n+r.eligible,0)};
 }
+export function semesterMonths(year:number,semester:number){if(!Number.isInteger(year)||year<2000||year>2100||![1,2].includes(semester))throw new Error('Semester tidak valid.');return Array.from({length:6},(_,i)=>(semester===1?year:year+1)+'-'+String((semester===1?7:1)+i).padStart(2,'0'));}

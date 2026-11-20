@@ -14,3 +14,12 @@ test('validation rejects impossible dates, fractions, negative, oversized and un
 test('student scope uses bound current musyrif assignment and never client user id',()=>{const args:any[]=[];assert.match(studentScope({admin:false,musyrif_master:'Teacher'},args),/\$1/);assert.deepEqual(args,['Teacher']);assert.equal(studentScope({admin:false,musyrif_master:''},[]),'false');});
 test('reading or saving another teachers student is rejected before any daily query',async()=>{let n=0;await assert.rejects(yaumiyyah({admin:false,musyrif_master:'Teacher'},'yaum-save',{santri_id:'foreign'},async()=>{n++;return {rows:[]};}),/tidak termasuk/);assert.equal(n,1);});
 test('stale save is rejected without overwriting a newer daily entry',async()=>{let q=0;await assert.rejects(yaumiyyah({admin:true,username:'admin'},'yaum-save',{santri_id:'demo',entry:{date:'2026-09-01',values:{},excused:[],note:''}},async(sql:string)=>{q++;if(q===1)return {rows:[{id:'demo'}]};assert.match(sql,/version=\$7/);return {rows:[]};}),/telah berubah/);});
+// Nilai rapor = rata-rata isian yang terisi (hari kosong tidak dihitung), sesuai target harian/pekanan/bulanan.
+const one=(date:string,values:Record<string,number>):Entry=>({date,values,excused:[],note:''});
+const sem=(es:Entry[])=>semesterReport(semesterMonths(2026,1),es,'2027-01-01');
+const row=(r:any,id:string)=>r.rows.find((x:any)=>x.id===id);
+test('satu isian dalam satu semester: nilai isian itu yang masuk rapor',()=>{const r=sem([one('2026-09-03',{jamaah:4,rawatib:4,qiyam:1,puasa:1})]);assert.equal(row(r,'jamaah').score,80);assert.equal(row(r,'rawatib').score,100);assert.equal(row(r,'qiyam').score,100);assert.equal(row(r,'puasa').score,100);assert.equal(row(r,'dhuha').score,null);});
+test('dua isian atau lebih dirata-rata; target harian membatasi kelebihan',()=>{const r=sem([one('2026-09-03',{jamaah:5,quran:20}),one('2026-10-10',{jamaah:3,quran:5})]);assert.equal(row(r,'jamaah').score,80);assert.equal(row(r,'quran').score,75);});
+test('pekanan: target disesuaikan hari terisi, lalu rata-rata pekan',()=>{const r=sem([one('2026-09-01',{dhuha:1}),one('2026-09-02',{dhuha:0}),one('2026-09-15',{dhuha:0})]);assert.equal(row(r,'dhuha').score,25);});
+test('bulanan: puasa 2 kali/bulan dihitung per bulan yang terisi',()=>{const es=daysOfMonth('2026-08').map(d=>one(d,{puasa:d==='2026-08-05'?1:0}));const r=sem(es);assert.equal(row(r,'puasa').score,50);});
+test('aktivitas tanpa isian tidak menurunkan nilai keseluruhan',()=>{const r=sem([one('2026-09-03',{jamaah:5})]);assert.equal(r.score,100);});
