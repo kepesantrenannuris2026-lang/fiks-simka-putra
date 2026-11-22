@@ -75,7 +75,7 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
 :is(.dark,[data-nuris-theme=dark]){--nn-bar:#163a26;--nn-item:#9fbcaa;--nn-shadow:#000000a6}
 .nuris-notch.nuris-notch{position:fixed!important;left:12px!important;right:12px!important;top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom))!important;width:auto!important;
   background:transparent!important;border:0!important;border-radius:24px!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-  padding:14px 12px 7px!important;overflow:visible!important;isolation:isolate}
+  padding:14px 16px 7px!important;overflow:visible!important;isolation:isolate}
 .nuris-notch>.nuris-lens{display:none!important}
 .nuris-notch-bar{position:absolute;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none;overflow:visible;filter:drop-shadow(0 12px 18px var(--nn-shadow)) drop-shadow(0 1px 1px #082e1a33)}
 .nuris-notch-bar path{fill:var(--nn-bar)}
@@ -90,10 +90,11 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
 .nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true])>:first-child{transform:translateY(var(--nn-dy,-20px));color:var(--nn-ink)!important}
 .nuris-notch :is([aria-current=page],[aria-selected=true])>:first-child *{color:inherit}
 /* Aksi utama: dari tombol menonjol menjadi ubin saffron sebaris; saat aktif ubin larut ke gelembung saffron. */
-.nuris-notch :is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch :is(a,button)>span[class*="size-14"]{width:34px!important;height:34px!important;margin:-6px 0 0!important;border-radius:12px!important;display:grid!important;place-items:center;
+.nuris-notch :is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch :is(a,button)>span[class*="size-14"]{width:34px!important;height:34px!important;margin:-9px 0 -1px!important;border-radius:12px!important;display:grid!important;place-items:center;
   background:var(--nn-saffron)!important;color:var(--nn-ink)!important;box-shadow:0 4px 10px -4px #ee8a3599!important}
 .nuris-notch :is(.nuris-record-tab,[data-nuris-primary])>span svg,.nuris-notch :is(a,button)>span[class*="size-14"] svg{width:20px;height:20px}
 .nuris-notch :is([aria-current=page],[aria-selected=true]):is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch :is([aria-current=page],[aria-selected=true])>span[class*="size-14"]{background:transparent!important;box-shadow:none!important}
 .nuris-notch :is(a,button)[class*="-mt-"]{padding-top:4px!important}
+.nuris-notch .nuris-record-tab,.nuris-notch [data-nuris-primary]{padding-top:inherit}
 @media (prefers-reduced-motion:reduce){.nuris-notch :is(a,button,[role=tab])>:first-child{transition:none}}
 @media print{.nuris-notch-bar,.nuris-notch-ball{display:none}}

@@ -180,7 +180,7 @@
       const W = this.root.clientWidth + this.root.clientLeft * 2, H = this.root.offsetHeight; if (!W || !H || this.x == null) return;
       const none = this.root.hasAttribute('data-notch-none');
       // Lekukan membulat memeluk gelembung (jari-jari 29, pusat y 5) dengan bahu lembut di kedua sisi.
-      const R = Math.min(22, H / 2), S = 40, cx = Math.max(S, Math.min(W - S, this.x));
+      const R = Math.min(22, H / 2), S = 38, cx = Math.max(S, Math.min(W - S, this.x));
       const L = Math.max(0, Math.min(R, cx - S)), Rr = Math.max(0, Math.min(R, W - cx - S));
       const top = none ? `H${W - Rr}` : `H${cx - S} Q${cx - 29} 0 ${cx - 27.25} 14.92 A29 29 0 0 0 ${cx + 27.25} 14.92 Q${cx + 29} 0 ${cx + S} 0 H${W - Rr}`;
       this.svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
