@@ -81,7 +81,7 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
 .nuris-notch.nuris-notch :is(a,button,[role=tab]){pointer-events:auto}
 .nuris-notch.nuris-notch>div{padding-top:0!important;padding-bottom:0!important;background:transparent!important}
 .nuris-notch>.nuris-lens{display:none!important}
-.nuris-notch-bar{position:absolute;left:var(--nn-side);right:var(--nn-side);top:var(--nn-over);bottom:calc(var(--nn-gap) + env(safe-area-inset-bottom));z-index:-2;pointer-events:none;overflow:visible;
+.nuris-notch-bar{position:absolute;left:var(--nn-side);top:var(--nn-over);width:calc(100% - 2 * var(--nn-side));height:calc(100% - var(--nn-over) - var(--nn-gap) - env(safe-area-inset-bottom));z-index:-2;pointer-events:none;overflow:visible;
   filter:drop-shadow(0 10px 16px var(--nn-shadow)) drop-shadow(0 1px 1px #082e1a33)}
 .nuris-notch-bar path{fill:var(--nn-bar)}
 :is(.dark,[data-nuris-theme=dark]) .nuris-notch-bar path{stroke:#ffffff1f;stroke-width:1}
