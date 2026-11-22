@@ -20,3 +20,10 @@
 .yw-kat span b{margin-right:2px}.yw-kat span.on.a{background:var(--leaf-soft);color:#0d6b33}.yw-kat span.on.bp{background:var(--sky-soft);color:#1d4fae}.yw-kat span.on.b{background:var(--amber-soft);color:#8a5a12}.yw-kat span.on.c{background:var(--rose-soft);color:#a12c2c}
 .yw-rinci td small{display:block;color:var(--muted);font-size:11.5px}.yw-rinci td,.yw-rinci th{white-space:nowrap}
 .yw-step input{width:76px}
+.yw-combo{position:relative}.yw-combo label{font-size:12px;font-weight:700;color:var(--muted)}
+.yw-opts{position:absolute;left:0;right:0;top:100%;margin-top:6px;z-index:30;max-height:min(320px,52vh);overflow:auto;overscroll-behavior:contain;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 34px -16px #082e1a59;padding:4px}
+.yw-opts [role=option]{display:flex;flex-direction:column;gap:1px;padding:9px 10px;border-radius:10px;cursor:pointer;color:var(--ink)}
+.yw-opts [role=option] b{font-size:14px;font-weight:700}.yw-opts [role=option] small{font-size:12px;color:var(--muted);font-weight:500}
+.yw-opts [role=option].hi,.yw-opts [role=option]:hover{background:var(--leaf-soft)}.yw-opts [role=option][aria-selected=true] b{color:var(--leaf-deep)}
+.yw-opt-more{margin:6px 10px;font-size:12px;color:var(--muted);font-weight:500}
+@media (max-width:899px){.yw-savebar{bottom:calc(100px + env(safe-area-inset-bottom))}}

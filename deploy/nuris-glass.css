@@ -86,8 +86,7 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
 .nuris-notch-bar path{fill:var(--nn-bar)}
 :is(.dark,[data-nuris-theme=dark]) .nuris-notch-bar path{stroke:#ffffff1f;stroke-width:1}
 .nuris-notch-ball{position:absolute;left:0;top:0;z-index:-1;width:42px;height:42px;border-radius:50%;pointer-events:none;opacity:0;will-change:transform;
-  background:radial-gradient(120% 90% at 50% 18%,#ffc48f 0%,var(--nn-saffron) 60%,#d9721f 100%);
-  box-shadow:0 8px 16px -6px #8a3f0b80,inset 0 1px 0 #ffffffb3;transition:opacity .2s ease}
+  background:var(--nn-saffron);box-shadow:none;transition:opacity .2s ease}
 .nuris-notch.nuris-notch :is(a,button,[role=tab]){position:relative;color:var(--nn-item)!important;background:transparent!important;border-color:transparent!important;box-shadow:none!important;margin-top:0!important;padding-top:4px!important;padding-bottom:3px!important;transition:color .25s ease}
 .nuris-notch :is(a,button,[role=tab])>:first-child{transition:transform .55s cubic-bezier(.34,1.56,.64,1),color .25s ease}
 .nuris-notch :is(a,button,[role=tab]) svg{width:21px!important;height:21px!important}
@@ -102,5 +101,9 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
 .nuris-notch.nuris-notch .nuris-record-tab>b{margin:0!important}
 .nuris-notch.nuris-notch :is(a,button)[class*="font-bold"]{font-weight:600!important}
 .nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true])[class*="font-bold"]{font-weight:800!important}
+/* Nav baru dibuat ulang: ikon aktif mulai dari posisi biasa lalu naik ke gelembung. */
+.nuris-notch.nuris-notch[data-nn-enter] :is([aria-current=page],[aria-selected=true])>:first-child{transform:none;transition:none}
 @media (prefers-reduced-motion:reduce){.nuris-notch :is(a,button,[role=tab])>:first-child{transition:none}}
+/* Fitur siang/malam dihapus: sembunyikan sisa tombol/pilihan tema di semua aplikasi. */
+#nuris-appearance-toggle,[role=radiogroup][aria-label="Pilih Tema Tampilan"]{display:none!important}
 @media print{.nuris-notch-bar,.nuris-notch-ball{display:none}}

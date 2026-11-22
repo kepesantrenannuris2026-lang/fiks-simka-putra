@@ -6,6 +6,7 @@
 /mutabaah/nuris-offline.js
 /mutabaah/rapor-edit.css
 /mutabaah/rapor-edit.js
+/nuris-appearance.js
 /nuris-glass.css
 /nuris-glass.js
 /nuris-install.js

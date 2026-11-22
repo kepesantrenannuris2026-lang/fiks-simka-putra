@@ -5,7 +5,7 @@ import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, em
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/');
 const today = todayWIB(), thisMonth = today.slice(0, 7);
-const st: any = { user: null, students: [], sid: '', view: 'isian', month: thisMonth, period: 'month', year: Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 7 ? 1 : 0), sem: Number(today.slice(5, 7)) >= 7 ? 1 : 2, entries: [] as MonthEntry[], draft: null as MonthEntry | null, dirty: false, busy: false, q: '', loading: true, logo: '', rincian: false };
+const st: any = { user: null, students: [], sid: '', view: 'isian', month: thisMonth, period: 'month', year: Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 7 ? 1 : 0), sem: Number(today.slice(5, 7)) >= 7 ? 1 : 2, entries: [] as MonthEntry[], draft: null as MonthEntry | null, dirty: false, busy: false, loading: true, logo: '', rincian: false };
 const app = document.getElementById('app')!;
 const fresh = (month: string): MonthEntry => ({ month, values: {}, izin: 0, note: '' });
 const student = () => st.students.find((s: any) => s.id === st.sid);
@@ -20,13 +20,33 @@ function render() {
   const nav = [{ id: 'isian', label: 'Isian bulanan', icon: I.edit }, { id: 'rekap', label: 'Rekap', icon: I.chart }];
   app.innerHTML = shell({ app: 'Mutabaah Yaumiyyah', title, nav, active: st.view, user: st.user && { nama: st.user.nama, peran: peran() } }, body());
 }
+// Pilih santri: satu kolom yang bisa diketik; daftar nama yang cocok muncul di bawahnya (tanpa kolom "Cari santri" terpisah).
+const sLabel = (x: any) => `${x.nama} · ${x.kelas} · ${unitLabel(x.unit)}${x.kamar ? ' · ' + x.kamar : ''}`;
 function picker() {
-  const q = st.q.toLowerCase();
-  const list = st.students.filter((s: any) => !q || `${s.nama} ${s.unit} ${s.kelas} ${s.kamar} ${s.halaqah}`.toLowerCase().includes(q));
   const s = student();
-  return `<section class="ns-card yw-pick"><div class="ns-filters" style="margin:0"><label class="ns-field">Cari santri<input type="search" data-act="q" value="${esc(st.q)}" placeholder="Nama, kelas, kamar, atau unit"></label>
-    <label class="ns-field">Santri<select data-act="sid">${s && !list.includes(s) ? `<option value="${esc(s.id)}">${esc(s.nama)}</option>` : ''}${list.slice(0, 600).map((x: any) => `<option value="${esc(x.id)}" ${x.id === st.sid ? 'selected' : ''}>${esc(x.nama)} · ${esc(x.kelas)} · ${esc(unitLabel(x.unit))}${x.kamar ? ' · ' + esc(x.kamar) : ''}</option>`).join('')}</select></label></div>
+  return `<section class="ns-card yw-pick"><div class="ns-field yw-combo"><label for="yw-santri">Santri</label>
+    <input id="yw-santri" type="text" data-act="sq" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="yw-opts" autocomplete="off" spellcheck="false" value="${esc(s?.nama || '')}" placeholder="Ketik nama santri">
+    <div id="yw-opts" class="yw-opts" role="listbox" hidden></div></div>
     ${s ? `<p class="ns-muted yw-who">${esc(unitLabel(s.unit))} · Kelas ${esc(s.kelas)}${s.kamar ? ` · Kamar ${esc(s.kamar)}` : ''} · Musyrif/ah: ${esc(s.musyrif || '–')}</p>` : ''}</section>`;
+}
+const combo = { hi: 0, list: [] as any[] };
+function comboShow(q: string) {
+  const box = $('#yw-opts'), inp = $<HTMLInputElement>('#yw-santri'); if (!box || !inp) return;
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  combo.list = st.students.filter((x: any) => { const t = `${x.nama} ${x.kelas} ${unitLabel(x.unit)} ${x.unit} ${x.kamar || ''} ${x.halaqah || ''}`.toLowerCase(); return words.every((w) => t.includes(w)); });
+  combo.hi = Math.max(0, combo.list.findIndex((x: any) => x.id === st.sid && !words.length));
+  const shown = combo.list.slice(0, 60);
+  box.innerHTML = shown.length ? shown.map((x: any, i: number) => `<div role="option" id="yw-o${i}" data-sid="${esc(x.id)}" aria-selected="${x.id === st.sid}" class="${i === combo.hi ? 'hi' : ''}"><b>${esc(x.nama)}</b><small>${esc(x.kelas)} · ${esc(unitLabel(x.unit))}${x.kamar ? ' · ' + esc(x.kamar) : ''}</small></div>`).join('') + (combo.list.length > 60 ? `<p class="yw-opt-more">${combo.list.length - 60} santri lain, ketik nama untuk mempersempit.</p>` : '')
+    : '<p class="yw-opt-more">Tidak ada santri yang cocok.</p>';
+  box.hidden = false; inp.setAttribute('aria-expanded', 'true'); inp.setAttribute('aria-activedescendant', shown.length ? 'yw-o' + combo.hi : '');
+  box.querySelector('.hi')?.scrollIntoView({ block: 'nearest' });
+}
+function comboHide() { const box = $('#yw-opts'), inp = $<HTMLInputElement>('#yw-santri'); if (box) box.hidden = true; if (inp) { inp.setAttribute('aria-expanded', 'false'); inp.value = student()?.nama || ''; } }
+async function comboPick(id: string) {
+  comboHide();
+  if (!id || id === st.sid) return;
+  if (!leave()) return;
+  st.sid = id; sessionStorage.setItem('yw-sid', st.sid); await load();
 }
 function body() {
   if (st.loading && !st.students.length) return loading();
@@ -127,7 +147,7 @@ document.addEventListener('click', async (e) => {
 });
 document.addEventListener('input', (e) => {
   const t = e.target as HTMLInputElement;
-  if (t.dataset.act === 'q') { st.q = t.value; const p = t.selectionStart; render(); const n = $<HTMLInputElement>('[data-act=q]'); n?.focus(); n?.setSelectionRange(p, p); }
+  if (t.dataset.act === 'sq') comboShow(t.value);
   else if (t.dataset.val) { const v = t.value.replace(/\D/g, ''); t.value = v; setVal(t.dataset.val, v === '' ? null : Number(v)); $('.yw-savebar')?.classList.add('dirty'); }
   else if (t.dataset.act === 'note') { st.draft.note = t.value; st.dirty = true; $('.yw-savebar')?.classList.add('dirty'); }
 });
@@ -135,11 +155,22 @@ document.addEventListener('change', async (e) => {
   const t = e.target as HTMLInputElement;
   if (t.dataset.val) { refreshCard(); return; }
   const a = t.dataset.act;
-  if (a === 'sid') { if (!leave()) { render(); return; } st.sid = t.value; sessionStorage.setItem('yw-sid', st.sid); await load(); }
-  else if (a === 'izin') { const n = Math.max(0, Math.min(daysInMonth(st.month), Number(t.value.replace(/\D/g, '')) || 0)); st.draft.izin = n; for (const x of activities) if (st.draft.values[x.id] != null) setVal(x.id, st.draft.values[x.id]); st.dirty = true; refreshCard(); }
+  if (a === 'izin') { const n = Math.max(0, Math.min(daysInMonth(st.month), Number(t.value.replace(/\D/g, '')) || 0)); st.draft.izin = n; for (const x of activities) if (st.draft.values[x.id] != null) setVal(x.id, st.draft.values[x.id]); st.dirty = true; refreshCard(); }
   else if (a === 'month') { if (!t.value || t.value > thisMonth) { toast('Bulan tidak boleh melewati bulan ini.', 'err'); render(); return; } if (!leave()) { render(); return; } st.month = t.value; await load(); }
   else if (a === 'year') { st.year = Number(t.value); await load(); }
   else if (a === 'semx') { st.sem = Number(t.value); await load(); }
+});
+document.addEventListener('focusin', (e) => { const t = e.target as HTMLInputElement; if (t.dataset?.act === 'sq') { t.select(); comboShow(''); } });
+document.addEventListener('focusout', (e) => { const t = e.target as HTMLInputElement; if (t.dataset?.act === 'sq') setTimeout(() => { if (document.activeElement !== t) comboHide(); }, 120); });
+// mousedown (bukan click) agar pilihan terambil sebelum kolom kehilangan fokus
+document.addEventListener('mousedown', (e) => { const o = (e.target as HTMLElement).closest<HTMLElement>('#yw-opts [data-sid]'); if (o) { e.preventDefault(); comboPick(o.dataset.sid!); } });
+document.addEventListener('click', (e) => { const o = (e.target as HTMLElement).closest<HTMLElement>('#yw-opts [data-sid]'); if (o) comboPick(o.dataset.sid!); });
+document.addEventListener('keydown', (e) => {
+  const t = e.target as HTMLInputElement; if (t.dataset?.act !== 'sq') return;
+  const box = $('#yw-opts'); const n = Math.min(60, combo.list.length);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (box?.hidden) { comboShow(t.value); return; } if (!n) return; combo.hi = (combo.hi + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; $$('#yw-opts [data-sid]').forEach((o, i) => o.classList.toggle('hi', i === combo.hi)); t.setAttribute('aria-activedescendant', 'yw-o' + combo.hi); $('#yw-opts .hi')?.scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'Enter') { e.preventDefault(); const x = combo.list[combo.hi]; if (x && !box?.hidden) comboPick(x.id); }
+  else if (e.key === 'Escape') { comboHide(); t.blur(); }
 });
 addEventListener('beforeunload', (e) => { if (st.dirty) e.preventDefault(); });
 boot();

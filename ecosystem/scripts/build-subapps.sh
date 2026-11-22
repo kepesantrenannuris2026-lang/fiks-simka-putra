@@ -24,6 +24,8 @@ for pair in rapor-pesantren:rapor-pesantren ujian-praktik:ujian-praktik yaumiyya
 done
 cp ecosystem/simka-theme/nuris-mutabaah.css deploy/
 cp ecosystem/glass/nuris-glass.css ecosystem/glass/nuris-glass.js deploy/
+# Tampilan selalu terang (fitur siang/malam dihapus).
+cp ecosystem/cloudflare/baseline-nuris-appearance.js deploy/nuris-appearance.js
 cp ecosystem/portal/apps.js deploy/
 # Infrastructure Manager (khusus pimpinan/admin).
 mkdir -p deploy/infrastruktur && cp ecosystem/portal/infrastruktur/index.html deploy/infrastruktur/

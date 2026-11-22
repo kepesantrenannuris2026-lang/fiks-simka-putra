@@ -2,7 +2,14 @@
    Progressive enhancement: tidak mengubah rute, data, atau pilihan tab. Satu lensa per navigasi mengikuti elemen aktif
    dengan animasi pegas (regang-memantul), umpan balik tekan, dan seret pada tab bar. Hormati reduced-motion/transparency. */
 (() => {
-  if (window.__nurisGlass) return; window.__nurisGlass = 4;
+  if (window.__nurisGlass) return; window.__nurisGlass = 4.2;
+  // Fitur siang/malam dihapus: semua aplikasi selalu terang. Pilihan gelap lama di perangkat ditimpa.
+  const terang = () => {
+    try { for (const k of ['nuris-appearance', 'simka_theme', 'simka_theme_mode']) if (localStorage.getItem(k) && localStorage.getItem(k) !== 'light') localStorage.setItem(k, 'light'); } catch {}
+    const r = document.documentElement; r.dataset.nurisTheme = 'light'; r.style.colorScheme = 'light';
+    if (r.classList.contains('dark') || document.body?.classList.contains('dark')) { r.classList.remove('dark'); document.body?.classList.remove('dark'); dispatchEvent(new CustomEvent('nuris-theme', { detail: 'light' })); }
+  };
+  terang();
   // v3: hanya navigasi. Kontrol segmen/chip ([role=tablist]) memakai sorotan aplikasinya sendiri agar teks tetap kontras.
   const SEL = '[data-nuris-glass]:not([data-nuris-glass="off"]), .nuris-bottom-nav, #mobile-nav, #desktop-nav, .nuris-sidebar nav, aside.fixed.inset-y-0 > nav';
   const ACTIVE = '[aria-current="page"], [role="tab"][aria-selected="true"]';
@@ -54,6 +61,7 @@
     }
     active() { const a = this.root.querySelector(ACTIVE); return a && a.offsetParent !== null ? a : null; }
     sync(immediate) {
+      if (this.el.parentNode !== this.root) this.root.append(this.el);
       const a = this.drag ? null : this.active();
       if (!this.drag && !a) { this.el.style.opacity = '0'; this.p = null; return; }
       this.el.dataset.tone = this.toneCache ||= tone(this.root);
@@ -132,6 +140,8 @@
   /* Tab bar bawah: bar melayang hijau pinus dengan lekukan (notch) yang mengikuti tab aktif; ikon aktif naik ke
      gelembung bundar. Lekukan & gelembung bergerak dengan pegas. Tidak mengubah rute/pilihan tab; hanya tampilan. */
   const SVGNS = 'http://www.w3.org/2000/svg';
+  const memo = new Map(); // posisi gelembung terakhir per tab bar; dipakai bila aplikasi membuat ulang elemen nav
+  const navKey = (root) => location.pathname + '|' + (root.getAttribute('aria-label') || root.id || '');
   const isMobile = (root) => root.dataset.nurisGlass === 'mobile' || root.matches('.nuris-bottom-nav, #mobile-nav');
   class Notch {
     constructor(root) {
@@ -142,12 +152,18 @@
       this.ball = document.createElement('span'); this.ball.className = 'nuris-notch-ball'; this.ball.setAttribute('aria-hidden', 'true');
       root.prepend(this.svg); root.append(this.ball);
       this.x = null; this.v = 0; this.t = 0; this.press = 0; this.pressT = 0; this.raf = 0;
-      this.ro = new ResizeObserver(() => this.sync('jump')); this.ro.observe(root);
+      this.ro = new ResizeObserver(() => { const w = root.getBoundingClientRect().width; const j = this.w != null && Math.abs(w - this.w) > 1; this.w = w; this.sync(j ? 'jump' : undefined); }); this.ro.observe(root);
+      // Nav dibuat ulang oleh aplikasi (mis. Yaumiyyah merender ulang seluruh layar): lanjutkan dari posisi lama
+      // dan biarkan ikon aktif naik dengan animasi, bukan melompat.
+      this.key = navKey(root); const m = memo.get(this.key), a0 = this.active();
+      if (m && performance.now() - m.time < 4000) { this.x = m.x; this.fresh = m.item !== this.itemId(a0); if (this.fresh) root.setAttribute('data-nn-enter', ''); }
       root.addEventListener('pointerdown', (e) => { const it = e.target.closest(ITEM); if (it && root.contains(it)) { this.pressT = 1; const a = this.active(); if (a && it !== a && !reduce.matches) { this.t = this.cx(it); } this.kick(); } });
       const rel = () => { this.pressT = 0; this.kick(); requestAnimationFrame(() => this.sync()); };
       root.addEventListener('pointerup', rel); root.addEventListener('pointercancel', rel); root.addEventListener('pointerleave', () => { if (this.pressT) rel(); });
     }
     active() { const a = this.root.querySelector(ACTIVE); return a && a.offsetParent !== null ? a : null; }
+    itemId(a) { return a ? (a.getAttribute('href') || a.getAttribute('data-nav') || a.textContent.trim()) : ''; }
+    attach() { if (this.svg.parentNode !== this.root) this.root.prepend(this.svg); if (this.ball.parentNode !== this.root) this.root.append(this.ball); }
     cx(item) { const nb = this.root.getBoundingClientRect(), b = item.getBoundingClientRect(); return b.left - nb.left + b.width / 2; }
     geo() {
       // Posisi bar (SVG) di dalam nav: bar melayang di dalam elemen nav yang menempel di dasar layar.
@@ -157,6 +173,7 @@
     sync(mode) {
       const a = this.active(), alive = this.root.getBoundingClientRect().width > 0;
       if (!alive) return;
+      this.attach(); // aplikasi bisa mengganti isi nav (innerHTML) sehingga bar & gelembung ikut terhapus
       this.root.toggleAttribute('data-notch-none', !a);
       if (a) {
         this.t = this.cx(a);
@@ -169,7 +186,10 @@
           this.root.style.setProperty('--nn-dy', Math.round(g.top + 5 - natural) + 'px');
         }
       }
-      if (this.x == null || mode === 'jump' || reduce.matches) { this.x = this.t; this.v = 0; }
+      if (this.x == null || (mode === 'jump' && !this.fresh) || reduce.matches) { this.x = this.t; this.v = 0; }
+      if (this.root.hasAttribute('data-nn-enter')) requestAnimationFrame(() => requestAnimationFrame(() => this.root.removeAttribute('data-nn-enter')));
+      this.fresh = false;
+      memo.set(this.key, { x: this.t, item: this.itemId(a), time: performance.now() });
       this.kick(); this.draw();
     }
     kick() { if (!this.raf) { this.last = performance.now(); this.raf = requestAnimationFrame((t) => this.step(t)); } }
@@ -193,6 +213,7 @@
       const sp = reduce.matches ? 0 : Math.min(0.16, Math.abs(this.v) / 2600), k = 1 - this.press * 0.08;
       this.ball.style.transform = `translate3d(${cx + g.left - this.root.clientLeft}px,${g.top + 5 - this.root.clientTop}px,0) translate(-50%,-50%) scale(${((1 + sp) * k).toFixed(3)},${((1 - sp * 0.6) * k).toFixed(3)})`;
       this.ball.style.opacity = none ? '0' : '1';
+      const m = memo.get(this.key); if (m) { m.x = this.x; m.time = performance.now(); }
     }
     destroy() { this.ro.disconnect(); this.svg.remove(); this.ball.remove(); this.root.classList.remove('nuris-notch'); }
   }
@@ -211,7 +232,12 @@
   const schedule = () => { if (!queued) queued = requestAnimationFrame(scan); };
   const start = () => {
     scan();
-    new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-current', 'aria-selected', 'hidden', 'class'] });
+    // Perubahan struktur (nav baru/isi nav diganti) ditangani langsung sebelum layar digambar agar tidak berkedip;
+    // perubahan lain cukup dikumpulkan per frame.
+    new MutationObserver((recs) => {
+      const now = recs.some((r) => r.type === 'childList' && ([...r.addedNodes].some((n) => n.nodeType === 1 && (n.matches(SEL) || n.querySelector(SEL))) || roots.has(r.target)));
+      if (now) { if (queued) { cancelAnimationFrame(queued); queued = 0; } scan(); terang(); } else schedule();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-current', 'aria-selected', 'hidden', 'class'] });
     addEventListener('resize', () => { for (const l of roots.values()) { l.toneCache = ''; l.sync('jump'); } }, { passive: true });
     addEventListener('nuris-theme', () => setTimeout(() => { for (const l of roots.values()) { l.toneCache = ''; l.sync(); } }, 380));
     document.fonts && document.fonts.ready.then(schedule);
