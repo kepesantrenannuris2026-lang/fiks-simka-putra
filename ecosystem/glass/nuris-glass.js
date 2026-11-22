@@ -149,21 +149,25 @@
     }
     active() { const a = this.root.querySelector(ACTIVE); return a && a.offsetParent !== null ? a : null; }
     cx(item) { const nb = this.root.getBoundingClientRect(), b = item.getBoundingClientRect(); return b.left - nb.left + b.width / 2; }
+    geo() {
+      // Posisi bar (SVG) di dalam nav: bar melayang di dalam elemen nav yang menempel di dasar layar.
+      const nb = this.root.getBoundingClientRect(), sb = this.svg.getBoundingClientRect();
+      return { nb, left: sb.left - nb.left, top: sb.top - nb.top, W: sb.width, H: sb.height };
+    }
     sync(mode) {
       const a = this.active(), alive = this.root.getBoundingClientRect().width > 0;
       if (!alive) return;
       this.root.toggleAttribute('data-notch-none', !a);
       if (a) {
         this.t = this.cx(a);
-        // Ikon aktif naik ke tengah gelembung (pusat gelembung = y 5 px dari tepi atas bar).
+        // Ikon aktif naik ke tengah gelembung (pusat gelembung = 5 px di bawah tepi atas bar).
         const ic = a.firstElementChild;
         if (ic) {
-          const nb = this.root.getBoundingClientRect(), r = ic.getBoundingClientRect();
-          const m = new DOMMatrixReadOnly(getComputedStyle(ic).transform === 'none' ? undefined : getComputedStyle(ic).transform);
-          const natural = r.top + r.height / 2 - m.m42 - nb.top;
-          this.root.style.setProperty('--nn-dy', Math.round(5 - natural) + 'px');
+          const g = this.geo(), r = ic.getBoundingClientRect(), tr = getComputedStyle(ic).transform;
+          const m = new DOMMatrixReadOnly(tr === 'none' ? undefined : tr);
+          const natural = r.top + r.height / 2 - m.m42 - g.nb.top;
+          this.root.style.setProperty('--nn-dy', Math.round(g.top + 5 - natural) + 'px');
         }
-        this.ball.classList.toggle('is-primary', !!a.closest('.nuris-record-tab, [data-nuris-primary]') || !!a.querySelector('[class*="bg-saffron"]'));
       }
       if (this.x == null || mode === 'jump' || reduce.matches) { this.x = this.t; this.v = 0; }
       this.kick(); this.draw();
@@ -177,16 +181,17 @@
       this.draw(); if (moving) this.kick();
     }
     draw() {
-      const W = this.root.clientWidth + this.root.clientLeft * 2, H = this.root.offsetHeight; if (!W || !H || this.x == null) return;
+      if (this.x == null) return;
+      const g = this.geo(), W = g.W, H = g.H; if (!W || !H) return;
       const none = this.root.hasAttribute('data-notch-none');
-      // Lekukan membulat memeluk gelembung (jari-jari 29, pusat y 5) dengan bahu lembut di kedua sisi.
-      const R = Math.min(22, H / 2), S = 38, cx = Math.max(S, Math.min(W - S, this.x));
+      // Lekukan membulat memeluk gelembung (jari-jari 27, pusat y 5) dengan bahu lembut di kedua sisi.
+      const R = Math.min(20, H / 2), S = 35, cx = Math.max(S, Math.min(W - S, this.x - g.left));
       const L = Math.max(0, Math.min(R, cx - S)), Rr = Math.max(0, Math.min(R, W - cx - S));
-      const top = none ? `H${W - Rr}` : `H${cx - S} Q${cx - 29} 0 ${cx - 27.25} 14.92 A29 29 0 0 0 ${cx + 27.25} 14.92 Q${cx + 29} 0 ${cx + S} 0 H${W - Rr}`;
+      const top = none ? `H${W - Rr}` : `H${cx - S} Q${cx - 27} 0 ${cx - 25.37} 14.23 A27 27 0 0 0 ${cx + 25.37} 14.23 Q${cx + 27} 0 ${cx + S} 0 H${W - Rr}`;
       this.svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       this.path.setAttribute('d', `M0 ${L} A${L} ${L} 0 0 1 ${L} 0 ${top} A${Rr} ${Rr} 0 0 1 ${W} ${Rr} V${H - R} A${R} ${R} 0 0 1 ${W - R} ${H} H${R} A${R} ${R} 0 0 1 0 ${H - R} Z`);
       const sp = reduce.matches ? 0 : Math.min(0.16, Math.abs(this.v) / 2600), k = 1 - this.press * 0.08;
-      this.ball.style.transform = `translate3d(${cx - this.root.clientLeft}px,5px,0) translate(-50%,-50%) scale(${((1 + sp) * k).toFixed(3)},${((1 - sp * 0.6) * k).toFixed(3)})`;
+      this.ball.style.transform = `translate3d(${cx + g.left - this.root.clientLeft}px,${g.top + 5 - this.root.clientTop}px,0) translate(-50%,-50%) scale(${((1 + sp) * k).toFixed(3)},${((1 - sp * 0.6) * k).toFixed(3)})`;
       this.ball.style.opacity = none ? '0' : '1';
     }
     destroy() { this.ro.disconnect(); this.svg.remove(); this.ball.remove(); this.root.classList.remove('nuris-notch'); }
