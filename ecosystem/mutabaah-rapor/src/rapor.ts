@@ -33,7 +33,7 @@ export function raporHTML(r: any, logo: string, edit = false) {
   <h3 class="rt-bag">C. EVALUASI &amp; KETIDAKHADIRAN</h3>
   <div class="rt-boxes rt-3">${ev.map((x) => `<div${x.key === 'ujian' && u.sumber === 'aplikasi' ? '' : e(x.key, x.j)}><small>${x.j}</small><b class="${x.bad ? 'bad' : ''}">${x.raw ? x.v : esc(x.v)}</b><em>${esc(x.s)}</em></div>`).join('')}</div>
   <h3 class="rt-bag">D. RIWAYAT HAFALAN</h3>
-  <div class="rt-riwayat">${rw.length ? rw.map((x) => `<p><b>${esc(x.judul)}</b><span>${esc(x.isi)}</span></p>`).join('') : '<p class="rt-muted">Belum ada nilai hafalan per surat atau sertifikasi pada semester ini.</p>'}</div>
+  <div class="rt-riwayat${r.riwayat_diubah ? '' : ' rt-auto-box'}"${e('riwayat', 'riwayat hafalan')}>${rw.length ? rw.map((x) => `<p><b>${esc(x.judul)}</b><span>${esc(x.isi)}</span></p>`).join('') : '<p class="rt-muted">Belum ada nilai hafalan per surat atau sertifikasi pada semester ini.</p>'}</div>
   <h3 class="rt-bag">E. CATATAN PEMBINAAN</h3>
   <div class="rt-catatan${r.catatan_otomatis ? ' rt-auto' : ''}"${e('catatan', 'catatan pembinaan')}>${esc(r.catatan || '-')}</div>
   <footer class="rt-ttd">

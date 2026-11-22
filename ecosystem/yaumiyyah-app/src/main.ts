@@ -1,7 +1,6 @@
 // Mutabaah Yaumiyyah — 8 ibadah sesuai aspek Ibadah Rapor Pesantren, diisi PER BULAN (jumlah pelaksanaan sebulan).
 // Data di yaumiyyah.bulanan; isian harian lama sudah dikonversi. Target & rincian predikat dihitung otomatis per bulan.
 import { activities, monthlyReport, semesterReport, semesterMonths, todayWIB, MonthEntry, monthTarget, monthMax, kategori, scoreOf, grade, hadir, daysInMonth, targetLabel, SKALA } from '../../../src/yaumiyyah/model';
-import { unduhPdf } from '../../shared/pdf';
 import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, appsMenu, sessionEnded, unitLabel } from '../../shared/ui';
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/');
@@ -17,8 +16,8 @@ const predClass = (p: string) => (p === 'A' ? 'a' : p === 'B+' ? 'bp' : p === 'B
 const fmt = (n: number | null | undefined, d = 1) => (n == null ? '–' : n.toFixed(d).replace('.', ','));
 
 function render() {
-  const title = { isian: 'Isian bulanan', rekap: 'Rekap', rapor: 'Rapor PDF' }[st.view as string] || '';
-  const nav = [{ id: 'isian', label: 'Isian bulanan', icon: I.edit }, { id: 'rekap', label: 'Rekap', icon: I.chart }, { id: 'rapor', label: 'Rapor PDF', icon: I.pdf }];
+  const title = { isian: 'Isian bulanan', rekap: 'Rekap' }[st.view as string] || '';
+  const nav = [{ id: 'isian', label: 'Isian bulanan', icon: I.edit }, { id: 'rekap', label: 'Rekap', icon: I.chart }];
   app.innerHTML = shell({ app: 'Mutabaah Yaumiyyah', title, nav, active: st.view, user: st.user && { nama: st.user.nama, peran: peran() } }, body());
 }
 function picker() {
@@ -33,7 +32,7 @@ function body() {
   if (st.loading && !st.students.length) return loading();
   if (!st.students.length) return empty('Belum ada santri binaan.', 'Akun ini belum memegang santri, kamar, atau unit. Hubungi pimpinan melalui Mutabaah Tahfidz.');
   return `<section class="ns-hero anim-rise"><div><p class="ns-eyebrow">Kepesantrenan Nuris</p><h2>Ibadah santri, dicatat setiap bulan.</h2><p>8 ibadah sesuai Rapor Pesantren. Isi jumlah pelaksanaan dalam sebulan; target, nilai, dan predikat dihitung otomatis.</p></div>${heroScore()}</section>
-    ${picker()}${st.loading ? loading() : st.view === 'isian' ? isian() : st.view === 'rekap' ? rekap() : rapor()}`;
+    ${picker()}${st.loading ? loading() : st.view === 'isian' ? isian() : rekap()}`;
 }
 function heroScore() {
   if (st.loading || !st.entries) return '';
@@ -83,39 +82,13 @@ function rekap() {
     <p class="ns-muted" style="font-size:13px">Predikat: A ≥ 90 · B+ 80–89 · B 70–79 · C &lt; 70 (skala Rapor Pesantren). ${sem ? 'Nilai semester = rata-rata bulan yang terisi.' : ''}</p>
     ${sem ? '' : `<details class="ns-card" style="padding:10px 12px"><summary style="cursor:pointer;font-weight:700">Rincian kategori nilai ${esc(monthLabel(m[0]))}</summary>${rincianTabel(m[0], r.izin)}</details>`}`;
 }
-function raporHTML() {
-  const s = student(), { sem, r, list } = rows(), m = months();
-  const body = list.map((x: any, i: number) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${esc(x.label)}</td>${sem ? x.cells.map((v: any) => `<td>${v == null ? '–' : Math.round(v)}</td>`).join('') : `<td>${x.value ?? '–'} / ${x.target || '–'}</td>`}<td><b>${fmt(x.score)}</b></td><td><b>${x.predikat}</b></td></tr>`).join('');
-  const notes = sem ? r.reports.filter((x: any) => x.note).map((x: any) => ({ date: monthLabel(x.month), note: x.note })) : r.note ? [{ date: monthLabel(m[0]), note: r.note }] : [];
-  return `<article class="yw-page"><header class="yw-kop"><img src="${st.logo}" alt=""><div><h1>PESANTREN NURUL ISLAM TENGARAN</h1><h2>RAPOR MUTABAAH YAUMIYYAH ${sem ? 'SEMESTER' : 'BULANAN'}</h2><p>${sem ? `${monthLabel(m[0])} – ${monthLabel(m[m.length - 1])}` : monthLabel(m[0])}</p></div></header>
-  <section class="yw-id"><b>${esc(s.nama)}</b><span>Kelas ${esc(s.kelas)} · ${esc(unitLabel(s.unit))}${s.kamar ? ` · Kamar ${esc(s.kamar)}` : ''} · Musyrif/ah: ${esc(s.musyrif || '-')}</span></section>
-  <section class="yw-score"><div><small>NILAI RATA-RATA</small><b>${r.score == null ? 'Belum dinilai' : fmt(r.score, 2) + ' / 100'}</b><em>${sem ? `${r.provisional ? 'Rapor sementara' : 'Data lengkap'} · ${r.bulanTerisi} dari 6 bulan terisi` : `${r.filled} dari 8 ibadah terisi · ${r.hadir} hari di pondok`}</em></div><strong>${r.predikat}</strong></section>
-  <table class="yw-tab"><thead><tr><th>No</th><th>Ibadah</th><th>Target</th>${sem ? m.map((x) => `<th>${monthLabel(x).split(' ')[0].slice(0, 3)}</th>`).join('') : '<th>Capaian</th>'}<th>Nilai</th><th>Pred.</th></tr></thead><tbody>${body}</tbody></table>
-  <p class="yw-leg">Predikat: A ≥ 90 · B+ 80–89 · B 70–79 · C &lt; 70. Isian bulanan; target harian × hari di pondok, pekanan × jumlah pekan.</p>
-  ${notes.length ? `<section class="yw-notes"><b>Catatan musyrif/ah</b>${notes.slice(-6).map((n: any) => `<p><small>${esc(n.date)}</small> ${esc(n.note)}</p>`).join('')}</section>` : ''}
-  <footer class="yw-ttd"><div><p>Orang Tua/Wali</p><p class="yw-nm">……………………………</p></div><div><p>Tengaran, ${new Date(today + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</p><p>Musyrif/ah</p><p class="yw-nm">${esc(s.musyrif || '……………………………')}</p></div></footer></article>`;
-}
-const RAPOR_CSS = `.yw-page{box-sizing:border-box;width:210mm;height:297mm;padding:13mm 15mm;background:#fff;color:#122219;font-family:NurisJakarta,"Plus Jakarta Sans",Arial,sans-serif;font-size:10pt;line-height:1.3;display:flex;flex-direction:column}
-.yw-page *{box-sizing:border-box}.yw-kop{display:flex;gap:12px;align-items:center;border-bottom:2.5px solid #0d4a28;padding-bottom:8px;margin-bottom:10px}.yw-kop img{width:56px;height:56px;object-fit:contain}
-.yw-kop h1{margin:0;font-size:1.35em;color:#082e1a}.yw-kop h2{margin:2px 0 0;font-size:1.05em;color:#0d4a28}.yw-kop p{margin:2px 0 0;color:#5e6f65;font-size:.9em}
-.yw-id b{display:block;font-size:1.25em}.yw-id span{color:#3c4d43;font-size:.92em}
-.yw-score{display:flex;justify-content:space-between;align-items:center;background:#e3f2e8;border-radius:10px;padding:10px 16px;margin:10px 0}.yw-score small{color:#0d4a28;font-weight:700;font-size:.8em}.yw-score b{display:block;font-size:1.6em;color:#082e1a}.yw-score em{font-style:normal;font-size:.8em;color:#5e6f65}.yw-score strong{font-size:2.4em;color:#0d4a28}
-.yw-tab{width:100%;border-collapse:collapse;font-size:.92em}.yw-tab th{background:#0d4a28;color:#fff;padding:5px 6px;text-align:left}.yw-tab td{border-bottom:1px solid #d3ded7;padding:5px 6px}.yw-tab td:nth-child(n+4),.yw-tab th:nth-child(n+4){text-align:center}
-.yw-leg{font-size:.78em;color:#5e6f65;margin:6px 0}.yw-notes{border:1px solid #d3ded7;border-radius:8px;padding:6px 10px;font-size:.88em}.yw-notes p{margin:3px 0}.yw-notes small{color:#5e6f65}
-.yw-ttd{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;text-align:center}.yw-ttd p{margin:0}.yw-nm{margin-top:4em!important;font-weight:700}`;
-function rapor() {
-  return `${periodBar()}<div class="rt-actions" style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap"><button class="ns-btn primary" data-act="pdf">${icon(I.pdf, 16)}Unduh PDF</button><button class="ns-btn" data-act="print">${icon(I.print, 16)}Cetak</button></div>
-    <div class="yw-scroll"><div id="preview">${raporHTML()}</div></div>`;
-}
-function fitPreview() { const sc = $('.yw-scroll'), b = $('#preview'), pg = $('#preview .yw-page'); if (!sc || !b || !pg) return; const k = Math.min(1, (sc.clientWidth - 8) / pg.offsetWidth); b.style.transform = `scale(${k})`; b.style.height = pg.offsetHeight * k + 'px'; }
-
 /* ---------- Data ---------- */
 async function load() {
   if (!st.sid) return;
   st.loading = true; render();
   try { const r = await api('yaum-load', { santri_id: st.sid, months: months() }); st.entries = r.entries; st.draft = structuredClone(st.entries.find((e: MonthEntry) => e.month === st.month) || fresh(st.month)); st.dirty = false; }
   catch (e: any) { toast(e.message, 'err'); st.entries = []; }
-  st.loading = false; render(); if (st.view === 'rapor') fitPreview();
+  st.loading = false; render();
 }
 const leave = () => !st.dirty || confirm('Ada isian belum tersimpan. Tinggalkan perubahan?');
 async function save() {
@@ -126,8 +99,8 @@ async function save() {
 }
 async function boot() {
   if (!token()) { app.innerHTML = shell({ app: 'Mutabaah Yaumiyyah', title: 'Mutabaah Yaumiyyah', nav: [], active: '' }, needLogin('Mutabaah Yaumiyyah')); return; }
-  const h = location.hash.slice(1); st.view = h === 'harian' ? 'isian' : ['isian', 'rekap', 'rapor'].includes(h) ? h : 'isian'; render();
-  fetch('/logo-mark.png').then((r) => r.blob()).then((b) => new Promise<string>((ok) => { const f = new FileReader(); f.onload = () => ok(String(f.result)); f.readAsDataURL(b); })).then((u) => { st.logo = u; if (st.view === 'rapor') render(); }).catch(() => {});
+  const h = location.hash.slice(1); // Rapor Yaumiyyah sudah terwakili Rapor Pesantren; tautan lama #rapor diarahkan ke Rekap.
+  st.view = h === 'rekap' || h === 'rapor' ? 'rekap' : 'isian'; if (h === 'rapor') history.replaceState(null, '', '#rekap'); render();
   try {
     const r = await api('yaum-students'); st.user = r.user; st.students = r.students;
     st.sid = sessionStorage.getItem('yw-sid') && st.students.some((s: any) => s.id === sessionStorage.getItem('yw-sid')) ? sessionStorage.getItem('yw-sid') : st.students[0]?.id || '';
@@ -151,13 +124,6 @@ document.addEventListener('click', async (e) => {
   else if (a === 'save') save();
   else if (a === 'rincian') { st.rincian = !st.rincian; refreshCard(); }
   else if (a === 'period') { st.period = t.dataset.v; await load(); }
-  else if (a === 'pdf' || a === 'print') {
-    const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0'; host.innerHTML = raporHTML(); document.body.append(host);
-    const s = student(); const nama = `Rapor Yaumiyyah ${s.nama} ${months().length > 1 ? `${st.year}-${st.year + 1} S${st.sem}` : st.month}`;
-    try { if (a === 'print') throw 0; await document.fonts.ready; await unduhPdf($$('.yw-page', host), { w: 210, h: 297 }, RAPOR_CSS, nama); }
-    catch { const w = window.open('', '_blank'); if (w) { w.document.write(`<title>${esc(nama)}</title><style>@page{size:A4;margin:0}body{margin:0}${RAPOR_CSS}</style>${raporHTML()}`); w.document.close(); setTimeout(() => w.print(), 300); } }
-    finally { host.remove(); }
-  }
 });
 document.addEventListener('input', (e) => {
   const t = e.target as HTMLInputElement;
@@ -176,6 +142,4 @@ document.addEventListener('change', async (e) => {
   else if (a === 'semx') { st.sem = Number(t.value); await load(); }
 });
 addEventListener('beforeunload', (e) => { if (st.dirty) e.preventDefault(); });
-addEventListener('resize', fitPreview);
-document.head.insertAdjacentHTML('beforeend', `<style>${RAPOR_CSS}</style>`);
 boot();

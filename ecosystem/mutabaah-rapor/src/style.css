@@ -73,3 +73,6 @@ html.mrp-lock,html.mrp-lock body{overflow:hidden}
 .mrp-iq-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}.mrp-iq-row small{color:#5e6f65}
 .mrp-iq-p{display:flex;gap:4px;flex:none}.mrp-iq-p button{width:38px;height:32px;border-radius:9px;border:1px solid var(--mrp-line);background:#f3f8f5;font-weight:800;color:var(--mrp-pine);cursor:pointer}
 .mrp-iq-p button.on{background:var(--mrp-deep);color:#fff;border-color:var(--mrp-deep)}
+.mrp-rws{display:flex;flex-direction:column;gap:8px}
+.mrp-rw{display:grid;grid-template-columns:1fr auto;gap:6px;border:1px solid var(--mrp-line);border-radius:12px;padding:8px}
+.mrp-rw input{grid-column:1}.mrp-rw textarea{grid-column:1}.mrp-rw button{grid-column:2;grid-row:1/3;align-self:start;width:36px;padding:0;justify-content:center}

@@ -127,7 +127,7 @@ function render() {
     <section class="mrp-preview"><div class="mrp-actions"><span class="mrp-muted">F4 · 215 × 330 mm · 1 lembar</span><span class="mrp-grow"></span>
       <button class="mrp-btn" data-a="print1">${IC.print}Cetak santri ini</button><button class="mrp-btn" data-a="pdf1">${IC.pdf}PDF santri ini</button>
       <button class="mrp-btn primary" data-a="printsel" ${n ? '' : 'disabled'}>${IC.print}Cetak ${n || ''} terpilih</button><button class="mrp-btn primary" data-a="pdfsel" ${n ? '' : 'disabled'}>${IC.pdf}PDF ${n || ''} terpilih</button></div>
-      <p class="mrp-muted mrp-tip">Klik nilai, catatan, kelas, kamar, tanggal, ujian, tahsin (termasuk jalur santri &amp; Iqro'), atau ketidakhadiran pada rapor untuk mengubahnya. Perubahan tersimpan otomatis ke Mutabaah. Teks hijau = otomatis dari aplikasi.</p>
+      <p class="mrp-muted mrp-tip">Klik nilai, catatan, kelas, kamar, tanggal, ujian, tahsin (termasuk jalur santri &amp; Iqro'), riwayat hafalan, atau ketidakhadiran pada rapor untuk mengubahnya. Perubahan tersimpan otomatis ke Mutabaah. Teks hijau = otomatis dari aplikasi.</p>
       <div class="mrp-scroll"><div id="mrp-preview"></div></div></section></div>`);
   draw();
 }
@@ -205,6 +205,21 @@ function popover(target: HTMLElement) {
   }
   else if (key === 'kelas' || key === 'kamar') pop.innerHTML = `<b>${key === 'kelas' ? 'Kelas' : 'Kamar'}</b><input maxlength="${key === 'kelas' ? 12 : 40}" value="${esc(r.identitas[key])}">${btns}`;
   else if (key === 'rekap') pop.innerHTML = `<b>Ringkasan capaian</b><p class="mrp-muted">Otomatis dari setoran & sertifikasi; ubah bila perlu. Kosongkan untuk kembali ke nilai otomatis.</p><div class="mrp-duo">${REKAP.map(([k, l]) => `<label>${l}<input data-k="${k}" value="${esc(r.rekap[k])}" ${k === 'capaian' ? 'maxlength="30"' : 'inputmode="decimal" maxlength="8"'}><small>otomatis ${esc(r.rekap_auto?.[k] ?? '')}</small></label>`).join('')}</div>${btns}`;
+  else if (key === 'riwayat') {
+    // Riwayat hafalan: maks. 4 baris (yang tercetak). Kosongkan semua / "Kembali otomatis" = susunan otomatis dari aplikasi.
+    const rows: any[] = (r.riwayat || []).slice(0, 4);
+    const baris = (x: any = { judul: '', isi: '' }) => `<div class="mrp-rw"><input data-k="judul" maxlength="40" placeholder="Judul (mis. Juz 30)" value="${esc(x.judul)}"><textarea data-k="isi" rows="2" maxlength="220" placeholder="Keterangan">${esc(x.isi)}</textarea><button type="button" class="mrp-btn ghost" data-x="hapus" aria-label="Hapus baris">${IC.x}</button></div>`;
+    pop.classList.add('mrp-pop-wide');
+    pop.innerHTML = `<b>Riwayat hafalan</b><p class="mrp-muted mrp-small">Maksimal 4 baris tercetak. ${r.riwayat_diubah ? 'Saat ini memakai isian manual.' : 'Saat ini disusun otomatis dari nilai per surat dan sertifikasi.'}</p>
+      <div class="mrp-rws">${rows.map(baris).join('') || baris()}</div>
+      <div class="mrp-pop-act"><button class="mrp-btn" data-x="tambah">Tambah baris</button><button class="mrp-btn" data-x="otomatis">Kembali otomatis</button><span class="mrp-grow"></span><button class="mrp-btn" data-x="batal">Batal</button><button class="mrp-btn accent" data-x="ok">Simpan</button></div>`;
+    pop.addEventListener('click', (ev) => {
+      const b = (ev.target as HTMLElement).closest('button') as HTMLElement | null; if (!b) return;
+      if (b.dataset.x === 'hapus') { b.closest('.mrp-rw')?.remove(); ev.stopImmediatePropagation(); }
+      else if (b.dataset.x === 'tambah') { const box = pop.querySelector('.mrp-rws')!; if (box.children.length < 4) box.insertAdjacentHTML('beforeend', baris()); else toast('Maksimal 4 baris tercetak.', true); ev.stopImmediatePropagation(); }
+      else if (b.dataset.x === 'otomatis') { r.riwayat = r.riwayat_auto || []; r.riwayat_diubah = false; queue(r.santri.id, (x) => (x.pelengkap.riwayat = null)); pop.remove(); draw(); ev.stopImmediatePropagation(); }
+    }, true);
+  }
   else if (key === 'tanggal') pop.innerHTML = `<b>Tanggal rapor</b><input type="date" value="${esc(r.ttd.tanggal)}">${btns}`;
   else return;
   document.body.append(pop);
@@ -238,6 +253,7 @@ function popover(target: HTMLElement) {
     }
     else if (key === 'kelas' || key === 'kamar') { r.identitas[key] = (pop.querySelector('input') as HTMLInputElement).value; queue(id, (x) => (x.pelengkap[key] = r.identitas[key])); }
     else if (key === 'rekap') { const rk: any = {}; $$<HTMLInputElement>('input', pop).forEach((x) => { const k2 = x.dataset.k!; const v = x.value.trim() || String(r.rekap_auto?.[k2] ?? ''); if (v !== String(r.rekap[k2] ?? '')) { rk[k2] = v; r.rekap[k2] = v; } }); if (Object.keys(rk).length) queue(id, (x) => (x.pelengkap.rekap = { ...(x.pelengkap.rekap || {}), ...rk })); }
+    else if (key === 'riwayat') { const isi = $$('.mrp-rw', pop).map((x) => ({ judul: (x.querySelector('[data-k=judul]') as HTMLInputElement).value.trim(), isi: (x.querySelector('[data-k=isi]') as HTMLTextAreaElement).value.trim() })).filter((x) => x.judul || x.isi); r.riwayat = isi.length ? isi : r.riwayat_auto || []; r.riwayat_diubah = isi.length > 0; queue(id, (x) => (x.pelengkap.riwayat = isi.length ? isi : null)); }
     else if (key === 'tanggal') { r.ttd.tanggal = (pop.querySelector('input') as HTMLInputElement).value; queue(id, (x) => (x.pelengkap.tanggal = r.ttd.tanggal)); }
     done(); draw();
   });

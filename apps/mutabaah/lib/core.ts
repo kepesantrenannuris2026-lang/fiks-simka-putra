@@ -2031,7 +2031,9 @@ async function susunRapor(list: any[], periode: any) {
       murajaah: { ...m, halaman: murajaahHal, halaman_setoran: T.halamanBulat(m.baris), sertifikasi_bagian: ss.bagian, sertifikasi_hal: ss.hal, predikat: pred.murajaah || "" },
       absen: { sakit: Number(pilih(abM.sakit, ab.s)) || 0, izin: Number(pilih(abM.izin, ab.i)) || 0, alpa: Number(pilih(abM.alpa, ab.a)) || 0, otomatis: { sakit: ab.s || 0, izin: ab.i || 0, alpa: ab.a || 0 } },
       surat: suratAll, surat_auto: suratAuto, perempat, iqro: d.iqro || {}, iqro_lulus: iqroLulus,
-      rekap, rekap_auto: rekapAuto, riwayat,
+      rekap, rekap_auto: rekapAuto,
+      // Riwayat hafalan dapat diubah di Pratinjau & edit; kosong = kembali otomatis.
+      riwayat: Array.isArray(d.riwayat) && d.riwayat.length ? d.riwayat : riwayat, riwayat_auto: riwayat, riwayat_diubah: Array.isArray(d.riwayat) && d.riwayat.length > 0,
       catatan: r.catatan || catatanAuto, catatan_otomatis: !r.catatan, catatan_auto: catatanAuto,
       ttd: { tempat: "Tengaran", tanggal: d.tanggal || hariIni, kepala: T.KEPALA_KEPESANTRENAN, muhaffiz: s.musyrif, label_muhaffiz: gender === "Putri" ? "Muhaffizhah" : "Muhaffiz" },
       ujian_manual: d.ujian_manual ?? "", diperbarui: d.diperbarui || null,
@@ -2106,6 +2108,10 @@ export async function saveRaporSemester(u: User, santriId: any, ta: any, sem: an
   if (pl.iqro_lulus !== undefined) patch.iqro_lulus = pl.iqro_lulus === null ? null : !!pl.iqro_lulus;
   if (pl.jalur !== undefined) { if (pl.jalur !== null && !T.JALUR.some((j) => j.id === pl.jalur)) throw new Error("Jalur santri tidak dikenal."); patch.jalur = pl.jalur; }
   if (pl.tahsin_aktif !== undefined) patch.tahsin_aktif = pl.tahsin_aktif === null ? null : !!pl.tahsin_aktif;
+  if (pl.riwayat !== undefined) {
+    if (pl.riwayat !== null && (!Array.isArray(pl.riwayat) || pl.riwayat.length > 6)) throw new Error("Riwayat hafalan maksimal 6 baris.");
+    patch.riwayat = (pl.riwayat || []).map((x: any) => ({ judul: U.clip(U.safeText(x?.judul, 40), 40), isi: U.clip(U.safeText(x?.isi, 220), 220) })).filter((x: any) => x.judul || x.isi);
+  }
   if (pl.tahsin_materi !== undefined) patch.tahsin_materi = U.clip(U.safeText(pl.tahsin_materi, 60), 60);
   if (pl.rekap) patch.rekap = Object.fromEntries(["hafalan_awal", "ziyadah", "total", "murajaah", "target_semester", "target_tahunan", "capaian"].filter((k) => pl.rekap[k] !== undefined).map((k) => [k, U.clip(U.safeText(pl.rekap[k], 30), 30)]));
   const aspek = d.aspek || {};
