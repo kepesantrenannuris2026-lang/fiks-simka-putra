@@ -103,6 +103,7 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
 .nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true])[class*="font-bold"]{font-weight:800!important}
 /* Nav baru dibuat ulang: ikon aktif mulai dari posisi biasa lalu naik ke gelembung. */
 .nuris-notch.nuris-notch[data-nn-enter] :is([aria-current=page],[aria-selected=true])>:first-child{transform:none;transition:none}
+.nuris-notch.nuris-notch[data-nn-still] :is(a,button,[role=tab])>:first-child{transition:none}
 @media (prefers-reduced-motion:reduce){.nuris-notch :is(a,button,[role=tab])>:first-child{transition:none}}
 /* Fitur siang/malam dihapus: sembunyikan sisa tombol/pilihan tema di semua aplikasi. */
 #nuris-appearance-toggle,[role=radiogroup][aria-label="Pilih Tema Tampilan"]{display:none!important}

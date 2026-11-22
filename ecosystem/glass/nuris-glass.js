@@ -156,7 +156,9 @@
       // Nav dibuat ulang oleh aplikasi (mis. Yaumiyyah merender ulang seluruh layar): lanjutkan dari posisi lama
       // dan biarkan ikon aktif naik dengan animasi, bukan melompat.
       this.key = navKey(root); const m = memo.get(this.key), a0 = this.active();
-      if (m && performance.now() - m.time < 4000) { this.x = m.x; this.fresh = m.item !== this.itemId(a0); if (this.fresh) root.setAttribute('data-nn-enter', ''); }
+      if (m) { this.x = m.x; this.v = m.v || 0; this.cont = true; }
+      // Tab aktif berganti → ikon naik dengan animasi; tab sama → langsung di posisi akhir tanpa kedip.
+      root.setAttribute(m && m.item !== this.itemId(a0) ? 'data-nn-enter' : 'data-nn-still', '');
       root.addEventListener('pointerdown', (e) => { const it = e.target.closest(ITEM); if (it && root.contains(it)) { this.pressT = 1; const a = this.active(); if (a && it !== a && !reduce.matches) { this.t = this.cx(it); } this.kick(); } });
       const rel = () => { this.pressT = 0; this.kick(); requestAnimationFrame(() => this.sync()); };
       root.addEventListener('pointerup', rel); root.addEventListener('pointercancel', rel); root.addEventListener('pointerleave', () => { if (this.pressT) rel(); });
@@ -186,10 +188,10 @@
           this.root.style.setProperty('--nn-dy', Math.round(g.top + 5 - natural) + 'px');
         }
       }
-      if (this.x == null || (mode === 'jump' && !this.fresh) || reduce.matches) { this.x = this.t; this.v = 0; }
-      if (this.root.hasAttribute('data-nn-enter')) requestAnimationFrame(() => requestAnimationFrame(() => this.root.removeAttribute('data-nn-enter')));
-      this.fresh = false;
-      memo.set(this.key, { x: this.t, item: this.itemId(a), time: performance.now() });
+      if (this.x == null || (mode === 'jump' && !this.cont) || reduce.matches) { this.x = this.t; this.v = 0; }
+      if (this.root.hasAttribute('data-nn-enter') || this.root.hasAttribute('data-nn-still')) requestAnimationFrame(() => requestAnimationFrame(() => { this.root.removeAttribute('data-nn-enter'); this.root.removeAttribute('data-nn-still'); }));
+      this.cont = false;
+      memo.set(this.key, { x: this.x, v: this.v, item: this.itemId(a) });
       this.kick(); this.draw();
     }
     kick() { if (!this.raf) { this.last = performance.now(); this.raf = requestAnimationFrame((t) => this.step(t)); } }
@@ -213,7 +215,7 @@
       const sp = reduce.matches ? 0 : Math.min(0.16, Math.abs(this.v) / 2600), k = 1 - this.press * 0.08;
       this.ball.style.transform = `translate3d(${cx + g.left - this.root.clientLeft}px,${g.top + 5 - this.root.clientTop}px,0) translate(-50%,-50%) scale(${((1 + sp) * k).toFixed(3)},${((1 - sp * 0.6) * k).toFixed(3)})`;
       this.ball.style.opacity = none ? '0' : '1';
-      const m = memo.get(this.key); if (m) { m.x = this.x; m.time = performance.now(); }
+      const m = memo.get(this.key); if (m) { m.x = this.x; m.v = this.v; }
     }
     destroy() { this.ro.disconnect(); this.svg.remove(); this.ball.remove(); this.root.classList.remove('nuris-notch'); }
   }
