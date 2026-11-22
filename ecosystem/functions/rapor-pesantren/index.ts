@@ -1,7 +1,7 @@
 // Rapor Pesantren (per kamar). Sesi & akun = Mutabaah (public.sesi/public.akun). Data di skema privat rapor_pesantren.
 // Wali kamar hanya melihat/menyimpan santri kamarnya; pimpinan/admin semua kamar dan pengaturan.
 import pg from 'npm:pg@8.13.1';
-import { semesterMonths, semesterReport, validateEntry, daysOfMonth } from './yaumiyyahModel.ts';
+import { semesterMonths, semesterReport, validateMonth, validMonth } from './yaumiyyahModel.ts';
 
 const origins = ['https://kepesantrenan-nuris.kepesantrenannuris.workers.dev', 'https://kepesantrenannuris.netlify.app', 'http://localhost:4173', 'http://localhost:3400'];
 const direct = new URL(Deno.env.get('SUPABASE_DB_URL')!);
@@ -99,22 +99,20 @@ function cleanData(input: any) {
   return out;
 }
 
-const yaumMap: Record<string, string> = { jamaah: 'jamaah', qiyam: 'qiyam', dhuha: 'dhuha', rawatib: 'rawatib', dzikir: 'dzikir', matsurat: 'matsurat', quran: 'tilawah', puasa: 'puasa' };
-
 async function autoSources(ids: string[], ta: string, sem: number) {
   const out: Record<string, any> = Object.fromEntries(ids.map((id) => [id, {}]));
   if (!ids.length) return out;
-  // Mutabaah Yaumiyyah → saran predikat ibadah (rerata skor semester, batas 100%).
+  // Mutabaah Yaumiyyah (isian bulanan, 8 ibadah = aspek Ibadah rapor) → saran predikat: rata-rata nilai bulan yang terisi.
   const months = semesterMonths(Number(ta.slice(0, 4)), sem);
-  const daily = (await q(`SELECT santri_id,to_char(tanggal,'YYYY-MM-DD') AS date,aktivitas AS values,izin AS excused FROM yaumiyyah.daily
-    WHERE santri_id=ANY($1::text[]) AND to_char(tanggal,'YYYY-MM')=ANY($2::text[])`, [ids, months])).rows;
+  const bulanan = (await q(`SELECT santri_id,bulan AS month,aktivitas AS values,izin FROM yaumiyyah.bulanan
+    WHERE santri_id=ANY($1::text[]) AND bulan=ANY($2::text[])`, [ids, months])).rows;
   const by = new Map<string, any[]>();
-  for (const r of daily) (by.get(r.santri_id) ?? by.set(r.santri_id, []).get(r.santri_id)!).push(r);
+  for (const r of bulanan) (by.get(r.santri_id) ?? by.set(r.santri_id, []).get(r.santri_id)!).push(r);
   for (const [id, entries] of by) {
     const rep = semesterReport(months, entries);
     const ibadah: Record<string, number> = {};
-    for (const row of rep.rows) if (yaumMap[row.id] && row.score != null) ibadah[yaumMap[row.id]] = row.score;
-    out[id].yaumiyyah = { skor: ibadah, hari: entries.length, sementara: rep.provisional };
+    for (const row of rep.rows) if (row.score != null) ibadah[row.rapor] = row.score;
+    out[id].yaumiyyah = { skor: ibadah, bulan: rep.bulanTerisi, sementara: rep.provisional };
   }
   // Ujian Praktik Ibadah → nilai tiap subujian (wudhu, tayamum, lisan, …) pada periode tahun ajaran & semester yang sama.
   const ent = (await q(`SELECT n.santri_id,n.nilai,p.nama FROM ujian_praktik.nilai n JOIN ujian_praktik.periode p ON p.id=n.periode_id
@@ -264,25 +262,24 @@ async function yaumiyyah(path: string, a: Actor, body: any) {
   const student = (await q(`SELECT s.id,s.nama,s.tingkat AS kelas,s.unit,s.musyrif FROM public.santri s WHERE s.id=$1 AND s.aktif AND ${yaumScope(a, args)}`, args)).rows[0];
   if (!student) throw fail('Santri tidak termasuk binaan atau unit Anda.', 403);
   if (path === 'yaum-load') {
-    if (!Array.isArray(body.months) || body.months.length < 1 || body.months.length > 6 || new Set(body.months).size !== body.months.length) throw fail('Pilih maksimal enam bulan.');
-    for (const m of body.months) daysOfMonth(m);
-    const entries = (await q(`SELECT to_char(tanggal,'YYYY-MM-DD') AS date,aktivitas AS values,izin AS excused,catatan AS note,version FROM yaumiyyah.daily WHERE santri_id=$1 AND to_char(tanggal,'YYYY-MM')=ANY($2::text[]) ORDER BY tanggal`, [id, body.months])).rows;
+    if (!Array.isArray(body.months) || body.months.length < 1 || body.months.length > 6 || new Set(body.months).size !== body.months.length || !body.months.every((m: any) => validMonth(String(m)))) throw fail('Pilih maksimal enam bulan.');
+    const entries = (await q(`SELECT bulan AS month,aktivitas AS values,izin,catatan AS note,version FROM yaumiyyah.bulanan WHERE santri_id=$1 AND bulan=ANY($2::text[]) ORDER BY bulan`, [id, body.months])).rows;
     return { student, entries };
   }
   if (path === 'yaum-save') {
     let entry;
-    try { entry = validateEntry(body.entry || {}); } catch (e: any) { throw fail(e.message); }
+    try { entry = validateMonth(body.entry || {}); } catch (e: any) { throw fail(e.message); }
     const version = body.entry?.version ?? null;
     if (version !== null && !/^[0-9a-f-]{36}$/i.test(version)) throw fail('Versi data tidak valid.');
-    const vals: unknown[] = [id, entry.date, JSON.stringify(entry.values), JSON.stringify(entry.excused), entry.note, a.username, version];
+    const vals: unknown[] = [id, entry.month, JSON.stringify(entry.values), entry.izin, entry.note, a.username, version];
     const scope = yaumScope(a, vals);
-    const rows = (await q(`WITH saved AS (INSERT INTO yaumiyyah.daily(santri_id,tanggal,aktivitas,izin,catatan,updated_by)
-        SELECT $1,$2::date,$3::jsonb,$4::jsonb,$5,$6 FROM public.santri s WHERE s.id=$1 AND s.aktif AND ${scope}
-        ON CONFLICT(santri_id,tanggal) DO UPDATE SET aktivitas=excluded.aktivitas,izin=excluded.izin,catatan=excluded.catatan,updated_by=excluded.updated_by,updated_at=now(),version=gen_random_uuid()
-        WHERE $7::uuid IS NOT NULL AND yaumiyyah.daily.version=$7::uuid RETURNING *),
-      audit AS (INSERT INTO yaumiyyah.audit(username,santri_id,tanggal) SELECT updated_by,santri_id,tanggal FROM saved)
-      SELECT to_char(tanggal,'YYYY-MM-DD') AS date,aktivitas AS values,izin AS excused,catatan AS note,version FROM saved`, vals)).rows;
-    if (!rows.length) throw fail('Catatan telah berubah di perangkat lain atau penugasan diperbarui. Muat ulang sebelum menyimpan.', 409);
+    const rows = (await q(`WITH saved AS (INSERT INTO yaumiyyah.bulanan(santri_id,bulan,aktivitas,izin,catatan,updated_by)
+        SELECT $1,$2,$3::jsonb,$4,$5,$6 FROM public.santri s WHERE s.id=$1 AND s.aktif AND ${scope}
+        ON CONFLICT(santri_id,bulan) DO UPDATE SET aktivitas=excluded.aktivitas,izin=excluded.izin,catatan=excluded.catatan,updated_by=excluded.updated_by,updated_at=now(),version=gen_random_uuid()
+        WHERE $7::uuid IS NOT NULL AND yaumiyyah.bulanan.version=$7::uuid RETURNING *),
+      audit AS (INSERT INTO yaumiyyah.audit(username,santri_id,tanggal,bulan) SELECT updated_by,santri_id,(bulan||'-01')::date,bulan FROM saved)
+      SELECT bulan AS month,aktivitas AS values,izin,catatan AS note,version FROM saved`, vals)).rows;
+    if (!rows.length) throw fail('Isian bulan ini telah berubah di perangkat lain atau penugasan diperbarui. Muat ulang sebelum menyimpan.', 409);
     return { entry: rows[0] };
   }
   throw fail('Rute tidak dikenal.', 404);

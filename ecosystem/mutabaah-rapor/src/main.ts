@@ -2,7 +2,7 @@
 // (klik nilai, catatan, kelas, kamar, tanggal, ujian, tahsin, ketidakhadiran), seperti Rapor Pesantren.
 // Modul tambahan yang dimuat halaman Mutabaah; memakai API Mutabaah yang sama (getRaporHalaqah / saveRaporSemester)
 // dengan sesi pengguna, sehingga hak akses dan data identik dengan editor rapor Mutabaah.
-import { PREDIKAT, PREDIKAT_TAHFIDZ, INDIKATOR_SINGKAT, narasiCatatan } from '../../../apps/mutabaah/lib/target';
+import { PREDIKAT, PREDIKAT_TAHFIDZ, INDIKATOR_SINGKAT, narasiCatatan, IQRO_TOPIK, JALUR } from '../../../apps/mutabaah/lib/target';
 import { raporHTML, RAPOR_CSS, SIZE, fitPage } from './rapor';
 import { unduhPdf } from '../../shared/pdf';
 
@@ -127,7 +127,7 @@ function render() {
     <section class="mrp-preview"><div class="mrp-actions"><span class="mrp-muted">F4 · 215 × 330 mm · 1 lembar</span><span class="mrp-grow"></span>
       <button class="mrp-btn" data-a="print1">${IC.print}Cetak santri ini</button><button class="mrp-btn" data-a="pdf1">${IC.pdf}PDF santri ini</button>
       <button class="mrp-btn primary" data-a="printsel" ${n ? '' : 'disabled'}>${IC.print}Cetak ${n || ''} terpilih</button><button class="mrp-btn primary" data-a="pdfsel" ${n ? '' : 'disabled'}>${IC.pdf}PDF ${n || ''} terpilih</button></div>
-      <p class="mrp-muted mrp-tip">Klik nilai, catatan, kelas, kamar, tanggal, ujian, tahsin, atau ketidakhadiran pada rapor untuk mengubahnya. Perubahan tersimpan otomatis ke Mutabaah. Teks hijau = otomatis dari aplikasi.</p>
+      <p class="mrp-muted mrp-tip">Klik nilai, catatan, kelas, kamar, tanggal, ujian, tahsin (termasuk jalur santri &amp; Iqro'), atau ketidakhadiran pada rapor untuk mengubahnya. Perubahan tersimpan otomatis ke Mutabaah. Teks hijau = otomatis dari aplikasi.</p>
       <div class="mrp-scroll"><div id="mrp-preview"></div></div></section></div>`);
   draw();
 }
@@ -189,7 +189,20 @@ function popover(target: HTMLElement) {
   } else if (key === 'catatan') pop.innerHTML = `<b>Catatan pembinaan</b><textarea rows="7" maxlength="1000">${esc(r.catatan)}</textarea><button type="button" class="mrp-btn ghost" data-x="auto">Susun otomatis dari nilai</button>${btns}`;
   else if (key === 'absen') pop.innerHTML = `<b>Ketidakhadiran</b><div class="mrp-trio">${['sakit', 'izin', 'alpa'].map((k) => `<label>${k[0].toUpperCase() + k.slice(1)}<input inputmode="numeric" data-k="${k}" value="${esc(r.absen[k])}"><small>otomatis ${esc(r.absen.otomatis?.[k] ?? '')}</small></label>`).join('')}</div>${btns}`;
   else if (key === 'ujian') pop.innerHTML = `<b>Nilai ujian manual (0–100)</b><p class="mrp-muted">Belum ada ujian final di menu Ujian Semester. Isi bila santri diuji di luar aplikasi.</p><input inputmode="decimal" value="${esc(r.ujian_manual)}">${btns}`;
-  else if (key === 'tahsin') pop.innerHTML = `<b>Status tahsin / Iqro'</b><select><option value="">Belum ada hasil</option><option value="1" ${r.iqro_lulus === true ? 'selected' : ''}>Lulus</option><option value="0" ${r.iqro_lulus === false ? 'selected' : ''}>Belum lulus</option></select><label>Materi terakhir<input data-k="materi" maxlength="60" value="${esc(r.tahsin.materi)}"></label>${btns}`;
+  else if (key === 'tahsin') {
+    // Jalur santri & blok Iqro'/Tahsin klasikal (Draf Revisi Panduan Rapor Al-Qur'an 2026/2027).
+    const th = r.tahsin, bawaan = !!th.bawaan, iq = r.iqro || {};
+    pop.classList.add('mrp-pop-wide');
+    pop.innerHTML = `<b>Jalur & tahsin / Iqro'</b>
+      <label>Jalur santri<select data-k="jalur">${JALUR.map((j) => `<option value="${j.id}" ${r.jalur === j.id ? 'selected' : ''}>${j.label}</option>`).join('')}</select></label>
+      <p class="mrp-muted mrp-small">Fokus Tahsin/Talaqqi: ziyadah kosong tidak otomatis C, predikat tahfidz dari ketuntasan tahsin. Fokus Sertifikasi: predikat dari capaian murajaah (5 hlm/pekan) dan sertifikasi.</p>
+      <label class="mrp-check"><input type="checkbox" data-k="aktif" ${th.aktif ? 'checked' : ''} ${bawaan ? 'disabled' : ''}> Masih tahap Tahsin/Iqro' ${bawaan ? '<small>(otomatis aktif untuk kelas 7 &amp; 10)</small>' : '<small>(centang untuk kelas 8, 9, 11, 12 yang masih tahsin)</small>'}</label>
+      <div class="mrp-iqro" ${th.aktif ? '' : 'hidden'}><small class="mrp-muted">Penilaian Iqro'/Tahsin klasikal (hal. 15–54) · ${th.tuntas || 0}/${th.total || IQRO_TOPIK.length} tuntas (B ke atas)</small>
+        ${IQRO_TOPIK.map((t) => `<div class="mrp-iq-row"><span>${esc(t.tema)} <small>hal. ${t.hal}</small></span><span class="mrp-iq-p" data-topik="${t.id}">${PREDIKAT.map((p) => `<button type="button" data-iq="${p}" class="${iq[t.id]?.p === p ? 'on' : ''}">${p}</button>`).join('')}</span></div>`).join('')}</div>
+      <label>Status lulus tahsin / Iqro'<select data-k="lulus"><option value="">Belum ada hasil</option><option value="1" ${r.iqro_lulus === true ? 'selected' : ''}>Lulus</option><option value="0" ${r.iqro_lulus === false ? 'selected' : ''}>Belum lulus</option></select></label>
+      <label>Materi terakhir<input data-k="materi" maxlength="60" value="${esc(th.materi)}"></label>${btns}`;
+    pop.addEventListener('change', (ev) => { const t = ev.target as HTMLElement; if ((t as HTMLInputElement).dataset.k === 'aktif' || (t as HTMLSelectElement).dataset.k === 'jalur') { const on = bawaan || (pop.querySelector('[data-k=aktif]') as HTMLInputElement).checked || (pop.querySelector('[data-k=jalur]') as HTMLSelectElement).value === 'tahsin'; (pop.querySelector('.mrp-iqro') as HTMLElement).hidden = !on; } });
+  }
   else if (key === 'kelas' || key === 'kamar') pop.innerHTML = `<b>${key === 'kelas' ? 'Kelas' : 'Kamar'}</b><input maxlength="${key === 'kelas' ? 12 : 40}" value="${esc(r.identitas[key])}">${btns}`;
   else if (key === 'rekap') pop.innerHTML = `<b>Ringkasan capaian</b><p class="mrp-muted">Otomatis dari setoran & sertifikasi; ubah bila perlu. Kosongkan untuk kembali ke nilai otomatis.</p><div class="mrp-duo">${REKAP.map(([k, l]) => `<label>${l}<input data-k="${k}" value="${esc(r.rekap[k])}" ${k === 'capaian' ? 'maxlength="30"' : 'inputmode="decimal" maxlength="8"'}><small>otomatis ${esc(r.rekap_auto?.[k] ?? '')}</small></label>`).join('')}</div>${btns}`;
   else if (key === 'tanggal') pop.innerHTML = `<b>Tanggal rapor</b><input type="date" value="${esc(r.ttd.tanggal)}">${btns}`;
@@ -205,6 +218,7 @@ function popover(target: HTMLElement) {
   pop.addEventListener('click', (e) => {
     const t = (e.target as HTMLElement).closest('button') as HTMLElement | null; if (!t) return;
     const k = key.slice(6), ta = pop.querySelector('textarea') as HTMLTextAreaElement | null;
+    if (t.dataset.iq !== undefined) { const row = t.parentElement!; const was = t.classList.contains('on'); $$('button', row).forEach((x) => x.classList.remove('on')); if (!was) t.classList.add('on'); return; }
     if (t.dataset.p !== undefined) { pred = t.dataset.p; $$('.mrp-choice button', pop).forEach((x) => x.classList.toggle('on', x === t)); const a = r.aspek.find((x: any) => x.key === k); if (ta && (a.ket_otomatis || !ta.value)) ta.value = INDIKATOR_SINGKAT[k]?.[pred] || ''; return; }
     if (t.dataset.x === 'batal') return done();
     if (t.dataset.x === 'kosong') { pred = ''; $$('.mrp-choice button', pop).forEach((x) => x.classList.remove('on')); if (ta) ta.value = ''; return; }
@@ -215,7 +229,13 @@ function popover(target: HTMLElement) {
     else if (key === 'catatan') { r.catatan = ta!.value; r.catatan_otomatis = false; queue(id, (x) => (x.catatan = r.catatan)); }
     else if (key === 'absen') { const v: any = {}; $$<HTMLInputElement>('input', pop).forEach((x) => (v[x.dataset.k!] = x.value.replace(/\D/g, ''))); Object.assign(r.absen, v); queue(id, (x) => (x.pelengkap.absen = { sakit: r.absen.sakit, izin: r.absen.izin, alpa: r.absen.alpa })); }
     else if (key === 'ujian') { const v = (pop.querySelector('input') as HTMLInputElement).value.trim(); const n = Number(v.replace(',', '.')); if (v && !(n >= 0 && n <= 100)) { toast('Nilai ujian 0–100.', true); return; } r.ujian_manual = v; queue(id, (x) => (x.pelengkap.ujian_manual = v)); }
-    else if (key === 'tahsin') { const s = (pop.querySelector('select') as HTMLSelectElement).value; r.iqro_lulus = s === '' ? null : s === '1'; r.tahsin.lulus = r.iqro_lulus; r.tahsin.materi = (pop.querySelector('[data-k=materi]') as HTMLInputElement).value; queue(id, (x) => { x.pelengkap.iqro_lulus = r.iqro_lulus; x.pelengkap.tahsin_materi = r.tahsin.materi; }); }
+    else if (key === 'tahsin') {
+      const s = (pop.querySelector('[data-k=lulus]') as HTMLSelectElement).value; r.iqro_lulus = s === '' ? null : s === '1'; r.tahsin.lulus = r.iqro_lulus; r.tahsin.materi = (pop.querySelector('[data-k=materi]') as HTMLInputElement).value;
+      const jalur = (pop.querySelector('[data-k=jalur]') as HTMLSelectElement).value, aktif = (pop.querySelector('[data-k=aktif]') as HTMLInputElement).checked;
+      const iqro: Record<string, { p: string; k: string }> = {}; $$('[data-topik]', pop).forEach((row) => { const on = row.querySelector('button.on') as HTMLElement | null; if (on) iqro[row.dataset.topik!] = { p: on.dataset.iq!, k: r.iqro?.[row.dataset.topik!]?.k || '' }; });
+      r.jalur = jalur; r.iqro = iqro;
+      queue(id, (x) => { x.pelengkap.iqro_lulus = r.iqro_lulus; x.pelengkap.tahsin_materi = r.tahsin.materi; x.pelengkap.jalur = jalur; if (!r.tahsin.bawaan) x.pelengkap.tahsin_aktif = aktif; x.pelengkap.iqro = iqro; });
+    }
     else if (key === 'kelas' || key === 'kamar') { r.identitas[key] = (pop.querySelector('input') as HTMLInputElement).value; queue(id, (x) => (x.pelengkap[key] = r.identitas[key])); }
     else if (key === 'rekap') { const rk: any = {}; $$<HTMLInputElement>('input', pop).forEach((x) => { const k2 = x.dataset.k!; const v = x.value.trim() || String(r.rekap_auto?.[k2] ?? ''); if (v !== String(r.rekap[k2] ?? '')) { rk[k2] = v; r.rekap[k2] = v; } }); if (Object.keys(rk).length) queue(id, (x) => (x.pelengkap.rekap = { ...(x.pelengkap.rekap || {}), ...rk })); }
     else if (key === 'tanggal') { r.ttd.tanggal = (pop.querySelector('input') as HTMLInputElement).value; queue(id, (x) => (x.pelengkap.tanggal = r.ttd.tanggal)); }

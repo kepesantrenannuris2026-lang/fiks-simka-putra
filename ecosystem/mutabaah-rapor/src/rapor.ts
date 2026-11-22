@@ -16,7 +16,7 @@ export function raporHTML(r: any, logo: string, edit = false) {
   ];
   const ev = [
     { j: 'UJIAN SEMESTER', key: 'ujian', v: u.nilai == null ? 'Belum ada nilai' : `Nilai ${angka(u.nilai)}`, s: u.nilai == null ? (u.draft ? 'Ujian sedang berjalan' : 'Kelulusan belum ditentukan') : u.lulus ? `Lulus KKM ${u.kkm}` : `Belum mencapai KKM ${u.kkm}`, bad: u.lulus === false },
-    { j: "TAHSIN / IQRO'", key: 'tahsin', v: th.lulus === true ? 'Lulus' : th.lulus === false ? 'Belum lulus' : 'Belum ada hasil', s: th.materi ? `Materi: ${th.materi}` : th.sumber === 'ujian' ? 'Dari ujian tahsin semester' : th.wajib ? 'Syarat target semester ini' : 'Status kelulusan tahsin', bad: th.lulus === false },
+    { j: "TAHSIN / IQRO'", key: 'tahsin', v: th.lulus === true ? 'Lulus' : th.lulus === false ? 'Belum lulus' : 'Belum ada hasil', s: [r.jalur && r.jalur !== 'reguler' ? r.jalur_label : '', th.aktif && th.persen != null ? `Ketuntasan ${th.persen}% (${th.tuntas}/${th.total})` : '', th.materi ? `Materi: ${th.materi}` : th.sumber === 'ujian' ? 'Dari ujian tahsin semester' : !th.aktif ? 'Tidak dalam tahap tahsin' : th.wajib ? 'Syarat target semester ini' : 'Status kelulusan tahsin'].filter(Boolean).join(' · '), bad: th.lulus === false },
     { j: 'KETIDAKHADIRAN', key: 'absen', v: `S: ${ab.sakit}&nbsp;&nbsp; I: ${ab.izin}&nbsp;&nbsp; A: ${ab.alpa}`, s: 'Sakit · Izin · Alpa', bad: false, raw: true },
   ];
   const rw: any[] = (r.riwayat || []).slice(0, 4);

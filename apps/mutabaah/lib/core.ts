@@ -1932,9 +1932,22 @@ async function susunRapor(list: any[], periode: any) {
     const m = mur[s.id] || { baris: 0, rata: null, n: 0 };
     const ss = sertSem[s.id] || { bagian: 0, hal: 0 };
     const murajaahHal = T.halamanBulat(m.baris) + ss.hal; // murajaah setoran + sertifikasi semester ini
+    // Jalur santri (Draf Revisi Panduan Rapor Al-Qur'an 2026/2027): reguler · fokus tahsin/talaqqi · fokus sertifikasi/murajaah.
+    // Semester ke-6 otomatis fokus sertifikasi. Blok Iqro'/Tahsin klasikal: bawaan aktif kelas 7 & 10; kelas 8/9/11/12 bila dicentang.
+    const jalur = T.JALUR.some((j) => j.id === d.jalur) ? d.jalur : semKe === 6 ? "sertifikasi" : "reguler";
+    const tahsinBawaan = [7, 10].includes(Number(s.tingkat));
+    const tahsinAktif = tahsinBawaan || jalur === "tahsin" || d.tahsin_aktif === true;
+    const iqroIsi = d.iqro || {}, iqroTuntas = T.IQRO_TOPIK.filter((t) => ["A+", "A", "B+", "B"].includes(iqroIsi[t.id]?.p)).length;
+    // Predikat tahfidz otomatis. Ziyadah kosong pada jalur tahsin/sertifikasi TIDAK otomatis C.
+    const targetMurajaahHal = 5 * (p.setoran || 0); // target murajaah 5 halaman per pekan setoran
+    const tahsinPct = d.iqro_lulus === true ? 100 : Object.keys(iqroIsi).length ? Math.round((iqroTuntas / T.IQRO_TOPIK.length) * 100) : null;
+    const jalurTahfidz: { p: string; k: string } =
+      jalur === "sertifikasi" ? (targetMurajaahHal ? { p: T.predikatTahfidz(murajaahHal, targetMurajaahHal, semKe), k: `Fokus Murajaah & Persiapan Sertifikasi; capaian murajaah ${Math.round((murajaahHal / targetMurajaahHal) * 100)}% (${murajaahHal} dari ${targetMurajaahHal} hlm)` } : { p: "", k: "Fokus Murajaah & Persiapan Sertifikasi; belum ada setoran murajaah" })
+      : jalur === "tahsin" && !p.ziyadah ? (tahsinPct == null ? { p: "", k: "Program Tahsin/Talaqqi (belum masuk target ziyadah); predikat menunggu penilaian Iqro'/Tahsin" } : { p: tahsinPct >= 90 ? "A" : tahsinPct >= 80 ? "B+" : tahsinPct >= 70 ? "B" : "C", k: `Program Tahsin/Talaqqi (belum masuk target ziyadah); ketuntasan tahsin ${tahsinPct}%` })
+      : { p: tgt.semester ? T.predikatTahfidz(p.ziyadah, tgt.semester * T.BARIS_PER_JUZ, semKe) : "", k: "" };
     const otomatis: Record<string, string> = {
       makhraj: pn[s.id]?.makhraj || "", tajwid: pn[s.id]?.tajwid || "",
-      tahfidz: tgt.semester ? T.predikatTahfidz(p.ziyadah, tgt.semester * T.BARIS_PER_JUZ, semKe) : "",
+      tahfidz: jalurTahfidz.p,
       murajaah: T.predikatMurajaah(m.rata), kehadiran: saranKehadiran(hadirPct), perkembangan: "",
     };
     // Sumber: isian rapor/penilaian semester (ujian_semester) → otomatis dari data aplikasi.
@@ -1943,6 +1956,7 @@ async function susunRapor(list: any[], periode: any) {
     const aspek = T.ASPEK_RAPOR.map((a) => {
       const pred = simpan(a.key) || otomatis[a.key] || "";
       let ket = ketSimpan(a.key);
+      if (!ket && a.key === "tahfidz" && !simpan("tahfidz") && jalurTahfidz.k) ket = jalurTahfidz.k;
       if (!ket && pred) ket = a.key === "murajaah" && m.rata != null ? `${T.INDIKATOR_SINGKAT.murajaah[pred]}; rerata ${angkaId(m.rata)} dari ${m.n} penilaian` : T.INDIKATOR_SINGKAT[a.key]?.[pred] || "";
       return { key: a.key, label: LABEL_ASPEK[a.key], predikat: pred, keterangan: ket, otomatis: !simpan(a.key) && !!pred, ket_otomatis: !ketSimpan(a.key) };
     });
@@ -2003,7 +2017,8 @@ async function susunRapor(list: any[], periode: any) {
       riwayat.push({ judul: "Sertifikasi", isi: `${bagian} bagian (¼ juz) pada juz ${juzSert.join(", ")}${semua.length ? `; rerata ${Math.round(semua.reduce((a, b) => a + b, 0) / semua.length)}` : ""}` });
     }
 
-    const tahsin = { lulus: iqroLulus, wajib: !!tgt.iqro, materi: d.tahsin_materi || "", sumber: d.iqro_lulus != null ? "isian" : tahsinUjian != null ? "ujian" : "" };
+    const tahsin = { lulus: iqroLulus, wajib: !!tgt.iqro || tahsinAktif, aktif: tahsinAktif, bawaan: tahsinBawaan, centang: d.tahsin_aktif === true, tuntas: iqroTuntas, total: T.IQRO_TOPIK.length, persen: tahsinPct,
+      materi: d.tahsin_materi || "", sumber: d.iqro_lulus != null ? "isian" : tahsinUjian != null ? "ujian" : "" };
     const catatanAuto = T.narasiCatatan(pred, gender, { ziyadah_hal: Math.round((p.ziyadah / 15) * 10) / 10, target_juz: tgt.semester, murajaah_rata: m.rata, murajaah_n: m.n, ujian: nilaiUjian });
     const ab = abs[s.id] || { s: 0, i: 0, a: 0 }, abM = d.absen || {}, pilih = (x: any, y: any) => (x == null || x === "" ? y : x);
 
@@ -2012,7 +2027,7 @@ async function susunRapor(list: any[], periode: any) {
       periode: { tahun_ajaran: periode.tahun_ajaran, semester: periode.semester, nama: periode.nama, label: `${periode.tahun_ajaran.replace("/", "-")}/${periode.nama}`, semester_ke: semKe },
       identitas: { kelas: d.kelas || T.romawi(s.tingkat), kamar: d.kamar || "", nomor: d.nomor || "" },
       templat: d.templat || T.templatOtomatis(s.tingkat, totalAkhir / T.BARIS_PER_JUZ),
-      aspek, ujian, target: tgt, tahsin,
+      aspek, ujian, target: tgt, tahsin, jalur, jalur_label: T.JALUR.find((j) => j.id === jalur)!.label,
       murajaah: { ...m, halaman: murajaahHal, halaman_setoran: T.halamanBulat(m.baris), sertifikasi_bagian: ss.bagian, sertifikasi_hal: ss.hal, predikat: pred.murajaah || "" },
       absen: { sakit: Number(pilih(abM.sakit, ab.s)) || 0, izin: Number(pilih(abM.izin, ab.i)) || 0, alpa: Number(pilih(abM.alpa, ab.a)) || 0, otomatis: { sakit: ab.s || 0, izin: ab.i || 0, alpa: ab.a || 0 } },
       surat: suratAll, surat_auto: suratAuto, perempat, iqro: d.iqro || {}, iqro_lulus: iqroLulus,
@@ -2035,7 +2050,7 @@ async function antreRaporSheet(r: any, u: User) {
     murajaah: a.murajaah?.predikat || "", ket_murajaah: a.murajaah?.keterangan || "", murajaah_rata: r.murajaah.rata ?? "", murajaah_hal: r.rekap.murajaah,
     ziyadah_hal: r.rekap.ziyadah, total_juz: r.rekap.total, target_semester_juz: r.rekap.target_semester, capaian_target: r.rekap.capaian,
     nilai_ujian: r.ujian.nilai ?? "", status_ujian: r.ujian.nilai == null ? "Belum ada nilai" : r.ujian.lulus ? "Lulus KKM" : "Belum KKM",
-    status_tahsin: r.tahsin.lulus == null ? "" : r.tahsin.lulus ? "Lulus" : "Belum lulus",
+    status_tahsin: r.tahsin.lulus == null ? "" : r.tahsin.lulus ? "Lulus" : "Belum lulus", jalur: r.jalur_label || "",
     sakit: r.absen.sakit, izin: r.absen.izin, alpa: r.absen.alpa, kamar: r.identitas.kamar, catatan: r.catatan,
     diperbarui_oleh: U.clip(u.username, 100), diperbarui_pada: new Date().toISOString(),
   };
@@ -2089,6 +2104,8 @@ export async function saveRaporSemester(u: User, santriId: any, ta: any, sem: an
   }
   if (pl.iqro) { patch.iqro = {}; Object.entries(pl.iqro).forEach(([k, v]: any) => { if (!T.IQRO_TOPIK.some((t) => t.id === k)) throw new Error("Topik Iqro' tidak dikenal."); patch.iqro[k] = { p: predikatValid(v?.p, "Iqro'"), k: U.clip(U.safeText(v?.k, 160), 160) }; }); }
   if (pl.iqro_lulus !== undefined) patch.iqro_lulus = pl.iqro_lulus === null ? null : !!pl.iqro_lulus;
+  if (pl.jalur !== undefined) { if (pl.jalur !== null && !T.JALUR.some((j) => j.id === pl.jalur)) throw new Error("Jalur santri tidak dikenal."); patch.jalur = pl.jalur; }
+  if (pl.tahsin_aktif !== undefined) patch.tahsin_aktif = pl.tahsin_aktif === null ? null : !!pl.tahsin_aktif;
   if (pl.tahsin_materi !== undefined) patch.tahsin_materi = U.clip(U.safeText(pl.tahsin_materi, 60), 60);
   if (pl.rekap) patch.rekap = Object.fromEntries(["hafalan_awal", "ziyadah", "total", "murajaah", "target_semester", "target_tahunan", "capaian"].filter((k) => pl.rekap[k] !== undefined).map((k) => [k, U.clip(U.safeText(pl.rekap[k], 30), 30)]));
   const aspek = d.aspek || {};

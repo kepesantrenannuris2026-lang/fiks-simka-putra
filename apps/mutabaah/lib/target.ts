@@ -333,6 +333,12 @@ export const IQRO_TOPIK = [
   { id: "qolqolah", hal: "31", tema: "Qolqolah" }, { id: "ghunnah", hal: "36", tema: "Ghunnah" }, { id: "lafadz_allah", hal: "39", tema: "Lafadz Allah" },
   { id: "idghom", hal: "44", tema: "Idghom" }, { id: "ikhfa", hal: "49", tema: "Ikhfa" }, { id: "tes_akhir", hal: "54", tema: "Tes Akhir" },
 ];
+/** Jalur santri pada rapor Al-Qur'an (Draf Revisi Panduan 2026/2027). */
+export const JALUR = [
+  { id: "reguler", label: "Reguler" },
+  { id: "tahsin", label: "Fokus Tahsin/Talaqqi" },
+  { id: "sertifikasi", label: "Fokus Sertifikasi/Murajaah" },
+] as const;
 export const TEMPLAT_RAPOR = [
   { id: "7-10", label: "Kelas 7 & 10", info: "Nilai per surat Juz 30–26, perempat juz, dan Iqro'" },
   { id: "8-11", label: "Kelas 8 & 11", info: "Nilai per surat Juz 30–26 dan perempat juz" },

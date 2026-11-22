@@ -62,9 +62,9 @@ function jsonOut(obj: unknown, h: Record<string, string>, req: Request) {
   return new Response(body, { headers });
 }
 
-const ORIGINS = ["https://mutabaahtahfidznurista.netlify.app", "http://localhost:3400"];
+const ORIGINS = ["https://kepesantrenan-nuris.kepesantrenannuris.workers.dev", "https://kepesantrenannuris.netlify.app", "https://mutabaahtahfidznurista.netlify.app", "http://localhost:3400"];
 const cors = (o: string | null) => ({
-  "Access-Control-Allow-Origin": o && (ORIGINS.includes(o) || /--mutabaahtahfidznurista\.netlify\.app$/.test(o)) ? o : ORIGINS[0],
+  "Access-Control-Allow-Origin": o && (ORIGINS.includes(o) || /--(mutabaahtahfidznurista|kepesantrenannuris)\.netlify\.app$/.test(o)) ? o : ORIGINS[0],
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey, x-sync-key, x-deploy-key, x-region",
   "Access-Control-Max-Age": "86400", Vary: "Origin",

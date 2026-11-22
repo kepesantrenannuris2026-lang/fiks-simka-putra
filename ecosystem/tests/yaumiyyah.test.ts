@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {Entry,activities,monthlyReport,semesterReport,semesterMonths,grade,daysOfMonth,validateEntry} from '../../src/yaumiyyah/model';
+import {Entry,activities,monthlyReport,semesterReport,semesterMonths,grade,daysOfMonth,validateEntry} from '../../src/yaumiyyah/model-harian';
 import {studentScope,yaumiyyah} from '../functions/kepesantrenan/yaumiyyah';
 const perfect=(month:string):Entry[]=>daysOfMonth(month).map(date=>({date,values:Object.fromEntries(activities.map(a=>[a.id,a.period==='week'||a.period==='month'?1:a.target])),excused:[],note:''}));
 test('15 activities and exact grade boundaries',()=>{assert.equal(activities.length,15);for(const [n,g] of [[100,'A+'],[95,'A+'],[94.99,'A'],[85,'A'],[84.99,'B+'],[75,'B+'],[74.99,'B'],[65,'B'],[64.99,'C'],[0,'C']] as const)assert.equal(grade(n),g);});

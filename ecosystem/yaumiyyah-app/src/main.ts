@@ -1,22 +1,24 @@
-// Mutabaah Yaumiyyah — catatan ibadah & kebiasaan harian santri (desain Mutabaah). Data tetap di yaumiyyah.daily.
-import { activities, monthlyReport, semesterReport, semesterMonths, todayWIB, Entry } from '../../../src/yaumiyyah/model';
+// Mutabaah Yaumiyyah — 8 ibadah sesuai aspek Ibadah Rapor Pesantren, diisi PER BULAN (jumlah pelaksanaan sebulan).
+// Data di yaumiyyah.bulanan; isian harian lama sudah dikonversi. Target & rincian predikat dihitung otomatis per bulan.
+import { activities, monthlyReport, semesterReport, semesterMonths, todayWIB, MonthEntry, monthTarget, monthMax, kategori, scoreOf, grade, hadir, daysInMonth, targetLabel, SKALA } from '../../../src/yaumiyyah/model';
 import { unduhPdf } from '../../shared/pdf';
 import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, appsMenu, sessionEnded, unitLabel } from '../../shared/ui';
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/');
-const today = todayWIB();
-const st: any = { user: null, students: [], sid: '', view: 'harian', date: today, month: today.slice(0, 7), period: 'month', year: Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 7 ? 1 : 0), sem: Number(today.slice(5, 7)) >= 7 ? 1 : 2, entries: [] as Entry[], draft: null as Entry | null, dirty: false, busy: false, q: '', loading: true, logo: '' };
+const today = todayWIB(), thisMonth = today.slice(0, 7);
+const st: any = { user: null, students: [], sid: '', view: 'isian', month: thisMonth, period: 'month', year: Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 7 ? 1 : 0), sem: Number(today.slice(5, 7)) >= 7 ? 1 : 2, entries: [] as MonthEntry[], draft: null as MonthEntry | null, dirty: false, busy: false, q: '', loading: true, logo: '', rincian: false };
 const app = document.getElementById('app')!;
-const fresh = (date: string): Entry => ({ date, values: {}, excused: [], note: '' });
+const fresh = (month: string): MonthEntry => ({ month, values: {}, izin: 0, note: '' });
 const student = () => st.students.find((s: any) => s.id === st.sid);
-const months = () => (st.view !== 'harian' && st.period === 'semester' ? semesterMonths(st.year, st.sem) : [st.view === 'harian' ? st.date.slice(0, 7) : st.month]);
+const months = () => (st.view !== 'isian' && st.period === 'semester' ? semesterMonths(st.year, st.sem) : [st.month]);
 const monthLabel = (m: string) => new Date(m + '-01T00:00:00Z').toLocaleDateString('id-ID', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const peran = () => (st.user?.admin ? 'Pimpinan · semua santri' : st.user?.koordinator?.length ? `Koordinator ${st.user.koordinator.map(unitLabel).join(', ')}` : 'Musyrif/ah');
-const predClass = (p: string) => (p === 'A+' || p === 'A' ? 'a' : p === 'B+' ? 'bp' : p === 'B' ? 'b' : p === 'C' ? 'c' : 'none');
+const predClass = (p: string) => (p === 'A' ? 'a' : p === 'B+' ? 'bp' : p === 'B' ? 'b' : p === 'C' ? 'c' : 'none');
+const fmt = (n: number | null | undefined, d = 1) => (n == null ? '–' : n.toFixed(d).replace('.', ','));
 
 function render() {
-  const title = { harian: 'Catatan harian', rekap: 'Rekap', rapor: 'Rapor PDF' }[st.view as string] || '';
-  const nav = [{ id: 'harian', label: 'Catatan harian', icon: I.edit }, { id: 'rekap', label: 'Rekap', icon: I.chart }, { id: 'rapor', label: 'Rapor PDF', icon: I.pdf }];
+  const title = { isian: 'Isian bulanan', rekap: 'Rekap', rapor: 'Rapor PDF' }[st.view as string] || '';
+  const nav = [{ id: 'isian', label: 'Isian bulanan', icon: I.edit }, { id: 'rekap', label: 'Rekap', icon: I.chart }, { id: 'rapor', label: 'Rapor PDF', icon: I.pdf }];
   app.innerHTML = shell({ app: 'Mutabaah Yaumiyyah', title, nav, active: st.view, user: st.user && { nama: st.user.nama, peran: peran() } }, body());
 }
 function picker() {
@@ -30,54 +32,67 @@ function picker() {
 function body() {
   if (st.loading && !st.students.length) return loading();
   if (!st.students.length) return empty('Belum ada santri binaan.', 'Akun ini belum memegang santri, kamar, atau unit. Hubungi pimpinan melalui Mutabaah Tahfidz.');
-  return `<section class="ns-hero anim-rise"><div><p class="ns-eyebrow">Kepesantrenan Nuris</p><h2>Kebiasaan baik, dicatat setiap hari.</h2><p>15 aktivitas dari buku mutabaah. Isian tersimpan per tanggal; rekap dan rapor dihitung otomatis.</p></div>${heroScore()}</section>
-    ${picker()}${st.loading ? loading() : st.view === 'harian' ? harian() : st.view === 'rekap' ? rekap() : rapor()}`;
+  return `<section class="ns-hero anim-rise"><div><p class="ns-eyebrow">Kepesantrenan Nuris</p><h2>Ibadah santri, dicatat setiap bulan.</h2><p>8 ibadah sesuai Rapor Pesantren. Isi jumlah pelaksanaan dalam sebulan; target, nilai, dan predikat dihitung otomatis.</p></div>${heroScore()}</section>
+    ${picker()}${st.loading ? loading() : st.view === 'isian' ? isian() : st.view === 'rekap' ? rekap() : rapor()}`;
 }
 function heroScore() {
   if (st.loading || !st.entries) return '';
-  const r = monthlyReport(st.date.slice(0, 7), st.entries);
-  return `<div class="ns-kpi"><div><strong>${r.score == null ? '–' : r.score.toFixed(0)}</strong><span>skor ${monthLabel(st.date.slice(0, 7)).split(' ')[0]}</span></div><div><strong class="acc">${r.predikat}</strong><span>predikat</span></div><div><strong>${r.coverage}%</strong><span>terisi</span></div></div>`;
+  const r = monthlyReport(st.month, st.view === 'isian' ? st.draft : st.entries.find((e: MonthEntry) => e.month === st.month));
+  return `<div class="ns-kpi"><div><strong>${r.score == null ? '–' : r.score.toFixed(0)}</strong><span>nilai ${monthLabel(st.month).split(' ')[0]}</span></div><div><strong class="acc">${r.predikat}</strong><span>predikat</span></div><div><strong>${r.filled}/8</strong><span>ibadah terisi</span></div></div>`;
 }
-function harian() {
-  const d = st.draft || fresh(st.date);
+function rincianTabel(month: string, izin: number) {
+  return `<div class="ns-table-wrap"><table class="ns-table yw-rinci"><thead><tr><th>Ibadah</th><th>Target</th>${SKALA.map((k) => `<th><span class="ns-pill ${predClass(k.p)}">${k.p}</span></th>`).join('')}</tr></thead><tbody>
+    ${activities.map((a) => { const ks = kategori(a, month, izin); const t = monthTarget(a, month, izin); return `<tr><td><b>${esc(a.name)}</b><small>${esc(targetLabel(a))}</small></td><td class="tabular">${t || '–'} ${esc(a.unit)}</td>${SKALA.map((k) => `<td class="tabular">${esc(ks.find((x) => x.p === k.p)?.teks || '–')}</td>`).join('')}</tr>`; }).join('')}
+  </tbody></table></div><p class="ns-muted" style="font-size:12.5px">Predikat dari persentase capaian target bulan ini: A ≥ 90% · B+ 80–89% · B 70–79% · C &lt; 70% (skala Rapor Pesantren). Target = harian × ${hadir(month, izin)} hari di pondok; pekanan × ${Math.floor(hadir(month, izin) / 7)} pekan; puasa sunnah per bulan.</p>`;
+}
+function isian() {
+  const d = st.draft || fresh(st.month), m = st.month, izin = d.izin || 0;
   const cards = activities.map((a, i) => {
-    const ex = d.excused.includes(a.id), v = d.values[a.id];
-    const bin = a.max === 1;
-    const ctrl = ex ? '<span class="ns-pill none">Izin / udzur</span>' : bin
-      ? `<div class="ns-seg yw-bin"><button type="button" data-v="${a.id}" data-n="1" aria-selected="${v === 1}">Ya</button><button type="button" data-v="${a.id}" data-n="0" aria-selected="${v === 0}">Tidak</button></div>`
-      : `<div class="yw-step"><button type="button" data-step="${a.id}" data-d="-1" aria-label="Kurangi">−</button><input inputmode="numeric" data-val="${a.id}" value="${v ?? ''}" placeholder="–" aria-label="${esc(a.name)}"><button type="button" data-step="${a.id}" data-d="1" aria-label="Tambah">+</button><small>${esc(a.unit)}</small></div>`;
-    return `<article class="yw-act${ex ? ' ex' : ''}"><header><span class="yw-no">${String(i + 1).padStart(2, '0')}</span><div><b>${esc(a.name)}</b><small>Target ${esc(a.label)}</small></div></header>
-      <div class="yw-row">${ctrl}<label class="yw-ex"><input type="checkbox" data-ex="${a.id}" ${ex ? 'checked' : ''}>Izin</label></div></article>`;
+    const v = d.values[a.id], t = monthTarget(a, m, izin), sc = scoreOf(a, m, v, izin), p = grade(sc), ks = kategori(a, m, izin);
+    return `<article class="yw-act"><header><span class="yw-no">${i + 1}</span><div><b>${esc(a.name)}</b><small>${esc(a.detail)} · ${esc(targetLabel(a))}</small></div><span class="ns-pill ${predClass(p)}" title="Nilai ${fmt(sc)}">${sc == null ? '–' : p}</span></header>
+      <div class="yw-row"><div class="yw-step"><button type="button" data-step="${a.id}" data-d="-1" aria-label="Kurangi">−</button><input inputmode="numeric" data-val="${a.id}" value="${v ?? ''}" placeholder="–" aria-label="${esc(a.name)} sebulan"><button type="button" data-step="${a.id}" data-d="1" aria-label="Tambah">+</button></div>
+        <span class="yw-tgt">dari target <b>${t}</b> ${esc(a.unit)}${sc != null ? ` · ${fmt(sc, 0)}%` : ''}</span></div>
+      <div class="yw-kat">${ks.map((k) => `<span class="${p === k.p && sc != null ? 'on ' : ''}${predClass(k.p)}"><b>${k.p}</b> ${esc(k.teks)}</span>`).join('')}</div></article>`;
   }).join('');
-  return `<div class="ns-section-title"><label class="ns-field" style="flex-direction:row;align-items:center;gap:8px">Tanggal (WIB)<input type="date" data-act="date" value="${st.date}" max="${today}" style="width:auto"></label>
-    <span class="ns-muted">Isi jumlah sebenarnya. 0 = belum terlaksana, kosong = belum dicatat.</span></div>
+  const r = monthlyReport(m, d);
+  return `<div class="ns-section-title"><label class="ns-field" style="flex-direction:row;align-items:center;gap:8px">Bulan<input type="month" data-act="month" value="${m}" max="${thisMonth}" class="yw-in"></label>
+    <label class="ns-field" style="flex-direction:row;align-items:center;gap:8px">Hari izin/pulang<input inputmode="numeric" data-act="izin" value="${izin}" class="yw-in" style="width:70px" aria-describedby="yw-izin-help"></label>
+    <span class="ns-muted" id="yw-izin-help">${hadir(m, izin)} dari ${daysInMonth(m)} hari di pondok. Kosong = belum dicatat, 0 = tidak terlaksana.</span>
+    <button class="ns-btn" data-act="rincian" aria-expanded="${st.rincian}">${st.rincian ? 'Tutup' : 'Lihat'} rincian kategori</button></div>
+    ${st.rincian ? `<section class="ns-card" style="padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:15px">Rincian kategori nilai ${esc(monthLabel(m))}</h3>${rincianTabel(m, izin)}</section>` : ''}
     <div class="yw-grid">${cards}</div>
     <label class="ns-field" style="margin-top:12px">Catatan (opsional)<textarea rows="2" maxlength="2000" data-act="note">${esc(d.note || '')}</textarea></label>
-    <div class="yw-savebar ${st.dirty ? 'dirty' : ''}"><span>${st.dirty ? 'Ada isian belum disimpan' : d.version ? 'Catatan tanggal ini tersimpan' : 'Belum ada catatan untuk tanggal ini'}</span><button class="ns-btn primary" data-act="save" ${st.busy ? 'disabled' : ''}>${icon(I.check, 16)}Simpan catatan</button></div>`;
+    <div class="yw-savebar ${st.dirty ? 'dirty' : ''}"><span>${st.dirty ? 'Ada isian belum disimpan' : d.version ? `Isian ${monthLabel(m)} tersimpan · nilai ${fmt(r.score)} (${r.predikat})` : `Belum ada isian untuk ${monthLabel(m)}`}</span><button class="ns-btn primary" data-act="save" ${st.busy ? 'disabled' : ''}>${icon(I.check, 16)}Simpan bulan ini</button></div>`;
 }
 function periodBar() {
   const yOpts = [st.year - 1, st.year, st.year + 1].map((y) => `<option value="${y}" ${y === st.year ? 'selected' : ''}>${y}/${y + 1}</option>`).join('');
   return `<div class="ns-section-title"><div class="ns-seg" role="tablist" data-nuris-glass><button role="tab" aria-selected="${st.period === 'month'}" data-act="period" data-v="month">Bulanan</button><button role="tab" aria-selected="${st.period === 'semester'}" data-act="period" data-v="semester">Semester</button></div>
     ${st.period === 'month' ? `<input type="month" data-act="month" value="${st.month}" class="yw-in">` : `<span><select data-act="year" class="yw-in">${yOpts}</select> <select data-act="semx" class="yw-in"><option value="1" ${st.sem === 1 ? 'selected' : ''}>Ganjil (Jul–Des)</option><option value="2" ${st.sem === 2 ? 'selected' : ''}>Genap (Jan–Jun)</option></select></span>`}</div>`;
 }
-function report() { const m = months(); return m.length > 1 ? semesterReport(m, st.entries) : monthlyReport(m[0], st.entries); }
+function report() { const m = months(); return m.length > 1 ? semesterReport(m, st.entries) : null; }
+function rows() {
+  const m = months();
+  if (m.length > 1) { const r: any = semesterReport(m, st.entries); return { sem: true, r, list: r.rows.map((x: any) => ({ ...x, cells: x.months })) }; }
+  const r: any = monthlyReport(m[0], st.entries.find((e: MonthEntry) => e.month === m[0])); return { sem: false, r, list: r.rows };
+}
 function rekap() {
-  const r: any = report(), m = months(), sem = m.length > 1;
-  const rows = r.rows.map((x: any) => `<tr><td><b>${esc(x.name)}</b><small>Target ${esc(x.label)}</small></td>${sem ? x.months.map((v: any) => `<td class="tabular">${v == null ? '–' : Math.round(v)}</td>`).join('') : `<td class="tabular">${x.observed}/${x.eligible}</td><td class="tabular">${x.actual}</td>`}<td class="tabular"><b>${x.score == null ? '–' : x.score.toFixed(1).replace('.', ',')}</b></td><td><span class="ns-pill ${predClass(x.predikat)}">${x.predikat}</span></td></tr>`).join('');
-  return `${periodBar()}<div class="ns-stats"><div class="ns-stat"><strong>${r.score == null ? '–' : r.score.toFixed(2).replace('.', ',')}</strong><span>nilai rata-rata</span></div><div class="ns-stat acc"><strong>${r.predikat}</strong><span>predikat</span></div><div class="ns-stat"><strong>${r.observed}/${r.eligible}</strong><span>isian dinilai</span></div><div class="ns-stat"><strong>${r.provisional ? 'Sementara' : 'Lengkap'}</strong><span>status data</span></div></div>
-    <div class="ns-table-wrap"><table class="ns-table"><thead><tr><th>Aktivitas</th>${sem ? m.map((x) => `<th>${monthLabel(x).split(' ')[0].slice(0, 3)}</th>`).join('') : '<th>Hari terisi</th><th>Jumlah</th>'}<th>Nilai</th><th>Predikat</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="ns-muted" style="font-size:13px">Predikat: A+ ≥ 95 · A ≥ 85 · B+ ≥ 75 · B ≥ 65 · C &lt; 65. Aktivitas yang diizinkan (udzur) tidak dihitung. Isian kosong dihitung 0 pada rerata sementara.</p>`;
+  const { sem, r, list } = rows(), m = months();
+  const body = list.map((x: any) => `<tr><td><b>${esc(x.name)}</b><small>Target ${esc(x.label)}</small></td>${sem ? x.cells.map((v: any) => `<td class="tabular">${v == null ? '–' : Math.round(v)}</td>`).join('') : `<td class="tabular">${x.value ?? '–'}</td><td class="tabular">${x.target || '–'}</td>`}<td class="tabular"><b>${fmt(x.score)}</b></td><td><span class="ns-pill ${predClass(x.predikat)}">${x.predikat}</span></td></tr>`).join('');
+  return `${periodBar()}<div class="ns-stats"><div class="ns-stat"><strong>${fmt(r.score, 2)}</strong><span>nilai rata-rata</span></div><div class="ns-stat acc"><strong>${r.predikat}</strong><span>predikat</span></div><div class="ns-stat"><strong>${sem ? `${r.bulanTerisi}/6` : `${r.filled}/8`}</strong><span>${sem ? 'bulan terisi' : 'ibadah terisi'}</span></div><div class="ns-stat"><strong>${sem ? (r.provisional ? 'Sementara' : 'Lengkap') : `${r.hadir} hari`}</strong><span>${sem ? 'status data' : 'di pondok'}</span></div></div>
+    <div class="ns-table-wrap"><table class="ns-table"><thead><tr><th>Ibadah</th>${sem ? m.map((x) => `<th>${monthLabel(x).split(' ')[0].slice(0, 3)}</th>`).join('') : '<th>Jumlah</th><th>Target</th>'}<th>Nilai</th><th>Predikat</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="ns-muted" style="font-size:13px">Predikat: A ≥ 90 · B+ 80–89 · B 70–79 · C &lt; 70 (skala Rapor Pesantren). ${sem ? 'Nilai semester = rata-rata bulan yang terisi.' : ''}</p>
+    ${sem ? '' : `<details class="ns-card" style="padding:10px 12px"><summary style="cursor:pointer;font-weight:700">Rincian kategori nilai ${esc(monthLabel(m[0]))}</summary>${rincianTabel(m[0], r.izin)}</details>`}`;
 }
 function raporHTML() {
-  const s = student(), r: any = report(), m = months(), sem = m.length > 1;
-  const rows = r.rows.map((x: any, i: number) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${esc(x.label)}</td>${sem ? x.months.map((v: any) => `<td>${v == null ? '–' : Math.round(v)}</td>`).join('') : `<td>${x.observed}/${x.eligible}</td>`}<td><b>${x.score == null ? '–' : x.score.toFixed(1).replace('.', ',')}</b></td><td><b>${x.predikat}</b></td></tr>`).join('');
-  const notes = (r.notes || r.reports?.flatMap((x: any) => x.notes) || []).slice(-6);
+  const s = student(), { sem, r, list } = rows(), m = months();
+  const body = list.map((x: any, i: number) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${esc(x.label)}</td>${sem ? x.cells.map((v: any) => `<td>${v == null ? '–' : Math.round(v)}</td>`).join('') : `<td>${x.value ?? '–'} / ${x.target || '–'}</td>`}<td><b>${fmt(x.score)}</b></td><td><b>${x.predikat}</b></td></tr>`).join('');
+  const notes = sem ? r.reports.filter((x: any) => x.note).map((x: any) => ({ date: monthLabel(x.month), note: x.note })) : r.note ? [{ date: monthLabel(m[0]), note: r.note }] : [];
   return `<article class="yw-page"><header class="yw-kop"><img src="${st.logo}" alt=""><div><h1>PESANTREN NURUL ISLAM TENGARAN</h1><h2>RAPOR MUTABAAH YAUMIYYAH ${sem ? 'SEMESTER' : 'BULANAN'}</h2><p>${sem ? `${monthLabel(m[0])} – ${monthLabel(m[m.length - 1])}` : monthLabel(m[0])}</p></div></header>
   <section class="yw-id"><b>${esc(s.nama)}</b><span>Kelas ${esc(s.kelas)} · ${esc(unitLabel(s.unit))}${s.kamar ? ` · Kamar ${esc(s.kamar)}` : ''} · Musyrif/ah: ${esc(s.musyrif || '-')}</span></section>
-  <section class="yw-score"><div><small>NILAI RATA-RATA</small><b>${r.score == null ? 'Belum dinilai' : r.score.toFixed(2).replace('.', ',') + ' / 100'}</b><em>${r.provisional ? 'Rapor sementara' : 'Data lengkap'} · terisi ${r.observed} dari ${r.eligible} isian · batas data ${today}</em></div><strong>${r.predikat}</strong></section>
-  <table class="yw-tab"><thead><tr><th>No</th><th>Aktivitas</th><th>Target</th>${sem ? m.map((x) => `<th>${monthLabel(x).split(' ')[0].slice(0, 3)}</th>`).join('') : '<th>Terisi</th>'}<th>Nilai</th><th>Pred.</th></tr></thead><tbody>${rows}</tbody></table>
-  <p class="yw-leg">Predikat: A+ ≥ 95 · A ≥ 85 · B+ ≥ 75 · B ≥ 65 · C &lt; 65. Aktivitas berizin/udzur tidak dihitung.</p>
-  ${notes.length ? `<section class="yw-notes"><b>Catatan musyrif/ah</b>${notes.map((n: any) => `<p><small>${esc(n.date)}</small> ${esc(n.note)}</p>`).join('')}</section>` : ''}
+  <section class="yw-score"><div><small>NILAI RATA-RATA</small><b>${r.score == null ? 'Belum dinilai' : fmt(r.score, 2) + ' / 100'}</b><em>${sem ? `${r.provisional ? 'Rapor sementara' : 'Data lengkap'} · ${r.bulanTerisi} dari 6 bulan terisi` : `${r.filled} dari 8 ibadah terisi · ${r.hadir} hari di pondok`}</em></div><strong>${r.predikat}</strong></section>
+  <table class="yw-tab"><thead><tr><th>No</th><th>Ibadah</th><th>Target</th>${sem ? m.map((x) => `<th>${monthLabel(x).split(' ')[0].slice(0, 3)}</th>`).join('') : '<th>Capaian</th>'}<th>Nilai</th><th>Pred.</th></tr></thead><tbody>${body}</tbody></table>
+  <p class="yw-leg">Predikat: A ≥ 90 · B+ 80–89 · B 70–79 · C &lt; 70. Isian bulanan; target harian × hari di pondok, pekanan × jumlah pekan.</p>
+  ${notes.length ? `<section class="yw-notes"><b>Catatan musyrif/ah</b>${notes.slice(-6).map((n: any) => `<p><small>${esc(n.date)}</small> ${esc(n.note)}</p>`).join('')}</section>` : ''}
   <footer class="yw-ttd"><div><p>Orang Tua/Wali</p><p class="yw-nm">……………………………</p></div><div><p>Tengaran, ${new Date(today + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</p><p>Musyrif/ah</p><p class="yw-nm">${esc(s.musyrif || '……………………………')}</p></div></footer></article>`;
 }
 const RAPOR_CSS = `.yw-page{box-sizing:border-box;width:210mm;height:297mm;padding:13mm 15mm;background:#fff;color:#122219;font-family:NurisJakarta,"Plus Jakarta Sans",Arial,sans-serif;font-size:10pt;line-height:1.3;display:flex;flex-direction:column}
@@ -98,20 +113,20 @@ function fitPreview() { const sc = $('.yw-scroll'), b = $('#preview'), pg = $('#
 async function load() {
   if (!st.sid) return;
   st.loading = true; render();
-  try { const r = await api('yaum-load', { santri_id: st.sid, months: months() }); st.entries = r.entries; st.draft = structuredClone(st.entries.find((e: Entry) => e.date === st.date) || fresh(st.date)); st.dirty = false; }
+  try { const r = await api('yaum-load', { santri_id: st.sid, months: months() }); st.entries = r.entries; st.draft = structuredClone(st.entries.find((e: MonthEntry) => e.month === st.month) || fresh(st.month)); st.dirty = false; }
   catch (e: any) { toast(e.message, 'err'); st.entries = []; }
   st.loading = false; render(); if (st.view === 'rapor') fitPreview();
 }
 const leave = () => !st.dirty || confirm('Ada isian belum tersimpan. Tinggalkan perubahan?');
 async function save() {
   if (!st.draft || st.busy) return; st.busy = true; render();
-  try { const r = await api('yaum-save', { santri_id: st.sid, entry: st.draft }); st.entries = [...st.entries.filter((e: Entry) => e.date !== r.entry.date), r.entry]; st.draft = structuredClone(r.entry); st.dirty = false; toast('Catatan tersimpan.'); }
+  try { const r = await api('yaum-save', { santri_id: st.sid, entry: st.draft }); st.entries = [...st.entries.filter((e: MonthEntry) => e.month !== r.entry.month), r.entry]; st.draft = structuredClone(r.entry); st.dirty = false; toast('Isian bulan ini tersimpan.'); }
   catch (e: any) { toast(e.message, 'err'); }
   st.busy = false; render();
 }
 async function boot() {
   if (!token()) { app.innerHTML = shell({ app: 'Mutabaah Yaumiyyah', title: 'Mutabaah Yaumiyyah', nav: [], active: '' }, needLogin('Mutabaah Yaumiyyah')); return; }
-  st.view = ['harian', 'rekap', 'rapor'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'harian'; render();
+  const h = location.hash.slice(1); st.view = h === 'harian' ? 'isian' : ['isian', 'rekap', 'rapor'].includes(h) ? h : 'isian'; render();
   fetch('/logo-mark.png').then((r) => r.blob()).then((b) => new Promise<string>((ok) => { const f = new FileReader(); f.onload = () => ok(String(f.result)); f.readAsDataURL(b); })).then((u) => { st.logo = u; if (st.view === 'rapor') render(); }).catch(() => {});
   try {
     const r = await api('yaum-students'); st.user = r.user; st.students = r.students;
@@ -124,16 +139,17 @@ async function boot() {
 }
 
 /* ---------- Peristiwa ---------- */
-function setVal(id: string, v: number | null) { const a = activities.find((x) => x.id === id)!; if (v != null) v = Math.max(0, Math.min(a.max, Math.round(v))); st.draft.values[id] = v; st.dirty = true; }
+function setVal(id: string, v: number | null) { const a = activities.find((x) => x.id === id)!; if (v != null) v = Math.max(0, Math.min(monthMax(a, st.month, st.draft.izin || 0), Math.round(v))); st.draft.values[id] = v; st.dirty = true; }
+function refreshCard() { const y = scrollY; render(); scrollTo(0, y); }
 document.addEventListener('click', async (e) => {
   const nv = (e.target as HTMLElement).closest<HTMLElement>('[data-nav]');
-  if (nv) { e.preventDefault(); if (!leave()) return; const old = st.view; st.view = nv.dataset.nav; history.replaceState(null, '', '#' + st.view); if ((old === 'harian') !== (st.view === 'harian') || st.period === 'semester') await load(); else { render(); if (st.view === 'rapor') fitPreview(); } return; }
-  const t = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-v],[data-step]'); if (!t) return;
-  if (t.dataset.v && t.dataset.n) { setVal(t.dataset.v, Number(t.dataset.n)); render(); return; }
-  if (t.dataset.step) { const id = t.dataset.step; setVal(id, (st.draft.values[id] ?? 0) + Number(t.dataset.d)); render(); ($(`[data-val="${id}"]`) as HTMLInputElement)?.focus(); return; }
+  if (nv) { e.preventDefault(); if (!leave()) return; st.view = nv.dataset.nav; history.replaceState(null, '', '#' + st.view); await load(); return; }
+  const t = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-step]'); if (!t) return;
+  if (t.dataset.step) { const id = t.dataset.step; setVal(id, (st.draft.values[id] ?? 0) + Number(t.dataset.d)); refreshCard(); ($(`[data-val="${id}"]`) as HTMLInputElement)?.focus(); return; }
   const a = t.dataset.act;
   if (a === 'apps') appsMenu(t, 'yaumiyyah');
   else if (a === 'save') save();
+  else if (a === 'rincian') { st.rincian = !st.rincian; refreshCard(); }
   else if (a === 'period') { st.period = t.dataset.v; await load(); }
   else if (a === 'pdf' || a === 'print') {
     const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0'; host.innerHTML = raporHTML(); document.body.append(host);
@@ -151,11 +167,11 @@ document.addEventListener('input', (e) => {
 });
 document.addEventListener('change', async (e) => {
   const t = e.target as HTMLInputElement;
-  if (t.dataset.ex) { const id = t.dataset.ex; const ex = new Set(st.draft.excused); t.checked ? ex.add(id) : ex.delete(id); st.draft.excused = [...ex]; if (t.checked) st.draft.values[id] = null; st.dirty = true; render(); return; }
+  if (t.dataset.val) { refreshCard(); return; }
   const a = t.dataset.act;
   if (a === 'sid') { if (!leave()) { render(); return; } st.sid = t.value; sessionStorage.setItem('yw-sid', st.sid); await load(); }
-  else if (a === 'date') { if (!t.value || t.value > today) { toast('Tanggal tidak boleh melewati hari ini.', 'err'); render(); return; } if (!leave()) { render(); return; } const pm = st.date.slice(0, 7); st.date = t.value; if (pm !== st.date.slice(0, 7)) await load(); else { st.draft = structuredClone(st.entries.find((x: Entry) => x.date === st.date) || fresh(st.date)); st.dirty = false; render(); } }
-  else if (a === 'month') { st.month = t.value; await load(); }
+  else if (a === 'izin') { const n = Math.max(0, Math.min(daysInMonth(st.month), Number(t.value.replace(/\D/g, '')) || 0)); st.draft.izin = n; for (const x of activities) if (st.draft.values[x.id] != null) setVal(x.id, st.draft.values[x.id]); st.dirty = true; refreshCard(); }
+  else if (a === 'month') { if (!t.value || t.value > thisMonth) { toast('Bulan tidak boleh melewati bulan ini.', 'err'); render(); return; } if (!leave()) { render(); return; } st.month = t.value; await load(); }
   else if (a === 'year') { st.year = Number(t.value); await load(); }
   else if (a === 'semx') { st.sem = Number(t.value); await load(); }
 });

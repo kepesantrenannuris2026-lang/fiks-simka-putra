@@ -18,10 +18,10 @@ declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 
 const SB = Deno.env.get('SUPABASE_URL')!, SR = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const BUCKET = 'cadangan';
-const SCHEMAS = ['public', 'ibadah', 'rapor_pesantren', 'simka', 'simka_putri', 'tahfidz_exam', 'ujian_praktik', 'yaumiyyah'];
+const SCHEMAS = ['public', 'rapor_pesantren', 'simka', 'simka_putri', 'tahfidz_exam', 'ujian_praktik', 'yaumiyyah'];
 const SKIP = new Set(['public.sync_queue', 'public.cache_hasil']); // sementara/turunan, tidak perlu dicadangkan
 const AUDIT: [string, string][] = [['public.audit', 'waktu'], ['rapor_pesantren.audit', 'waktu'], ['ujian_praktik.audit', 'waktu'], ['yaumiyyah.audit', 'waktu'],
-  ['simka.audit', 'waktu'], ['simka_putri.audit', 'waktu'], ['tahfidz_exam.audit', 'created_at'], ['ibadah.audit', 'created_at']];
+  ['simka.audit', 'waktu'], ['simka_putri.audit', 'waktu'], ['tahfidz_exam.audit', 'created_at']];
 // Data per tahun ajaran. $1 = awal (YYYY-07-01), $2 = akhir (YYYY+1-07-01), $3 = 'YYYY/YYYY+1'.
 const TA: [string, string][] = [
   ['public.setoran', `make_date(tahun, bulan, 1) >= $1::text::date AND make_date(tahun, bulan, 1) < $2::text::date`],
@@ -39,6 +39,7 @@ const TA: [string, string][] = [
   ['ujian_praktik.periode', `tahun_ajaran = $3`],
   ['ujian_praktik.nilai', `periode_id IN (SELECT id FROM ujian_praktik.periode WHERE tahun_ajaran = $3)`],
   ['yaumiyyah.daily', `tanggal >= $1::text::date AND tanggal < $2::text::date`],
+  ['yaumiyyah.bulanan', `(bulan || '-01')::date >= $1::text::date AND (bulan || '-01')::date < $2::text::date`],
   ['simka.pelanggaran', `tanggal_waktu >= $1::text::date AND tanggal_waktu < $2::text::date`],
   ['simka.pembinaan', `created_at >= $1::text::date AND created_at < $2::text::date`],
   ['simka_putri.pelanggaran', `tanggal_waktu >= $1::text::date AND tanggal_waktu < $2::text::date`],
