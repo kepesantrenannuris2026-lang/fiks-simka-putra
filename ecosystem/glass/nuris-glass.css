@@ -95,6 +95,5 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
 .nuris-notch :is(.nuris-record-tab,[data-nuris-primary])>span svg,.nuris-notch :is(a,button)>span[class*="size-14"] svg{width:20px;height:20px}
 .nuris-notch :is([aria-current=page],[aria-selected=true]):is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch :is([aria-current=page],[aria-selected=true])>span[class*="size-14"]{background:transparent!important;box-shadow:none!important}
 .nuris-notch :is(a,button)[class*="-mt-"]{padding-top:4px!important}
-.nuris-notch .nuris-record-tab,.nuris-notch [data-nuris-primary]{padding-top:inherit}
 @media (prefers-reduced-motion:reduce){.nuris-notch :is(a,button,[role=tab])>:first-child{transition:none}}
 @media print{.nuris-notch-bar,.nuris-notch-ball{display:none}}
