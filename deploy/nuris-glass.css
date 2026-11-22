@@ -68,32 +68,39 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
   .nuris-lens-shine{display:none}
 }
 @media print{.nuris-lens{display:none}}
-/* ---------- Tab bar bawah: floating notch (v4) ----------
-   Bar melayang hijau pinus dengan lekukan lembut; tab aktif naik ke gelembung mint. Aksi utama (Setor/Catat) tetap
-   saffron: ubin kecil saat tidak aktif, gelembung saffron saat aktif. Warna mengikuti token Mutabaah. */
-:root{--nn-bar:#082e1a;--nn-ball:#90d9a6;--nn-ink:#082e1a;--nn-item:#a7c6b2;--nn-on:#ffffff;--nn-saffron:#ee8a35;--nn-shadow:#082e1a66}
+/* ---------- Tab bar bawah: floating notch (v4.1) ----------
+   Elemen nav tetap menempel di dasar layar (transparan, tidak menangkap ketukan) sehingga tingginya = ruang yang benar-benar
+   terpakai: bar melayang + jarak bawah + safe area + ruang gelembung. Bilah lain yang memakai --nav-h (mis. bar "Simpan
+   pekan" Mutabaah) otomatis berada di atasnya. Semua tab setara; gelembung aktif selalu saffron. */
+:root{--nn-bar:#082e1a;--nn-ink:#082e1a;--nn-item:#a7c6b2;--nn-on:#ffffff;--nn-saffron:#ee8a35;--nn-shadow:#082e1a66;--nn-over:16px;--nn-gap:8px;--nn-side:10px}
 :is(.dark,[data-nuris-theme=dark]){--nn-bar:#163a26;--nn-item:#9fbcaa;--nn-shadow:#000000a6}
-.nuris-notch.nuris-notch{position:fixed!important;left:12px!important;right:12px!important;top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom))!important;width:auto!important;
-  background:transparent!important;border:0!important;border-radius:24px!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-  padding:14px 16px 7px!important;overflow:visible!important;isolation:isolate}
+.nuris-notch.nuris-notch{position:fixed!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:auto!important;max-width:none!important;margin:0!important;
+  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  padding:calc(var(--nn-over) + 9px) calc(var(--nn-side) + 12px) calc(var(--nn-gap) + 4px + env(safe-area-inset-bottom))!important;
+  overflow:visible!important;isolation:isolate;pointer-events:none}
+.nuris-notch.nuris-notch :is(a,button,[role=tab]){pointer-events:auto}
+.nuris-notch.nuris-notch>div{padding-top:0!important;padding-bottom:0!important;background:transparent!important}
 .nuris-notch>.nuris-lens{display:none!important}
-.nuris-notch-bar{position:absolute;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none;overflow:visible;filter:drop-shadow(0 12px 18px var(--nn-shadow)) drop-shadow(0 1px 1px #082e1a33)}
+.nuris-notch-bar{position:absolute;left:var(--nn-side);top:var(--nn-over);width:calc(100% - 2 * var(--nn-side));height:calc(100% - var(--nn-over) - var(--nn-gap) - env(safe-area-inset-bottom));z-index:-2;pointer-events:none;overflow:visible;
+  filter:drop-shadow(0 10px 16px var(--nn-shadow)) drop-shadow(0 1px 1px #082e1a33)}
 .nuris-notch-bar path{fill:var(--nn-bar)}
 :is(.dark,[data-nuris-theme=dark]) .nuris-notch-bar path{stroke:#ffffff1f;stroke-width:1}
-.nuris-notch-ball{position:absolute;left:0;top:0;z-index:-1;width:46px;height:46px;border-radius:50%;pointer-events:none;opacity:0;will-change:transform;
-  background:radial-gradient(120% 90% at 50% 18%,#c4efd1 0%,var(--nn-ball) 55%,#6fc48b 100%);
-  box-shadow:0 8px 16px -6px #082e1a80,inset 0 1px 0 #ffffffb3;transition:opacity .2s ease,background .3s ease}
-.nuris-notch-ball.is-primary{background:radial-gradient(120% 90% at 50% 18%,#ffc48f 0%,var(--nn-saffron) 60%,#d9721f 100%)}
-.nuris-notch.nuris-notch :is(a,button,[role=tab]){position:relative;color:var(--nn-item)!important;background:transparent!important;border-color:transparent!important;box-shadow:none!important;margin-top:0!important;transition:color .25s ease}
+.nuris-notch-ball{position:absolute;left:0;top:0;z-index:-1;width:42px;height:42px;border-radius:50%;pointer-events:none;opacity:0;will-change:transform;
+  background:radial-gradient(120% 90% at 50% 18%,#ffc48f 0%,var(--nn-saffron) 60%,#d9721f 100%);
+  box-shadow:0 8px 16px -6px #8a3f0b80,inset 0 1px 0 #ffffffb3;transition:opacity .2s ease}
+.nuris-notch.nuris-notch :is(a,button,[role=tab]){position:relative;color:var(--nn-item)!important;background:transparent!important;border-color:transparent!important;box-shadow:none!important;margin-top:0!important;padding-top:4px!important;padding-bottom:3px!important;transition:color .25s ease}
 .nuris-notch :is(a,button,[role=tab])>:first-child{transition:transform .55s cubic-bezier(.34,1.56,.64,1),color .25s ease}
+.nuris-notch :is(a,button,[role=tab]) svg{width:21px!important;height:21px!important}
 .nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true]){color:var(--nn-on)!important;font-weight:800!important}
 .nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true])>:first-child{transform:translateY(var(--nn-dy,-20px));color:var(--nn-ink)!important}
 .nuris-notch :is([aria-current=page],[aria-selected=true])>:first-child *{color:inherit}
-/* Aksi utama: dari tombol menonjol menjadi ubin saffron sebaris; saat aktif ubin larut ke gelembung saffron. */
-.nuris-notch :is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch :is(a,button)>span[class*="size-14"]{width:34px!important;height:34px!important;margin:-9px 0 -1px!important;border-radius:12px!important;display:grid!important;place-items:center;
-  background:var(--nn-saffron)!important;color:var(--nn-ink)!important;box-shadow:0 4px 10px -4px #ee8a3599!important}
-.nuris-notch :is(.nuris-record-tab,[data-nuris-primary])>span svg,.nuris-notch :is(a,button)>span[class*="size-14"] svg{width:20px;height:20px}
-.nuris-notch :is([aria-current=page],[aria-selected=true]):is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch :is([aria-current=page],[aria-selected=true])>span[class*="size-14"]{background:transparent!important;box-shadow:none!important}
-.nuris-notch :is(a,button)[class*="-mt-"]{padding-top:4px!important}
+/* Tombol tengah (Setor/Catat) diseragamkan dengan tab lain: tanpa ubin/lingkaran oranye, ukuran ikon sama. */
+.nuris-notch.nuris-notch :is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch.nuris-notch :is(a,button)>span[class*="size-14"]{width:auto!important;height:auto!important;margin:0!important;border-radius:0!important;
+  display:block!important;background:transparent!important;color:inherit!important;box-shadow:none!important}
+.nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true]):is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true])>span[class*="size-14"]{color:var(--nn-ink)!important}
+.nuris-notch.nuris-notch .nuris-record-tab>span{height:30px!important;display:grid!important;place-items:center}
+.nuris-notch.nuris-notch .nuris-record-tab>b{margin:0!important}
+.nuris-notch.nuris-notch :is(a,button)[class*="font-bold"]{font-weight:600!important}
+.nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true])[class*="font-bold"]{font-weight:800!important}
 @media (prefers-reduced-motion:reduce){.nuris-notch :is(a,button,[role=tab])>:first-child{transition:none}}
 @media print{.nuris-notch-bar,.nuris-notch-ball{display:none}}
