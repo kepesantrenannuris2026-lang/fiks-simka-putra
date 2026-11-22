@@ -98,6 +98,8 @@ aside.fixed.inset-y-0>nav::-webkit-scrollbar-thumb{background:#ffffff40;border-r
 .nuris-notch.nuris-notch :is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch.nuris-notch :is(a,button)>span[class*="size-14"]{width:auto!important;height:auto!important;margin:0!important;border-radius:0!important;
   display:block!important;background:transparent!important;color:inherit!important;box-shadow:none!important}
 .nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true]):is(.nuris-record-tab,[data-nuris-primary])>span,.nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true])>span[class*="size-14"]{color:var(--nn-ink)!important}
+.nuris-notch.nuris-notch .nuris-record-tab>span{height:30px!important;display:grid!important;place-items:center}
+.nuris-notch.nuris-notch .nuris-record-tab>b{margin:0!important}
 .nuris-notch.nuris-notch :is(a,button)[class*="font-bold"]{font-weight:600!important}
 .nuris-notch.nuris-notch :is([aria-current=page],[aria-selected=true])[class*="font-bold"]{font-weight:800!important}
 @media (prefers-reduced-motion:reduce){.nuris-notch :is(a,button,[role=tab])>:first-child{transition:none}}
