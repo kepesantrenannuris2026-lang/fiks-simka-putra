@@ -1,8 +1,8 @@
-/* Nuris Liquid Glass v3 — lensa kaca ala Apple untuk navigasi & tab.
+/* Nuris Liquid Glass v4 — lensa kaca ala Apple untuk navigasi samping, dan "floating notch" untuk tab bar bawah.
    Progressive enhancement: tidak mengubah rute, data, atau pilihan tab. Satu lensa per navigasi mengikuti elemen aktif
    dengan animasi pegas (regang-memantul), umpan balik tekan, dan seret pada tab bar. Hormati reduced-motion/transparency. */
 (() => {
-  if (window.__nurisGlass) return; window.__nurisGlass = 3;
+  if (window.__nurisGlass) return; window.__nurisGlass = 4;
   // v3: hanya navigasi. Kontrol segmen/chip ([role=tablist]) memakai sorotan aplikasinya sendiri agar teks tetap kontras.
   const SEL = '[data-nuris-glass]:not([data-nuris-glass="off"]), .nuris-bottom-nav, #mobile-nav, #desktop-nav, .nuris-sidebar nav, aside.fixed.inset-y-0 > nav';
   const ACTIVE = '[aria-current="page"], [role="tab"][aria-selected="true"]';
@@ -129,14 +129,77 @@
     destroy() { this.ro.disconnect(); this.el.remove(); }
   }
 
+  /* Tab bar bawah: bar melayang hijau pinus dengan lekukan (notch) yang mengikuti tab aktif; ikon aktif naik ke
+     gelembung bundar. Lekukan & gelembung bergerak dengan pegas. Tidak mengubah rute/pilihan tab; hanya tampilan. */
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const isMobile = (root) => root.dataset.nurisGlass === 'mobile' || root.matches('.nuris-bottom-nav, #mobile-nav');
+  class Notch {
+    constructor(root) {
+      this.root = root; root.classList.add('nuris-glass-nav', 'nuris-notch');
+      if (!root.dataset.nurisGlass) root.dataset.nurisGlass = 'mobile';
+      this.svg = document.createElementNS(SVGNS, 'svg'); this.svg.setAttribute('class', 'nuris-notch-bar'); this.svg.setAttribute('aria-hidden', 'true');
+      this.path = document.createElementNS(SVGNS, 'path'); this.svg.append(this.path);
+      this.ball = document.createElement('span'); this.ball.className = 'nuris-notch-ball'; this.ball.setAttribute('aria-hidden', 'true');
+      root.prepend(this.svg); root.append(this.ball);
+      this.x = null; this.v = 0; this.t = 0; this.press = 0; this.pressT = 0; this.raf = 0;
+      this.ro = new ResizeObserver(() => this.sync('jump')); this.ro.observe(root);
+      root.addEventListener('pointerdown', (e) => { const it = e.target.closest(ITEM); if (it && root.contains(it)) { this.pressT = 1; const a = this.active(); if (a && it !== a && !reduce.matches) { this.t = this.cx(it); } this.kick(); } });
+      const rel = () => { this.pressT = 0; this.kick(); requestAnimationFrame(() => this.sync()); };
+      root.addEventListener('pointerup', rel); root.addEventListener('pointercancel', rel); root.addEventListener('pointerleave', () => { if (this.pressT) rel(); });
+    }
+    active() { const a = this.root.querySelector(ACTIVE); return a && a.offsetParent !== null ? a : null; }
+    cx(item) { const nb = this.root.getBoundingClientRect(), b = item.getBoundingClientRect(); return b.left - nb.left + b.width / 2; }
+    sync(mode) {
+      const a = this.active(), alive = this.root.getBoundingClientRect().width > 0;
+      if (!alive) return;
+      this.root.toggleAttribute('data-notch-none', !a);
+      if (a) {
+        this.t = this.cx(a);
+        // Ikon aktif naik ke tengah gelembung (pusat gelembung = y 5 px dari tepi atas bar).
+        const ic = a.firstElementChild;
+        if (ic) {
+          const nb = this.root.getBoundingClientRect(), r = ic.getBoundingClientRect();
+          const m = new DOMMatrixReadOnly(getComputedStyle(ic).transform === 'none' ? undefined : getComputedStyle(ic).transform);
+          const natural = r.top + r.height / 2 - m.m42 - nb.top;
+          this.root.style.setProperty('--nn-dy', Math.round(5 - natural) + 'px');
+        }
+        this.ball.classList.toggle('is-primary', !!a.closest('.nuris-record-tab, [data-nuris-primary]') || !!a.querySelector('[class*="bg-saffron"]'));
+      }
+      if (this.x == null || mode === 'jump' || reduce.matches) { this.x = this.t; this.v = 0; }
+      this.kick(); this.draw();
+    }
+    kick() { if (!this.raf) { this.last = performance.now(); this.raf = requestAnimationFrame((t) => this.step(t)); } }
+    step(now) {
+      this.raf = 0; const dt = Math.min(0.032, (now - this.last) / 1000); this.last = now;
+      const d = this.t - this.x; this.v += (260 * d - 24 * this.v) * dt; this.x += this.v * dt;
+      let moving = Math.abs(d) > 0.2 || Math.abs(this.v) > 0.5; if (!moving) { this.x = this.t; this.v = 0; }
+      this.press += (this.pressT - this.press) * Math.min(1, dt * 20); if (Math.abs(this.pressT - this.press) > 0.01) moving = true;
+      this.draw(); if (moving) this.kick();
+    }
+    draw() {
+      const W = this.root.clientWidth + this.root.clientLeft * 2, H = this.root.offsetHeight; if (!W || !H || this.x == null) return;
+      const none = this.root.hasAttribute('data-notch-none');
+      // Lekukan membulat memeluk gelembung (jari-jari 29, pusat y 5) dengan bahu lembut di kedua sisi.
+      const R = Math.min(22, H / 2), S = 38, cx = Math.max(S, Math.min(W - S, this.x));
+      const L = Math.max(0, Math.min(R, cx - S)), Rr = Math.max(0, Math.min(R, W - cx - S));
+      const top = none ? `H${W - Rr}` : `H${cx - S} Q${cx - 29} 0 ${cx - 27.25} 14.92 A29 29 0 0 0 ${cx + 27.25} 14.92 Q${cx + 29} 0 ${cx + S} 0 H${W - Rr}`;
+      this.svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      this.path.setAttribute('d', `M0 ${L} A${L} ${L} 0 0 1 ${L} 0 ${top} A${Rr} ${Rr} 0 0 1 ${W} ${Rr} V${H - R} A${R} ${R} 0 0 1 ${W - R} ${H} H${R} A${R} ${R} 0 0 1 0 ${H - R} Z`);
+      const sp = reduce.matches ? 0 : Math.min(0.16, Math.abs(this.v) / 2600), k = 1 - this.press * 0.08;
+      this.ball.style.transform = `translate3d(${cx - this.root.clientLeft}px,5px,0) translate(-50%,-50%) scale(${((1 + sp) * k).toFixed(3)},${((1 - sp * 0.6) * k).toFixed(3)})`;
+      this.ball.style.opacity = none ? '0' : '1';
+    }
+    destroy() { this.ro.disconnect(); this.svg.remove(); this.ball.remove(); this.root.classList.remove('nuris-notch'); }
+  }
+
   let queued = 0;
   function scan() {
     queued = 0; defs();
     for (const [root, lens] of roots) if (!root.isConnected) { lens.destroy(); roots.delete(root); }
     for (const root of document.querySelectorAll(SEL)) {
-      if (root.closest('.nuris-lens, [data-nuris-glass="off"]')) continue;
+      if (root.closest('.nuris-lens, .nuris-notch-ball, [data-nuris-glass="off"]')) continue;
       let lens = roots.get(root);
-      if (!lens) { lens = new Lens(root); roots.set(root, lens); lens.sync('jump'); }
+      if (!lens) { lens = isMobile(root) && root.dataset.nurisNotch !== 'off' ? new Notch(root) : new Lens(root); roots.set(root, lens); lens.sync('jump'); }
       else lens.sync();
     }
   }
