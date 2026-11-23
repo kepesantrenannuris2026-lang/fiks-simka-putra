@@ -1,7 +1,8 @@
 // Mutabaah Yaumiyyah — 8 ibadah sesuai aspek Ibadah Rapor Pesantren, diisi PER BULAN (jumlah pelaksanaan sebulan).
 // Data di yaumiyyah.bulanan; isian harian lama sudah dikonversi. Target & rincian predikat dihitung otomatis per bulan.
 import { activities, monthlyReport, semesterReport, semesterMonths, todayWIB, MonthEntry, monthTarget, monthMax, kategori, scoreOf, grade, hadir, daysInMonth, targetLabel, SKALA } from '../../../src/yaumiyyah/model';
-import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, appsMenu, sessionEnded, unitLabel } from '../../shared/ui';
+import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, sessionEnded, unitLabel } from '../../shared/ui';
+import { APP, navGabungan, bottomOf, bersama } from './nav';
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/');
 const today = todayWIB(), thisMonth = today.slice(0, 7);
@@ -15,10 +16,12 @@ const peran = () => (st.user?.admin ? 'Pimpinan · semua santri' : st.user?.koor
 const predClass = (p: string) => (p === 'A' ? 'a' : p === 'B+' ? 'bp' : p === 'B' ? 'b' : p === 'C' ? 'c' : 'none');
 const fmt = (n: number | null | undefined, d = 1) => (n == null ? '–' : n.toFixed(d).replace('.', ','));
 
+// Modul Yaumiyyah di dalam aplikasi gabungan: aktif hanya saat menu Yaumiyyah dibuka (lihat gabung.ts).
+export const yaum = { views: ['isian', 'rekap'], active: false, started: false, canLeave: () => leave(), show: async (_v: string) => {} };
 function render() {
-  const title = { isian: 'Isian bulanan', rekap: 'Rekap' }[st.view as string] || '';
-  const nav = [{ id: 'isian', label: 'Isian bulanan', icon: I.edit }, { id: 'rekap', label: 'Rekap', icon: I.chart }];
-  app.innerHTML = shell({ app: 'Mutabaah Yaumiyyah', title, nav, active: st.view, user: st.user && { nama: st.user.nama, peran: peran() } }, body());
+  if (!yaum.active) return;
+  const title = { isian: 'Isian bulanan', rekap: 'Rekap ibadah' }[st.view as string] || '';
+  app.innerHTML = shell({ app: APP, title, nav: navGabungan(), bottom: bottomOf(st.view), active: st.view, user: st.user && { nama: st.user.nama, peran: peran() } }, body());
 }
 // Pilih santri: satu kolom yang bisa diketik; daftar nama yang cocok muncul di bawahnya (tanpa kolom "Cari santri" terpisah).
 const sLabel = (x: any) => `${x.nama} · ${x.kelas} · ${unitLabel(x.unit)}${x.kamar ? ' · ' + x.kamar : ''}`;
@@ -117,17 +120,22 @@ async function save() {
   catch (e: any) { toast(e.message, 'err'); }
   st.busy = false; render();
 }
+yaum.show = async (view: string) => {
+  st.view = view === 'rekap' ? 'rekap' : 'isian';
+  if (!yaum.started) { yaum.started = true; await boot(); return; }
+  if (st.loading && !st.students.length) { render(); return; }
+  await load();
+};
 async function boot() {
-  if (!token()) { app.innerHTML = shell({ app: 'Mutabaah Yaumiyyah', title: 'Mutabaah Yaumiyyah', nav: [], active: '' }, needLogin('Mutabaah Yaumiyyah')); return; }
-  const h = location.hash.slice(1); // Rapor Yaumiyyah sudah terwakili Rapor Pesantren; tautan lama #rapor diarahkan ke Rekap.
-  st.view = h === 'rekap' || h === 'rapor' ? 'rekap' : 'isian'; if (h === 'rapor') history.replaceState(null, '', '#rekap'); render();
+  if (!token()) { app.innerHTML = shell({ app: APP, title: APP, nav: [], active: '' }, needLogin(APP)); return; }
+  render();
   try {
-    const r = await api('yaum-students'); st.user = r.user; st.students = r.students;
+    const r = await api('yaum-students'); st.user = r.user; st.students = r.students; if (r.user?.admin) bersama.admin = true;
     st.sid = sessionStorage.getItem('yw-sid') && st.students.some((s: any) => s.id === sessionStorage.getItem('yw-sid')) ? sessionStorage.getItem('yw-sid') : st.students[0]?.id || '';
     st.loading = false; await load();
   } catch (e: any) {
     if (e.status === 401) sessionEnded();
-    app.innerHTML = shell({ app: 'Mutabaah Yaumiyyah', title: 'Mutabaah Yaumiyyah', nav: [], active: '' }, empty(e.status === 401 ? 'Sesi berakhir.' : 'Data belum dapat dimuat.', e.message, '<a class="ns-btn primary" href="/" target="_top">Buka portal</a>'));
+    if (yaum.active) app.innerHTML = shell({ app: APP, title: APP, nav: navGabungan(), active: '' }, empty(e.status === 401 ? 'Sesi berakhir.' : 'Data belum dapat dimuat.', e.message, '<a class="ns-btn primary" href="/" target="_top">Buka portal</a>'));
   }
 }
 
@@ -135,23 +143,23 @@ async function boot() {
 function setVal(id: string, v: number | null) { const a = activities.find((x) => x.id === id)!; if (v != null) v = Math.max(0, Math.min(monthMax(a, st.month, st.draft.izin || 0), Math.round(v))); st.draft.values[id] = v; st.dirty = true; }
 function refreshCard() { const y = scrollY; render(); scrollTo(0, y); }
 document.addEventListener('click', async (e) => {
-  const nv = (e.target as HTMLElement).closest<HTMLElement>('[data-nav]');
-  if (nv) { e.preventDefault(); if (!leave()) return; st.view = nv.dataset.nav; history.replaceState(null, '', '#' + st.view); await load(); return; }
+  if (!yaum.active) return; // perpindahan menu ditangani gabung.ts
   const t = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-step]'); if (!t) return;
   if (t.dataset.step) { const id = t.dataset.step; setVal(id, (st.draft.values[id] ?? 0) + Number(t.dataset.d)); refreshCard(); ($(`[data-val="${id}"]`) as HTMLInputElement)?.focus(); return; }
   const a = t.dataset.act;
-  if (a === 'apps') appsMenu(t, 'yaumiyyah');
-  else if (a === 'save') save();
+  if (a === 'save') save();
   else if (a === 'rincian') { st.rincian = !st.rincian; refreshCard(); }
   else if (a === 'period') { st.period = t.dataset.v; await load(); }
 });
 document.addEventListener('input', (e) => {
+  if (!yaum.active) return;
   const t = e.target as HTMLInputElement;
   if (t.dataset.act === 'sq') comboShow(t.value);
   else if (t.dataset.val) { const v = t.value.replace(/\D/g, ''); t.value = v; setVal(t.dataset.val, v === '' ? null : Number(v)); $('.yw-savebar')?.classList.add('dirty'); }
   else if (t.dataset.act === 'note') { st.draft.note = t.value; st.dirty = true; $('.yw-savebar')?.classList.add('dirty'); }
 });
 document.addEventListener('change', async (e) => {
+  if (!yaum.active) return;
   const t = e.target as HTMLInputElement;
   if (t.dataset.val) { refreshCard(); return; }
   const a = t.dataset.act;
@@ -160,7 +168,7 @@ document.addEventListener('change', async (e) => {
   else if (a === 'year') { st.year = Number(t.value); await load(); }
   else if (a === 'semx') { st.sem = Number(t.value); await load(); }
 });
-document.addEventListener('focusin', (e) => { const t = e.target as HTMLInputElement; if (t.dataset?.act === 'sq') { t.select(); comboShow(''); } });
+document.addEventListener('focusin', (e) => { if (!yaum.active) return; const t = e.target as HTMLInputElement; if (t.dataset?.act === 'sq') { t.select(); comboShow(''); } });
 document.addEventListener('focusout', (e) => { const t = e.target as HTMLInputElement; if (t.dataset?.act === 'sq') setTimeout(() => { if (document.activeElement !== t) comboHide(); }, 120); });
 // mousedown (bukan click) agar pilihan terambil sebelum kolom kehilangan fokus
 document.addEventListener('mousedown', (e) => { const o = (e.target as HTMLElement).closest<HTMLElement>('#yw-opts [data-sid]'); if (o) { e.preventDefault(); comboPick(o.dataset.sid!); } });
@@ -173,4 +181,3 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'Escape') { comboHide(); t.blur(); }
 });
 addEventListener('beforeunload', (e) => { if (st.dirty) e.preventDefault(); });
-boot();

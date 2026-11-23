@@ -1,7 +1,8 @@
 // Ujian Praktik Ibadah — aplikasi penguji & pengelola (desain Mutabaah).
 import { RUBRIK, MATERI_DEFAULT, GRUP, grupOf, materiOf, totalSkor } from './materi';
 import { huruf, MAKNA } from '../../shared/skala';
-import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, appsMenu, sessionEnded, unitLabel, download, csvOf } from '../../shared/ui';
+import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, sessionEnded, unitLabel, download, csvOf } from '../../shared/ui';
+import { APP, navGabungan, bottomOf, bersama } from '../../yaumiyyah-app/src/nav';
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/ujian-praktik/');
 const UNITS = ['SMP Ikhwan', 'SMA Ikhwan', 'MA Ikhwan', 'SMP Akhwat', 'SMA Akhwat', 'MA Akhwat'];
@@ -15,20 +16,26 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).repla
 const canKelola = (unit: string) => st.user?.admin || st.user?.koordinator?.includes(unit);
 const peran = () => (st.user?.admin ? 'Pimpinan · semua unit' : st.user?.koordinator?.length ? `Koordinator ${st.user.koordinator.map(unitLabel).join(', ')}` : 'Penguji');
 
-function nav() {
-  const n = [{ id: 'peserta', label: 'Peserta', icon: I.users }, { id: 'rekap', label: 'Rekap', icon: I.chart }, { id: 'rubrik', label: 'Rubrik', icon: I.book }];
-  if (st.user?.admin) n.push({ id: 'materi', label: 'Periode & materi', icon: I.gear });
-  return n;
-}
 function periodePicker() {
   if (!st.periodes.length) return '';
   return `<label class="ns-field" style="flex-direction:row;align-items:center"><span class="sr">Periode ujian</span><select data-act="periode" style="height:38px;min-width:200px">${st.periodes.map((p: any) => `<option value="${p.id}" ${p.id === st.periode?.id ? 'selected' : ''}>${esc(p.nama)}${p.aktif ? '' : ' (ditutup)'}</option>`).join('')}</select></label>`;
 }
+// Modul Ujian Praktik di dalam aplikasi gabungan Mutabaah Yaumiyyah (lihat yaumiyyah-app/src/gabung.ts).
+// Tampilan internal tetap 'peserta' | 'rekap' | 'rubrik' | 'materi'; di menu & alamat, 'rekap' menjadi 'ujian-rekap'.
+export const ujian = { views: ['peserta', 'rekap', 'rubrik', 'materi'], active: false, started: false, canLeave: () => true, show: async (_v: string) => {} };
+const navId = (v: string) => (v === 'rekap' ? 'ujian-rekap' : v);
 function render() {
-  const title = { peserta: 'Penilaian peserta', rekap: 'Rekap hasil ujian', rubrik: 'Rubrik & konversi nilai', materi: 'Periode & materi ujian' }[st.view as string] || 'Ujian Praktik Ibadah';
+  if (!ujian.active) return;
+  const title = { peserta: 'Peserta ujian', rekap: 'Rekap ujian', rubrik: 'Rubrik ujian', materi: 'Periode & materi' }[st.view as string] || 'Ujian Praktik Ibadah';
   const body = !st.loaded ? loading() : st.view === 'rekap' ? rekapView() : st.view === 'rubrik' ? rubrikView() : st.view === 'materi' ? materiView() : pesertaView();
-  app.innerHTML = shell({ app: 'Ujian Praktik Ibadah', title, nav: nav(), active: st.view, user: st.user && { nama: st.user.nama, peran: peran() }, actions: periodePicker() }, body);
+  app.innerHTML = shell({ app: APP, title, nav: navGabungan(), bottom: bottomOf(navId(st.view)), active: navId(st.view), user: st.user && { nama: st.user.nama, peran: peran() }, actions: periodePicker() }, body);
 }
+ujian.show = async (view: string) => {
+  st.view = ['peserta', 'rekap', 'rubrik', 'materi'].includes(view) ? view : 'peserta'; st.edit = null;
+  if (st.user && !st.user.admin && st.view === 'materi') st.view = 'peserta';
+  if (!ujian.started) { ujian.started = true; await boot(); return; }
+  render(); ($('#main') as HTMLElement)?.focus();
+};
 
 /* ---------- Peserta ---------- */
 function filtered() {
@@ -186,11 +193,11 @@ async function loadPeserta() {
   st.peserta = r.peserta; st.penguji = r.penguji; st.periode = r.periode; render();
 }
 async function boot() {
-  if (!token()) { app.innerHTML = shell({ app: 'Ujian Praktik Ibadah', title: 'Ujian Praktik Ibadah', nav: [], active: '' }, needLogin('Ujian Praktik Ibadah')); return; }
-  st.view = (location.hash.slice(1) || 'peserta'); render();
+  if (!token()) { app.innerHTML = shell({ app: APP, title: APP, nav: [], active: '' }, needLogin(APP)); return; }
+  render();
   try {
     const r = await api('boot');
-    st.user = r.user; st.periodes = r.periodes;
+    st.user = r.user; st.periodes = r.periodes; if (r.user?.admin) bersama.admin = true;
     const saved = sessionStorage.getItem('up-periode');
     st.periode = st.periodes.find((p: any) => p.id === saved) || st.periodes.find((p: any) => p.aktif) || st.periodes[0] || null;
     if (!st.user.admin && st.view === 'materi') st.view = 'peserta';
@@ -199,7 +206,7 @@ async function boot() {
   } catch (e: any) {
     if (e.status === 401) sessionEnded();
     st.loaded = true;
-    app.innerHTML = shell({ app: 'Ujian Praktik Ibadah', title: 'Ujian Praktik Ibadah', nav: [], active: '' }, empty(e.status === 401 ? 'Sesi berakhir.' : 'Data ujian belum dapat dimuat.', e.message, e.status === 401 ? '<a class="ns-btn primary" href="/" target="_top">Masuk kembali</a>' : '<button class="ns-btn primary" data-act="reload">Coba lagi</button>'));
+    if (ujian.active) app.innerHTML = shell({ app: APP, title: APP, nav: navGabungan(), active: '' }, empty(e.status === 401 ? 'Sesi berakhir.' : 'Data ujian belum dapat dimuat.', e.message, e.status === 401 ? '<a class="ns-btn primary" href="/" target="_top">Masuk kembali</a>' : '<button class="ns-btn primary" data-act="reload">Coba lagi</button>'));
   }
 }
 function kpPaste() {
@@ -226,12 +233,10 @@ function kpPaste() {
 
 /* ---------- Peristiwa ---------- */
 document.addEventListener('click', (e) => {
-  const navEl = (e.target as HTMLElement).closest<HTMLElement>('[data-nav]');
-  if (navEl) { e.preventDefault(); st.view = navEl.dataset.nav; st.edit = null; history.replaceState(null, '', '#' + st.view); render(); ($('#main') as HTMLElement)?.focus(); return; }
+  if (!ujian.active) return; // perpindahan menu ditangani gabung.ts
   const t = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!t) return;
   const a = t.dataset.act;
-  if (a === 'apps') appsMenu(t, 'ujian-praktik');
-  else if (a === 'nilai') nilaiDialog(t.dataset.id!);
+  if (a === 'nilai') nilaiDialog(t.dataset.id!);
   else if (a === 'rekapby') { st.rekapBy = t.dataset.v; render(); }
   else if (a === 'csv') csv();
   else if (a === 'kp-paste') kpPaste();
@@ -241,6 +246,7 @@ document.addEventListener('click', (e) => {
 });
 let kpT: Record<string, number> = {};
 document.addEventListener('input', (e) => {
+  if (!ujian.active) return;
   const t = e.target as HTMLInputElement;
   if (t.dataset.f) {
     st.f[t.dataset.f] = t.value;
@@ -252,10 +258,12 @@ document.addEventListener('input', (e) => {
   }
 });
 document.addEventListener('change', async (e) => {
+  if (!ujian.active) return;
   const t = e.target as HTMLSelectElement;
   if (t.dataset.act === 'periode') { st.periode = st.periodes.find((p: any) => p.id === t.value); sessionStorage.setItem('up-periode', t.value); st.loaded = false; render(); await loadPeserta().catch((er) => toast(er.message, 'err')); st.loaded = true; render(); }
 });
 document.addEventListener('submit', async (e) => {
+  if (!ujian.active) return;
   const f = e.target as HTMLFormElement; if (f.dataset.form !== 'periode') return; e.preventDefault();
   const fd = new FormData(f); const materi: Record<string, string[]> = {};
   for (const g of GRUP) { const v = fd.getAll('m:' + g).map(String); if (!v.length) { toast(`Pilih minimal satu materi untuk kelas ${g.replace('-', ' ')}.`, 'err'); return; } if (JSON.stringify(v) !== JSON.stringify(MATERI_DEFAULT[g])) materi[g] = v; }
@@ -265,5 +273,4 @@ document.addEventListener('submit', async (e) => {
     st.periode = r.periode; st.edit = null; sessionStorage.setItem('up-periode', r.periode.id); toast('Periode disimpan.'); await loadPeserta();
   } catch (er: any) { toast(er.message, 'err'); }
 });
-addEventListener('hashchange', () => { const v = location.hash.slice(1); if (v && v !== st.view && ['peserta', 'rekap', 'rubrik', 'materi'].includes(v)) { st.view = v; render(); } });
-boot();
+

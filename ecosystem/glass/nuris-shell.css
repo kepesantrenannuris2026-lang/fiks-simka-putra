@@ -1,0 +1,87 @@
+/* Nuris Shell (24 Nov 2026) — gaya bersama: Pindah Aplikasi, logo ke Portal, warna aplikasi, penyeragaman SIMKA. */
+
+/* ---------- Tombol "Aplikasi Nuris" di bilah atas dihapus (pindah ke menu) ---------- */
+.nuris-app-switcher, /* SIMKA */
+details:has(> summary[aria-label="Aplikasi Nuris"]), /* Mutabaah */
+.nuris-toolbar-actions [data-act="apps"], .ns-head [data-act="apps"] { display: none !important; }
+
+/* ---------- Logo pojok kiri atas = kembali ke Beranda Portal ---------- */
+[data-nuris-portal] { cursor: pointer; }
+[data-nuris-portal]:focus-visible { outline: 3px solid var(--nuris-accent, #17873f); outline-offset: 3px; border-radius: 12px; }
+[data-nuris-portal]:hover img, .ns-brand[data-portal]:hover .ns-mark, .ns-headmark[data-portal]:hover { filter: drop-shadow(0 0 0 transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nuris-accent, #17873f) 35%, transparent); border-radius: 12px; }
+
+/* ---------- Pindah Aplikasi ---------- */
+.nps { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; padding-top: 12px; border-top: 1px solid currentColor; border-top-color: color-mix(in srgb, currentColor 14%, transparent); }
+.nps-title { margin: 0 10px 6px; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .62; }
+.nps-item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 10px; border-radius: 12px; color: inherit; text-decoration: none; font-size: 13px; font-weight: 600; line-height: 1.25; }
+.nps-item i { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 18%, transparent); }
+.nps-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nps-item small { flex: none; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; background: color-mix(in srgb, currentColor 14%, transparent); }
+.nps-item:focus-visible { outline: 3px solid var(--nuris-accent, #17873f); outline-offset: 1px; }
+.nps-gelap { color: #e7f2ea; }
+.nps-gelap .nps-item:hover { background: #ffffff14; color: #fff; }
+.nps-gelap .nps-item.is-cur { background: #ffffff1c; color: #fff; }
+.nps-terang { color: #172c23; }
+.nps-terang .nps-item:hover { background: #e3f2e8; }
+.nps-terang .nps-item.is-cur { background: #eef6f0; color: #0a4f4a; }
+/* Mutabaah: di dalam nav sidebar, didorong ke bawah menu */
+aside.kufi-pattern > nav > .nps { margin-top: auto; }
+/* Sidebar ringkas (ikon saja): tampilkan titik warna saja */
+@media (min-width: 768px) and (max-width: 1023px) { aside.kufi-pattern .nps-title, aside.kufi-pattern .nps-item span, aside.kufi-pattern .nps-item small { display: none; } aside.kufi-pattern .nps-item { justify-content: center; } }
+.nuris-sidebar[class*="w-[76px]"] .nps-title, .nuris-sidebar[class*="w-[76px]"] .nps-item span, .nuris-sidebar[class*="w-[76px]"] .nps-item small { display: none; }
+.nuris-sidebar[class*="w-[76px]"] .nps-item { justify-content: center; }
+/* Laci "Lainnya" Mutabaah (panel putih) */
+div.rounded-t-3xl > .nps { margin-top: 16px; }
+
+/* ---------- Warna khas aplikasi pada aksen kecil ---------- */
+html:not([data-nuris-app="beranda"]) .ns-nav-group { color: color-mix(in srgb, var(--nuris-accent) 45%, #cfe3d6); }
+
+/* ---------- Beranda Portal: tanpa tab bar bawah; ikon kartu berwarna khas aplikasi ---------- */
+html[data-nuris-app="beranda"] #mobile-nav { display: none !important; }
+@media (max-width: 760px) { html[data-nuris-app="beranda"] .home { padding-bottom: 40px; } html[data-nuris-app="beranda"] .toast { bottom: 28px; } }
+html[data-nuris-app="beranda"] .app-card .icon { color: var(--app-c, #0d4a28); background: color-mix(in srgb, var(--app-c, #0d4a28) 12%, #fff); }
+html[data-nuris-app="beranda"] .app-card.disabled .icon { background: transparent; color: var(--muted); }
+html[data-nuris-app="beranda"] .app-card[href]:hover { border-color: var(--app-c, var(--leaf)); }
+.app-card[href="#mutabaah"] { --app-c: #2b7bd6; }
+.app-card[href="#yaumiyyah"] { --app-c: #0e9494; }
+.app-card[href="#rapor-pesantren"] { --app-c: #7c4dcc; }
+.app-card[href="#simka"] { --app-c: #c4473a; }
+.app-card[href="#simka-putri"] { --app-c: #e0528a; }
+.app-card[href="#infrastruktur"] { --app-c: #64748b; }
+
+/* ---------- SIMKA Putra & Putri: sidebar/laci hijau tua seperti Mutabaah ---------- */
+html[data-nuris-app^="simka"] .nuris-sidebar.nuris-sidebar {
+  background-color: #082e1a !important; color: #e7f2ea; border-right-color: #ffffff14 !important;
+}
+@media (min-width: 1024px) { /* motif belah ketupat halus hanya di desktop; laci HP polos agar tidak ramai */
+  html[data-nuris-app^="simka"] .nuris-sidebar.nuris-sidebar {
+    background-image: linear-gradient(45deg,#ffffff07 25%,transparent 25% 75%,#ffffff07 75%),linear-gradient(45deg,#ffffff07 25%,transparent 25% 75%,#ffffff07 75%);
+    background-size: 28px 28px; background-position: 0 0, 14px 14px;
+  }
+}
+html[data-nuris-app^="simka"] .nuris-sidebar [class*="border-"] { border-color: #ffffff1a !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar :is([class*="text-slate-9"], [class*="text-slate-8"], h4) { color: #fff !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar :is([class*="text-slate-5"], [class*="text-slate-6"], [class*="text-slate-7"]) { color: #cfe3d6 !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar [class*="text-slate-4"] { color: #a9cbb4 !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar [class*="text-emerald-5"] { color: #90d9a6 !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar > div:first-child [class*="bg-emerald-500/10"] { background: #ffffff1a !important; color: #e7f2ea !important; border-color: #ffffff2e !important; }
+/* Kartu profil */
+html[data-nuris-app^="simka"] .nuris-sidebar [class*="bg-slate-50"] { background: #ffffff10 !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar [class*="bg-emerald-600"] { background: var(--nuris-accent) !important; color: #fff !important; }
+/* Lencana unit (Unit MA / Semua Unit): teks gelap di latar terang, kontras > 7:1 */
+html[data-nuris-app^="simka"] .nuris-sidebar [class*="bg-emerald-100"] { background: #e3f2e8 !important; color: #0a4f4a !important; border-color: #e3f2e8 !important; }
+/* Item menu */
+html[data-nuris-app^="simka"] .nuris-sidebar nav button { color: #d6e8dc !important; border-color: transparent !important; background: transparent !important; box-shadow: none !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar nav button:hover { background: #ffffff12 !important; color: #fff !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar nav button svg { color: currentColor !important; opacity: .85; }
+html[data-nuris-app^="simka"] .nuris-sidebar nav button[aria-current="page"] { background: #fff !important; color: #082e1a !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar nav button[aria-current="page"] svg { color: #17873f !important; opacity: 1; }
+html[data-nuris-app^="simka"] .nuris-sidebar nav > div > p { color: #a9cbb4 !important; letter-spacing: .08em; }
+html[data-nuris-app^="simka"] .nuris-sidebar nav [class*="bg-slate-200"] { background: #ffffff1a !important; }
+/* Bawah: Ciutkan & Keluar */
+html[data-nuris-app^="simka"] .nuris-sidebar > div:last-child { background: transparent !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar > div:last-child button { color: #cfe3d6 !important; border-color: transparent !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar > div:last-child button:hover { background: #ffffff14 !important; color: #fff !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar button[aria-label="Tutup Menu"] { color: #cfe3d6 !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar button[aria-label="Tutup Menu"]:hover { background: #ffffff14 !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar nav { scrollbar-color: #ffffff40 transparent; }

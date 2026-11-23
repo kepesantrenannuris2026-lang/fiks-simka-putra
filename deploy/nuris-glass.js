@@ -2,7 +2,7 @@
    Progressive enhancement: tidak mengubah rute, data, atau pilihan tab. Satu lensa per navigasi mengikuti elemen aktif
    dengan animasi pegas (regang-memantul), umpan balik tekan, dan seret pada tab bar. Hormati reduced-motion/transparency. */
 (() => {
-  if (window.__nurisGlass) return; window.__nurisGlass = 4.2;
+  if (window.__nurisGlass) return; window.__nurisGlass = 4.3;
   // Fitur siang/malam dihapus: semua aplikasi selalu terang. Pilihan gelap lama di perangkat ditimpa.
   const terang = () => {
     try { for (const k of ['nuris-appearance', 'simka_theme', 'simka_theme_mode']) if (localStorage.getItem(k) && localStorage.getItem(k) !== 'light') localStorage.setItem(k, 'light'); } catch {}
@@ -10,6 +10,9 @@
     if (r.classList.contains('dark') || document.body?.classList.contains('dark')) { r.classList.remove('dark'); document.body?.classList.remove('dark'); dispatchEvent(new CustomEvent('nuris-theme', { detail: 'light' })); }
   };
   terang();
+  // Lapisan bersama (warna aplikasi, logo ke Portal, Pindah Aplikasi) untuk halaman yang belum memuatnya sendiri.
+  if (!document.querySelector('link[href^="/nuris-shell.css"]')) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/nuris-shell.css'; document.head.append(l); }
+  if (!document.querySelector('script[src^="/nuris-shell.js"]')) { const sc = document.createElement('script'); sc.src = '/nuris-shell.js'; document.head.append(sc); }
   // v3: hanya navigasi. Kontrol segmen/chip ([role=tablist]) memakai sorotan aplikasinya sendiri agar teks tetap kontras.
   const SEL = '[data-nuris-glass]:not([data-nuris-glass="off"]), .nuris-bottom-nav, #mobile-nav, #desktop-nav, .nuris-sidebar nav, aside.fixed.inset-y-0 > nav';
   const ACTIVE = '[aria-current="page"], [role="tab"][aria-selected="true"]';
@@ -102,7 +105,7 @@
     }
     down(e) {
       if (e.button !== 0) return;
-      const it = e.target.closest(ITEM); if (!it || !this.root.contains(it)) return;
+      const it = e.target.closest(ITEM); if (!it || !this.root.contains(it) || it.closest('[data-nuris-pindah-list]')) return;
       this.pressT = 1; this.kick();
       const a = this.active(); this.start = { x: e.clientX, y: e.clientY, id: e.pointerId, onActive: a && (a === it || a.contains(e.target)) };
       if (!this.start.onActive && !reduce.matches && a && this.p) { this.t = this.box(it); this.kick(); } // antisipasi: lensa mulai bergeser
@@ -159,7 +162,7 @@
       if (m) { this.x = m.x; this.v = m.v || 0; this.cont = true; }
       // Tab aktif berganti → ikon naik dengan animasi; tab sama → langsung di posisi akhir tanpa kedip.
       root.setAttribute(m && m.item !== this.itemId(a0) ? 'data-nn-enter' : 'data-nn-still', '');
-      root.addEventListener('pointerdown', (e) => { const it = e.target.closest(ITEM); if (it && root.contains(it)) { this.pressT = 1; const a = this.active(); if (a && it !== a && !reduce.matches) { this.t = this.cx(it); } this.kick(); } });
+      root.addEventListener('pointerdown', (e) => { const it = e.target.closest(ITEM); if (it && root.contains(it) && !it.closest('[data-nuris-pindah-list]')) { this.pressT = 1; const a = this.active(); if (a && it !== a && !reduce.matches) { this.t = this.cx(it); } this.kick(); } });
       const rel = () => { this.pressT = 0; this.kick(); requestAnimationFrame(() => this.sync()); };
       root.addEventListener('pointerup', rel); root.addEventListener('pointercancel', rel); root.addEventListener('pointerleave', () => { if (this.pressT) rel(); });
     }

@@ -108,3 +108,24 @@ button{-webkit-tap-highlight-color:transparent}
 button:not(:disabled):active,.ns-btn:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){.anim-rise{animation:none}button:active{transform:none!important}.ns-loading span{animation:none}}
 @media (max-width:640px){.ns-hero{flex-direction:column;align-items:stretch;padding:18px;border-radius:20px}.ns-kpi{flex-wrap:nowrap}.ns-kpi>div{min-width:0;flex:1;padding:8px 10px}.ns-kpi strong{font-size:20px}.ns-section-title{flex-wrap:wrap}main{padding-top:14px}}
+
+/* ---- Navigasi bersama 2026-11 (kelompok menu, laci HP, logo ke Portal) ---- */
+.ns-nav-group{margin:12px 12px 4px;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a9cbb4}
+.ns-nav-group:first-child{margin-top:0}
+.ns-brand[data-portal],.ns-headmark[data-portal]{cursor:pointer}
+.ns-brand[data-portal]:hover strong{text-decoration:underline;text-underline-offset:3px}
+.ns-headmark{text-decoration:none}
+.ns-side{overflow-y:auto}
+.ns-drawer{display:none}
+@media (max-width:899px){
+  .ns-bottom button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px;border:0;background:transparent;border-radius:16px;color:var(--muted);font:inherit;font-size:10.5px;font-weight:700;min-width:0;cursor:pointer}
+  .ns-drawer:not([hidden]){display:block;position:fixed;inset:0;z-index:90;background:#082e1a73;animation:ns-fade .18s ease}
+  .ns-drawer-panel{position:absolute;inset:0 auto 0 0;width:min(320px,86vw);overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px;padding:max(16px,env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));background:#082e1a;color:#e7f2ea;box-shadow:20px 0 40px -20px #000a;animation:ns-slide .22s cubic-bezier(.2,.8,.2,1)}
+  .ns-drawer-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .ns-drawer-head .ns-icon{background:#ffffff14;border-color:#ffffff24;color:#fff}
+  .ns-drawer .ns-user{background:#ffffff10;border-radius:14px;padding:10px}
+  html.ns-drawer-open{overflow:hidden}
+}
+@keyframes ns-fade{from{opacity:0}}@keyframes ns-slide{from{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.ns-drawer,.ns-drawer-panel{animation:none!important}}
+@media (max-width:640px){.ns-head h1{white-space:normal;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:15px;min-width:0;flex:1}}

@@ -33,9 +33,14 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}tr:la
 .msg{margin-top:10px;font-size:13px}.msg.err{color:var(--red)}.center{min-height:70vh;display:grid;place-content:center;text-align:center;gap:8px}
 svg.spark{width:100%;height:56px;display:block}
 @media (max-width:640px){.steps{grid-template-columns:1fr 1fr}}
+.nps-bar{display:flex;align-items:center;gap:12px;margin:-8px 0 22px}.nps-logo{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;border-radius:12px;padding:4px 6px 4px 4px}
+.nps-logo img{width:38px;height:38px;border-radius:10px;background:#fff;border:1px solid var(--line);padding:4px}.nps-logo small{display:block;font-size:10px;color:var(--muted)}.nps-logo strong{display:block;font-size:15px}
+.nps-wrap .nps{margin-top:0;padding-top:0;border-top:0}
 </style>
+<link rel="stylesheet" href="/nuris-shell.css">
 </head>
 <body>
+<header class="nps-bar"><a class="nps-logo" href="/#beranda" target="_top"><img src="/nuris-mark.svg" alt="" width="38" height="38"><span><small>Nurul Islam Tengaran</small><strong>Infrastructure Manager</strong></span></a></header>
 <div id="blok" class="center" hidden><h1>Khusus pimpinan</h1><p class="muted" id="blok-msg">Halaman ini hanya untuk akun pimpinan atau admin.</p></div>
 <main id="isi" hidden>
  <div class="head">
@@ -58,6 +63,7 @@ svg.spark{width:100%;height:56px;display:block}
   <section class="card wide"><h2>Tabel terbesar</h2><table><thead><tr><th>Tabel</th><th class="n">Baris</th><th class="n">Ukuran</th></tr></thead><tbody id="tab"></tbody></table></section>
   <section class="card wide"><h2>Jadwal otomatis</h2><table><thead><tr><th>Jadwal</th><th>Cron (UTC)</th><th>Terakhir</th><th>Status</th></tr></thead><tbody id="jad"></tbody></table></section>
   <section class="card wide"><h2>Catatan sistem</h2><table><tbody id="log"></tbody></table></section>
+  <section class="card wide nps-wrap"><div data-nuris-pindah></div></section>
  </div>
 </main>
 <div id="muatan" class="center"><p class="muted">Memuat…</p></div>
@@ -111,5 +117,6 @@ document.querySelectorAll('[data-tugas]').forEach(b=>b.addEventListener('click',
 muat();
 })();
 </script>
+<script src="/nuris-shell.js" defer></script>
 </body>
 </html>

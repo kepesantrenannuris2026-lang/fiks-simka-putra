@@ -15,29 +15,56 @@ export const I = {
   exit: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>', x: '<path d="M6 6l12 12M18 6 6 18"/>', bed: '<path d="M3 18V7m0 7h18v4M21 14v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11" r="2"/>',
 };
 
-export type NavItem = { id: string; label: string; icon: string; badge?: string | number };
-export type Shell = { app: string; title: string; nav: NavItem[]; active: string; user?: { nama: string; peran?: string } | null; actions?: string; back?: boolean };
+export type NavItem = { id: string; label: string; icon: string; badge?: string | number; group?: string };
+export type Shell = { app: string; title: string; nav: NavItem[]; active: string; user?: { nama: string; peran?: string } | null; actions?: string; back?: boolean; bottom?: NavItem[] };
 
+// Menu bersama: kelompok berjudul (opsional). Bagian "Pindah Aplikasi" diisi /nuris-shell.js pada [data-nuris-pindah].
+function navList(items: NavItem[], active: string) {
+  let g: string | undefined, out = '';
+  for (const n of items) {
+    if (n.group && n.group !== g) { g = n.group; out += `<p class="ns-nav-group">${esc(g)}</p>`; }
+    out += `<a href="#${esc(n.id)}" data-nav="${esc(n.id)}" class="ns-nav-item${n.id === active ? ' on' : ''}"${n.id === active ? ' aria-current="page"' : ''}>${icon(n.icon)}<span>${esc(n.label)}</span>${n.badge ? `<b class="ns-badge">${esc(n.badge)}</b>` : ''}</a>`;
+  }
+  return out;
+}
+const PORTAL = 'href="/#beranda" target="_top" data-portal title="Kembali ke Beranda Portal"';
 export function shell(o: Shell, body: string) {
-  const nav = o.nav.map((n) => `<a href="#${esc(n.id)}" data-nav="${esc(n.id)}" class="ns-nav-item${n.id === o.active ? ' on' : ''}"${n.id === o.active ? ' aria-current="page"' : ''}>${icon(n.icon)}<span>${esc(n.label)}</span>${n.badge ? `<b class="ns-badge">${esc(n.badge)}</b>` : ''}</a>`).join('');
-  const bottom = o.nav.slice(0, 5).map((n) => `<a href="#${esc(n.id)}" data-nav="${esc(n.id)}" class="${n.id === o.active ? 'on' : ''}"${n.id === o.active ? ' aria-current="page"' : ''}>${icon(n.icon, 20)}<span>${esc(n.label)}</span></a>`).join('');
+  const bottomItems = (o.bottom || o.nav).slice(0, 4);
+  const bottom = bottomItems.map((n) => `<a href="#${esc(n.id)}" data-nav="${esc(n.id)}" class="${n.id === o.active ? 'on' : ''}"${n.id === o.active ? ' aria-current="page"' : ''}>${icon(n.icon, 20)}<span>${esc(n.label)}</span></a>`).join('')
+    + `<button type="button" data-act="drawer" aria-haspopup="dialog" aria-controls="ns-drawer">${icon(I.list, 20)}<span>Menu</span></button>`;
+  const user = o.user ? `<div class="ns-user"><span class="ns-avatar">${esc((o.user.nama.replace(/^Ust(h)?\.?\s*/i, '')[0] || 'N').toUpperCase())}</span><span><b>${esc(o.user.nama)}</b><small>${esc(o.user.peran || '')}</small></span></div>` : '';
   return `<div class="ns">
   <aside class="ns-side nuris-sidebar" aria-label="Navigasi ${esc(o.app)}">
-    <a class="ns-brand" href="/" target="_top" data-portal><span class="ns-mark"><img src="/nuris-mark.svg" alt="" width="26" height="26"></span><span><small>Nurul Islam Tengaran</small><strong>${esc(o.app)}</strong></span></a>
-    <nav class="ns-nav" data-nuris-glass="side">${nav}</nav>
-    <div class="ns-foot">${o.user ? `<div class="ns-user"><span class="ns-avatar">${esc((o.user.nama.replace(/^Ust(h)?\.?\s*/i, '')[0] || 'N').toUpperCase())}</span><span><b>${esc(o.user.nama)}</b><small>${esc(o.user.peran || '')}</small></span></div>` : ''}
-      <a class="ns-portal" href="/" target="_top" data-portal>${icon(I.exit)}<span>Portal Kepesantrenan</span></a></div>
+    <a class="ns-brand" ${PORTAL}><span class="ns-mark"><img src="/nuris-mark.svg" alt="" width="26" height="26"></span><span><small>Nurul Islam Tengaran</small><strong>${esc(o.app)}</strong></span></a>
+    <nav class="ns-nav" data-nuris-glass="side">${navList(o.nav, o.active)}</nav>
+    <div class="ns-pindah" data-nuris-pindah></div>
+    <div class="ns-foot">${user}</div>
   </aside>
   <div class="ns-main">
     <header class="ns-head">${o.back ? `<button class="ns-icon" data-act="back" aria-label="Kembali">${icon(I.back)}</button>` : ''}
-      <span class="ns-headmark"><img src="/nuris-mark.svg" alt="" width="28" height="28"></span>
+      <a class="ns-headmark" ${PORTAL} aria-label="Kembali ke Beranda Portal"><img src="/nuris-mark.svg" alt="" width="28" height="28"></a>
       <h1>${esc(o.title)}</h1>
-      <div class="nuris-toolbar-actions">${o.actions || ''}<button class="ns-icon" data-act="apps" aria-label="Aplikasi Nuris" aria-haspopup="menu">${icon(I.grid)}</button></div></header>
+      <div class="nuris-toolbar-actions">${o.actions || ''}</div></header>
     <main id="main" tabindex="-1">${body}</main>
   </div>
-  ${o.nav.length > 1 ? `<nav class="ns-bottom nuris-bottom-nav" aria-label="Menu">${bottom}</nav>` : ''}
+  ${o.nav.length ? `<nav class="ns-bottom nuris-bottom-nav" aria-label="Menu">${bottom}</nav>
+  <div class="ns-drawer" id="ns-drawer" role="dialog" aria-modal="true" aria-label="Menu ${esc(o.app)}" hidden><div class="ns-drawer-panel">
+    <div class="ns-drawer-head"><a class="ns-brand" ${PORTAL}><span class="ns-mark"><img src="/nuris-mark.svg" alt="" width="26" height="26"></span><span><small>Nurul Islam Tengaran</small><strong>${esc(o.app)}</strong></span></a><button class="ns-icon" data-act="drawer-close" aria-label="Tutup menu">${icon(I.x)}</button></div>
+    ${user}<nav class="ns-nav">${navList(o.nav, o.active)}</nav><div class="ns-pindah" data-nuris-pindah></div></div></div>` : ''}
 </div>`;
 }
+// Laci menu (HP): buka/tutup; menutup otomatis saat pindah halaman.
+function drawer(open: boolean) {
+  const d = document.getElementById('ns-drawer'); if (!d) return;
+  d.hidden = !open; document.documentElement.classList.toggle('ns-drawer-open', open);
+  if (open) (d.querySelector('[data-act=drawer-close]') as HTMLElement)?.focus();
+}
+document.addEventListener('click', (e) => {
+  const t = e.target as HTMLElement;
+  if (t.closest('[data-act=drawer]')) { e.preventDefault(); drawer(true); return; }
+  if (t.closest('[data-act=drawer-close]') || t.classList.contains('ns-drawer') || t.closest('#ns-drawer [data-nav], #ns-drawer [data-portal], #ns-drawer [data-app]')) drawer(false);
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('ns-drawer')?.hidden === false) drawer(false); });
 
 export function toast(msg: string, kind: 'ok' | 'err' = 'ok') {
   const t = document.createElement('div'); t.className = `ns-toast ${kind}`; t.setAttribute('role', 'status'); t.textContent = msg;

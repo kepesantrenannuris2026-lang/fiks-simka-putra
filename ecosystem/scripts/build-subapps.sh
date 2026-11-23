@@ -4,11 +4,14 @@
 set -e
 cd "$(dirname "$0")/../.."
 E=${ESBUILD:-npx esbuild}
-for d in rapor-pesantren ujian-praktik yaumiyyah-app; do
-  cat ecosystem/shared/ui.css ecosystem/$d/src/style.css > /tmp/$d.css
-  $E /tmp/$d.css --minify --outfile=ecosystem/$d/dist/app.css --log-level=warning
-  $E ecosystem/$d/src/main.ts --bundle --format=iife --charset=utf8 --target=es2020 --minify --outfile=ecosystem/$d/dist/app.js --log-level=warning
-done
+# Rapor Pesantren
+cat ecosystem/shared/ui.css ecosystem/rapor-pesantren/src/style.css > /tmp/rapor-pesantren.css
+$E /tmp/rapor-pesantren.css --minify --outfile=ecosystem/rapor-pesantren/dist/app.css --log-level=warning
+$E ecosystem/rapor-pesantren/src/main.ts --bundle --format=iife --charset=utf8 --target=es2020 --minify --outfile=ecosystem/rapor-pesantren/dist/app.js --log-level=warning
+# Mutabaah Yaumiyyah (gabungan Yaumiyyah + Ujian Praktik Ibadah, 2026-11-24)
+cat ecosystem/shared/ui.css ecosystem/yaumiyyah-app/src/style.css ecosystem/ujian-praktik/src/style.css > /tmp/yaumiyyah-app.css
+$E /tmp/yaumiyyah-app.css --minify --outfile=ecosystem/yaumiyyah-app/dist/app.css --log-level=warning
+$E ecosystem/yaumiyyah-app/src/gabung.ts --bundle --format=iife --charset=utf8 --target=es2020 --minify --outfile=ecosystem/yaumiyyah-app/dist/app.js --log-level=warning
 # Modul "Pratinjau & edit" Rapor Al-Qur'an yang dimuat di halaman Mutabaah.
 $E ecosystem/mutabaah-rapor/src/main.ts --bundle --format=iife --charset=ascii --target=es2020 --minify --outfile=ecosystem/mutabaah-rapor/dist/rapor-edit.js --log-level=warning
 $E ecosystem/mutabaah-rapor/src/style.css --minify --charset=ascii --outfile=ecosystem/mutabaah-rapor/dist/rapor-edit.css --log-level=warning
@@ -18,7 +21,9 @@ cp ecosystem/mutabaah-rapor/dist/rapor-edit.js ecosystem/mutabaah-rapor/dist/rap
 cp ecosystem/mutabaah-rapor/src/cache.js deploy/mutabaah/nuris-cache.js
 # Antrean simpan offline setoran (IndexedDB).
 cp ecosystem/mutabaah-rapor/src/offline.js deploy/mutabaah/nuris-offline.js
-for pair in rapor-pesantren:rapor-pesantren ujian-praktik:ujian-praktik yaumiyyah-app:yaumiyyah; do
+# Alamat lama Ujian Praktik → menu Ujian Praktik di Mutabaah Yaumiyyah.
+mkdir -p deploy/ujian-praktik && cp ecosystem/ujian-praktik/index.html deploy/ujian-praktik/
+for pair in rapor-pesantren:rapor-pesantren yaumiyyah-app:yaumiyyah; do
   src=${pair%%:*}; dst=${pair##*:}; mkdir -p deploy/$dst
   cp ecosystem/$src/index.html ecosystem/$src/dist/app.js ecosystem/$src/dist/app.css deploy/$dst/
 done
@@ -26,6 +31,9 @@ cp ecosystem/simka-theme/nuris-mutabaah.css deploy/
 cp ecosystem/glass/nuris-glass.css ecosystem/glass/nuris-glass.js deploy/
 # Tampilan selalu terang (fitur siang/malam dihapus).
 cp ecosystem/cloudflare/baseline-nuris-appearance.js deploy/nuris-appearance.js
+# Lapisan bersama semua aplikasi: warna aplikasi, logo ke Portal, Pindah Aplikasi di menu, penyeragaman SIMKA.
+cp ecosystem/glass/nuris-shell.js ecosystem/glass/nuris-shell.css deploy/
+mkdir -p deploy/logo-app && cp ecosystem/glass/logo-app/*.svg deploy/logo-app/
 cp ecosystem/portal/apps.js deploy/
 # Infrastructure Manager (khusus pimpinan/admin).
 mkdir -p deploy/infrastruktur && cp ecosystem/portal/infrastruktur/index.html deploy/infrastruktur/
