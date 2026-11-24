@@ -75,7 +75,7 @@ ${x}
       <a class="ns-headmark" ${ma} aria-label="Kembali ke Beranda Portal"><img src="/nuris-mark.svg" alt="" width="28" height="28"></a>
       <h1>${w(a.title)}</h1>
       <div class="nuris-toolbar-actions">${a.actions||""}</div></header>
-    <main id="main" tabindex="-1">${t}</main>
+    <main id="main" tabindex="-1">${a.top||""}${t}</main>
   </div>
   ${a.nav.length?`<nav class="ns-bottom nuris-bottom-nav" aria-label="Menu">${e}</nav>
   <div class="ns-drawer" id="ns-drawer" role="dialog" aria-modal="true" aria-label="Menu ${w(a.app)}" hidden><div class="ns-drawer-panel">

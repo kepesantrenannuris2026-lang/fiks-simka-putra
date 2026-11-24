@@ -2,7 +2,7 @@
 import { RUBRIK, MATERI_DEFAULT, GRUP, grupOf, materiOf, totalSkor } from './materi';
 import { huruf, MAKNA } from '../../shared/skala';
 import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, sessionEnded, unitLabel, download, csvOf } from '../../shared/ui';
-import { APP, navGabungan, bottomOf, bersama } from '../../yaumiyyah-app/src/nav';
+import { APP, navGabungan, bottomOf, bersama, segmen } from '../../yaumiyyah-app/src/nav';
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/ujian-praktik/');
 const UNITS = ['SMP Ikhwan', 'SMA Ikhwan', 'MA Ikhwan', 'SMP Akhwat', 'SMA Akhwat', 'MA Akhwat'];
@@ -28,7 +28,7 @@ function render() {
   if (!ujian.active) return;
   const title = { peserta: 'Peserta ujian', rekap: 'Rekap ujian', rubrik: 'Rubrik ujian', materi: 'Periode & materi' }[st.view as string] || 'Ujian Praktik Ibadah';
   const body = !st.loaded ? loading() : st.view === 'rekap' ? rekapView() : st.view === 'rubrik' ? rubrikView() : st.view === 'materi' ? materiView() : pesertaView();
-  app.innerHTML = shell({ app: APP, title, nav: navGabungan(), bottom: bottomOf(navId(st.view)), active: navId(st.view), user: st.user && { nama: st.user.nama, peran: peran() }, actions: periodePicker() }, body);
+  app.innerHTML = shell({ app: APP, title, nav: navGabungan(), bottom: bottomOf(navId(st.view)), active: navId(st.view), top: segmen(navId(st.view)), user: st.user && { nama: st.user.nama, peran: peran() }, actions: periodePicker() }, body);
 }
 ujian.show = async (view: string) => {
   st.view = ['peserta', 'rekap', 'rubrik', 'materi'].includes(view) ? view : 'peserta'; st.edit = null;

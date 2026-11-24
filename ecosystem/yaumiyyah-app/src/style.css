@@ -27,3 +27,8 @@
 .yw-opts [role=option].hi,.yw-opts [role=option]:hover{background:var(--leaf-soft)}.yw-opts [role=option][aria-selected=true] b{color:var(--leaf-deep)}
 .yw-opt-more{margin:6px 10px;font-size:12px;color:var(--muted);font-weight:500}
 @media (max-width:899px){.yw-savebar{bottom:calc(100px + env(safe-area-inset-bottom))}}
+/* Tab bagian: Mutabaah Yaumiyyah | Ujian Praktik Ibadah */
+.yg-seg{display:flex;gap:4px;padding:4px;margin:0 0 16px;border-radius:16px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.yg-seg-item{flex:1;display:flex;align-items:center;justify-content:center;min-height:42px;padding:6px 10px;border-radius:12px;text-align:center;font-size:13.5px;font-weight:700;color:var(--muted);text-decoration:none;line-height:1.2}
+.yg-seg-item:hover{background:var(--leaf-soft);color:var(--leaf-deep)}
+.yg-seg-item.on{background:var(--saffron);color:var(--saffron-ink)}

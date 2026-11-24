@@ -16,7 +16,7 @@ export const I = {
 };
 
 export type NavItem = { id: string; label: string; icon: string; badge?: string | number; group?: string };
-export type Shell = { app: string; title: string; nav: NavItem[]; active: string; user?: { nama: string; peran?: string } | null; actions?: string; back?: boolean; bottom?: NavItem[] };
+export type Shell = { app: string; title: string; nav: NavItem[]; active: string; user?: { nama: string; peran?: string } | null; actions?: string; back?: boolean; bottom?: NavItem[]; top?: string };
 
 // Menu bersama: kelompok berjudul (opsional). Bagian "Pindah Aplikasi" diisi /nuris-shell.js pada [data-nuris-pindah].
 function navList(items: NavItem[], active: string) {
@@ -45,7 +45,7 @@ export function shell(o: Shell, body: string) {
       <a class="ns-headmark" ${PORTAL} aria-label="Kembali ke Beranda Portal"><img src="/nuris-mark.svg" alt="" width="28" height="28"></a>
       <h1>${esc(o.title)}</h1>
       <div class="nuris-toolbar-actions">${o.actions || ''}</div></header>
-    <main id="main" tabindex="-1">${body}</main>
+    <main id="main" tabindex="-1">${o.top || ''}${body}</main>
   </div>
   ${o.nav.length ? `<nav class="ns-bottom nuris-bottom-nav" aria-label="Menu">${bottom}</nav>
   <div class="ns-drawer" id="ns-drawer" role="dialog" aria-modal="true" aria-label="Menu ${esc(o.app)}" hidden><div class="ns-drawer-panel">

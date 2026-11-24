@@ -2,7 +2,7 @@
 // Data di yaumiyyah.bulanan; isian harian lama sudah dikonversi. Target & rincian predikat dihitung otomatis per bulan.
 import { activities, monthlyReport, semesterReport, semesterMonths, todayWIB, MonthEntry, monthTarget, monthMax, kategori, scoreOf, grade, hadir, daysInMonth, targetLabel, SKALA } from '../../../src/yaumiyyah/model';
 import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, sessionEnded, unitLabel } from '../../shared/ui';
-import { APP, navGabungan, bottomOf, bersama } from './nav';
+import { APP, navGabungan, bottomOf, bersama, segmen } from './nav';
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/');
 const today = todayWIB(), thisMonth = today.slice(0, 7);
@@ -21,7 +21,7 @@ export const yaum = { views: ['isian', 'rekap'], active: false, started: false, 
 function render() {
   if (!yaum.active) return;
   const title = { isian: 'Isian bulanan', rekap: 'Rekap ibadah' }[st.view as string] || '';
-  app.innerHTML = shell({ app: APP, title, nav: navGabungan(), bottom: bottomOf(st.view), active: st.view, user: st.user && { nama: st.user.nama, peran: peran() } }, body());
+  app.innerHTML = shell({ app: APP, title, nav: navGabungan(), bottom: bottomOf(st.view), active: st.view, top: segmen(st.view), user: st.user && { nama: st.user.nama, peran: peran() } }, body());
 }
 // Pilih santri: satu kolom yang bisa diketik; daftar nama yang cocok muncul di bawahnya (tanpa kolom "Cari santri" terpisah).
 const sLabel = (x: any) => `${x.nama} · ${x.kelas} · ${unitLabel(x.unit)}${x.kamar ? ' · ' + x.kamar : ''}`;

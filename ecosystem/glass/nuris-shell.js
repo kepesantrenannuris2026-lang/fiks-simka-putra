@@ -12,11 +12,11 @@
   // soft = latar tipis, light = aksen di atas latar hijau tua. Putih dominan & hijau sekunder tetap.
   const PALET = {
     beranda: { logo: '#ee8a36' },
-    mutabaah: { logo: '#0060d6', strong: '#0060d6', soft: '#e5effb', light: '#8db8f2' },
-    yaumiyyah: { logo: '#01a49a', strong: '#00796f', soft: '#def4f2', light: '#7fd9d1' },
-    'rapor-pesantren': { logo: '#660199', strong: '#660199', soft: '#f0e5f6', light: '#c99be3' },
-    simka: { logo: '#df0114', strong: '#c20012', soft: '#fde6e8', light: '#ff9aa3' },
-    infrastruktur: { logo: '#64748b', strong: '#4b5768', soft: '#eef1f5', light: '#b9c3d0' },
+    mutabaah: { logo: '#0060d6', strong: '#0060d6', soft: '#e5effb', light: '#8db8f2', ring: '#3d8ef0' },
+    yaumiyyah: { logo: '#01a49a', strong: '#00796f', soft: '#def4f2', light: '#7fd9d1', ring: '#1fc2b6' },
+    'rapor-pesantren': { logo: '#660199', strong: '#660199', soft: '#f0e5f6', light: '#c99be3', ring: '#a35ad6' },
+    simka: { logo: '#df0114', strong: '#c20012', soft: '#fde6e8', light: '#ff9aa3', ring: '#ff4d5a' },
+    infrastruktur: { logo: '#64748b', strong: '#4b5768', soft: '#eef1f5', light: '#b9c3d0', ring: '#94a3b8' },
   };
   const WARNA = Object.fromEntries(Object.entries(PALET).map(([k, v]) => [k, v.logo]));
   const p = location.pathname;
@@ -29,7 +29,7 @@
   const W = PALET[KUNCI];
   root.style.setProperty('--nuris-accent', W.logo);
   if (W.strong) {
-    const set = { '--nuris-accent-strong': W.strong, '--nuris-accent-soft': W.soft, '--nuris-accent-light': W.light,
+    const set = { '--nuris-accent-ring': W.ring, '--nuris-accent-strong': W.strong, '--nuris-accent-soft': W.soft, '--nuris-accent-light': W.light,
       '--nn-saffron': W.strong, '--nn-ink': '#ffffff',
       '--saffron': W.strong, '--saffron-ink': '#ffffff', '--saffron-soft': W.soft, '--saffron-light': W.light, '--saffron-text': W.strong, // kerangka bersama
       '--color-saffron': W.strong, '--color-saffron-soft': W.soft }; // Mutabaah (Tailwind)

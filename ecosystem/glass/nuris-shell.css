@@ -54,6 +54,8 @@ html:not([data-nuris-warna="beranda"]) .bg-saffron, html:not([data-nuris-warna="
 html:not([data-nuris-warna="beranda"]) .bg-saffron:hover { filter: brightness(1.08); }
 html:not([data-nuris-warna="beranda"]) :is(.kufi-pattern, [class*="bg-pine"], .bg-pine, [class*="bg-leaf-deep"]) .text-saffron { color: var(--nuris-accent-light) !important; }
 html:not([data-nuris-warna="beranda"]) .bg-saffron-soft { color: var(--nuris-accent-strong); }
+/* Lingkaran progres (Mutabaah: "sudah diisi pekan ini") memakai warna aplikasi, versi cerah agar jelas di panel hijau tua */
+html:not([data-nuris-warna="beranda"]) circle[stroke="#EE8A35" i] { stroke: var(--nuris-accent-ring, var(--nuris-accent)) !important; }
 /* SIMKA */
 html[data-nuris-warna="simka"] .nuris-primary { background: var(--nuris-accent-strong) !important; border-color: var(--nuris-accent-strong) !important; color: #fff !important; }
 html[data-nuris-warna="simka"] .nuris-primary:hover { filter: brightness(1.08); }
