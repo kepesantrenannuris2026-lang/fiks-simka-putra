@@ -52,11 +52,11 @@
     if (APP === 'beranda' || img.dataset.nurisLogo) return;
     const src = img.getAttribute('src') || '';
     if (!LOGO.test(src) || !img.closest(CHROME) || img.closest('#preview, .rapor, .rp-page, [data-rapor]')) return;
-    img.dataset.nurisLogo = '1'; img.onerror = null; img.src = '/logo-app/' + KUNCI + '.svg';
+    img.dataset.nurisLogo = '1'; img.onerror = null; img.src = '/logo-app/' + KUNCI + '.svg?v=20261124d';
   }
   function favicon() {
     if (APP === 'beranda') return;
-    for (const l of document.querySelectorAll('link[rel~="icon"]')) if (!l.dataset.nurisLogo) { l.dataset.nurisLogo = '1'; l.href = '/logo-app/' + KUNCI + '.svg'; l.type = 'image/svg+xml'; }
+    for (const l of document.querySelectorAll('link[rel~="icon"]')) if (!l.dataset.nurisLogo) { l.dataset.nurisLogo = '1'; l.href = '/logo-app/' + KUNCI + '.svg?v=20261124d'; l.type = 'image/svg+xml'; }
   }
 
   /* ---------- 2) Logo pojok kiri atas → Beranda Portal ---------- */
