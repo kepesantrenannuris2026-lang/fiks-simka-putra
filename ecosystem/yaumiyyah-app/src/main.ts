@@ -2,7 +2,7 @@
 // Data di yaumiyyah.bulanan; isian harian lama sudah dikonversi. Target & rincian predikat dihitung otomatis per bulan.
 import { activities, monthlyReport, semesterReport, semesterMonths, todayWIB, MonthEntry, monthTarget, monthMax, kategori, scoreOf, grade, hadir, daysInMonth, targetLabel, SKALA } from '../../../src/yaumiyyah/model';
 import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, sessionEnded, unitLabel } from '../../shared/ui';
-import { APP, navGabungan, bottomOf, bersama, segmen } from './nav';
+import { APP, navGabungan, bottomOf, bersama, segmen, jembatan } from './nav';
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/');
 const today = todayWIB(), thisMonth = today.slice(0, 7);
@@ -30,7 +30,8 @@ function picker() {
   return `<section class="ns-card yw-pick"><div class="ns-field yw-combo"><label for="yw-santri">Santri</label>
     <input id="yw-santri" type="text" data-act="sq" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="yw-opts" autocomplete="off" spellcheck="false" value="${esc(s?.nama || '')}" placeholder="Ketik nama santri">
     <div id="yw-opts" class="yw-opts" role="listbox" hidden></div></div>
-    ${s ? `<p class="ns-muted yw-who">${esc(unitLabel(s.unit))} · Kelas ${esc(s.kelas)}${s.kamar ? ` · Kamar ${esc(s.kamar)}` : ''} · Musyrif/ah: ${esc(s.musyrif || '–')}</p>` : ''}</section>`;
+    ${s ? `<p class="ns-muted yw-who">${esc(unitLabel(s.unit))} · Kelas ${esc(s.kelas)}${s.kamar ? ` · Kamar ${esc(s.kamar)}` : ''} · Musyrif/ah: ${esc(s.musyrif || '–')}</p>
+    <div class="yg-link"><span class="yg-link-ic">${icon(I.award, 18)}</span><div class="yg-link-tx"><b>Ujian praktik ibadah</b>${jembatan.ringkasUjian?.(s.id) || '<small>Lihat nilai subujian santri ini</small>'}</div><a href="#peserta" data-nav="peserta" data-ujian-santri="${esc(s.id)}" data-nama="${esc(s.nama)}" class="ns-btn sm">Buka</a></div>` : ''}</section>`;
 }
 const combo = { hi: 0, list: [] as any[] };
 function comboShow(q: string) {
@@ -105,6 +106,8 @@ function rekap() {
     <p class="ns-muted" style="font-size:13px">Predikat: A ≥ 90 · B+ 80–89 · B 70–79 · C &lt; 70 (skala Rapor Pesantren). ${sem ? 'Nilai semester = rata-rata bulan yang terisi.' : ''}</p>
     ${sem ? '' : `<details class="ns-card" style="padding:10px 12px"><summary style="cursor:pointer;font-weight:700">Rincian kategori nilai ${esc(monthLabel(m[0]))}</summary>${rincianTabel(m[0], r.izin)}</details>`}`;
 }
+// Nilai ujian siap → perbarui kartu santri saja (tanpa menggambar ulang isian yang sedang diketik).
+jembatan.onUjian = () => { const el = $('.yg-link-tx'), s = student(); if (el && s && yaum.active) el.innerHTML = `<b>Ujian praktik ibadah</b>${jembatan.ringkasUjian?.(s.id) || '<small>Lihat nilai subujian santri ini</small>'}`; };
 /* ---------- Data ---------- */
 async function load() {
   if (!st.sid) return;
@@ -122,6 +125,8 @@ async function save() {
 }
 yaum.show = async (view: string) => {
   st.view = view === 'rekap' ? 'rekap' : 'isian';
+  const ke = jembatan.keIbadah; jembatan.keIbadah = null;
+  if (ke && yaum.started && ke !== st.sid && st.students.some((x: any) => x.id === ke) && leave()) st.sid = ke;
   if (!yaum.started) { yaum.started = true; await boot(); return; }
   if (st.loading && !st.students.length) { render(); return; }
   await load();

@@ -15,7 +15,7 @@ export const I = {
   exit: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>', x: '<path d="M6 6l12 12M18 6 6 18"/>', bed: '<path d="M3 18V7m0 7h18v4M21 14v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11" r="2"/>',
 };
 
-export type NavItem = { id: string; label: string; icon: string; badge?: string | number; group?: string };
+export type NavItem = { id: string; label: string; icon: string; badge?: string | number; group?: string; also?: string[] };
 export type Shell = { app: string; title: string; nav: NavItem[]; active: string; user?: { nama: string; peran?: string } | null; actions?: string; back?: boolean; bottom?: NavItem[]; top?: string };
 
 // Menu bersama: kelompok berjudul (opsional). Bagian "Pindah Aplikasi" diisi /nuris-shell.js pada [data-nuris-pindah].
@@ -27,12 +27,20 @@ function navList(items: NavItem[], active: string) {
   }
   return out;
 }
+// Menu HP "Lainnya": petak 3 kolom seperti Mutabaah Tahfidz, berkelompok bila ada judul kelompok.
+function tiles(items: NavItem[], active: string) {
+  const groups: { g?: string; list: NavItem[] }[] = [];
+  for (const n of items) { const last = groups[groups.length - 1]; if (last && last.g === n.group) last.list.push(n); else groups.push({ g: n.group, list: [n] }); }
+  return groups.map((x) => `${x.g ? `<p class="ns-tile-group">${esc(x.g)}</p>` : ''}<div class="ns-tiles">${x.list.map((n) => `<a href="#${esc(n.id)}" data-nav="${esc(n.id)}" class="ns-tile${n.id === active ? ' on' : ''}"${n.id === active ? ' aria-current="page"' : ''}><span class="ns-tile-ic">${icon(n.icon, 22)}</span><span>${esc(n.label)}</span>${n.badge ? `<b class="ns-badge">${esc(n.badge)}</b>` : ''}</a>`).join('')}</div>`).join('');
+}
+const inisial = (nama: string) => (nama.replace(/^Ust(h)?\.?\s*/i, '')[0] || 'N').toUpperCase();
 const PORTAL = 'href="/#beranda" target="_top" data-portal title="Kembali ke Beranda Portal"';
 export function shell(o: Shell, body: string) {
   const bottomItems = (o.bottom || o.nav).slice(0, 4);
-  const bottom = bottomItems.map((n) => `<a href="#${esc(n.id)}" data-nav="${esc(n.id)}" class="${n.id === o.active ? 'on' : ''}"${n.id === o.active ? ' aria-current="page"' : ''}>${icon(n.icon, 20)}<span>${esc(n.label)}</span></a>`).join('')
+  const on = (n: NavItem) => n.id === o.active || !!n.also?.includes(o.active);
+  const bottom = bottomItems.map((n) => `<a href="#${esc(n.id)}" data-nav="${esc(n.id)}" class="${on(n) ? 'on' : ''}"${on(n) ? ' aria-current="page"' : ''}>${icon(n.icon, 20)}<span>${esc(n.label)}</span></a>`).join('')
     + `<button type="button" data-act="drawer" aria-haspopup="dialog" aria-controls="ns-drawer">${icon(I.list, 20)}<span>Menu</span></button>`;
-  const user = o.user ? `<div class="ns-user"><span class="ns-avatar">${esc((o.user.nama.replace(/^Ust(h)?\.?\s*/i, '')[0] || 'N').toUpperCase())}</span><span><b>${esc(o.user.nama)}</b><small>${esc(o.user.peran || '')}</small></span></div>` : '';
+  const user = o.user ? `<div class="ns-user"><span class="ns-avatar">${esc(inisial(o.user.nama))}</span><span><b>${esc(o.user.nama)}</b><small>${esc(o.user.peran || '')}</small></span></div>` : '';
   return `<div class="ns">
   <aside class="ns-side nuris-sidebar" aria-label="Navigasi ${esc(o.app)}">
     <a class="ns-brand" ${PORTAL}><span class="ns-mark"><img src="/nuris-mark.svg" alt="" width="26" height="26"></span><span><small>Nurul Islam Tengaran</small><strong>${esc(o.app)}</strong></span></a>
@@ -49,8 +57,11 @@ export function shell(o: Shell, body: string) {
   </div>
   ${o.nav.length ? `<nav class="ns-bottom nuris-bottom-nav" aria-label="Menu">${bottom}</nav>
   <div class="ns-drawer" id="ns-drawer" role="dialog" aria-modal="true" aria-label="Menu ${esc(o.app)}" hidden><div class="ns-drawer-panel">
-    <div class="ns-drawer-head"><a class="ns-brand" ${PORTAL}><span class="ns-mark"><img src="/nuris-mark.svg" alt="" width="26" height="26"></span><span><small>Nurul Islam Tengaran</small><strong>${esc(o.app)}</strong></span></a><button class="ns-icon" data-act="drawer-close" aria-label="Tutup menu">${icon(I.x)}</button></div>
-    ${user}<nav class="ns-nav">${navList(o.nav, o.active)}</nav><div class="ns-pindah" data-nuris-pindah></div></div></div>` : ''}
+    <span class="ns-grab" aria-hidden="true"></span>
+    <div class="ns-sheet-head">${o.user ? `<span class="ns-avatar">${esc(inisial(o.user.nama))}</span><span class="ns-sheet-who"><b>${esc(o.user.nama)}</b><small>${esc([o.user.peran, o.app].filter(Boolean).join(' · '))}</small></span>` : `<span class="ns-sheet-who"><b>${esc(o.app)}</b><small>Nurul Islam Tengaran</small></span>`}<button class="ns-sheet-x" data-act="drawer-close" aria-label="Tutup menu">${icon(I.x)}</button></div>
+    ${tiles(o.nav, o.active)}
+    <div class="ns-sheet-sep" aria-hidden="true"></div>
+    <div class="ns-pindah" data-nuris-pindah></div></div></div>` : ''}
 </div>`;
 }
 // Laci menu (HP): buka/tutup; menutup otomatis saat pindah halaman.

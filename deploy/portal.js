@@ -35,7 +35,7 @@
   for(const app of window.NURIS_APPS.filter(a=>!a.admin||session.apps[a.id])){
    const allowed=allowedOf(app), card=document.createElement(allowed?'a':'article');
    card.className='app-card'+(allowed?'':' disabled');if(allowed)card.href='#'+app.id;
-   card.innerHTML='<div class="icon">'+icon(app.icon)+'</div><div class="label"></div><h3></h3><p></p><div class="card-action"></div>';
+   card.innerHTML='<div class="icon app-logo"><img src="/logo-app/'+app.id+'.svg" alt="" width="34" height="34" decoding="async"></div><div class="label"></div><h3></h3><p></p><div class="card-action"></div>';
    card.querySelector('.label').textContent=app.label;card.querySelector('h3').textContent=app.name;card.querySelector('p').textContent=app.description;
    card.querySelector('.card-action').textContent=allowed?'Buka '+app.short:'Belum ada penugasan. Hubungi pimpinan.';
    $('app-grid').append(card);

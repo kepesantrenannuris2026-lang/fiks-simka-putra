@@ -11,12 +11,13 @@
   // Warna logo (bagian atas) sesuai logo per aplikasi; strong = tombol/aksen berteks putih (kontras ≥ 4.5:1),
   // soft = latar tipis, light = aksen di atas latar hijau tua. Putih dominan & hijau sekunder tetap.
   const PALET = {
+    // Palet permata yang serasi dengan putih (dominan) & hijau pinus (sekunder); semua 'strong' ≥ 5:1 dengan teks putih.
     beranda: { logo: '#ee8a36' },
-    mutabaah: { logo: '#0060d6', strong: '#0060d6', soft: '#e5effb', light: '#8db8f2', ring: '#3d8ef0' },
-    yaumiyyah: { logo: '#01a49a', strong: '#00796f', soft: '#def4f2', light: '#7fd9d1', ring: '#1fc2b6' },
-    'rapor-pesantren': { logo: '#660199', strong: '#660199', soft: '#f0e5f6', light: '#c99be3', ring: '#a35ad6' },
-    simka: { logo: '#df0114', strong: '#c20012', soft: '#fde6e8', light: '#ff9aa3', ring: '#ff4d5a' },
-    infrastruktur: { logo: '#64748b', strong: '#4b5768', soft: '#eef1f5', light: '#b9c3d0', ring: '#94a3b8' },
+    mutabaah: { logo: '#1d5fa8', strong: '#1d5fa8', soft: '#e8f0fa', light: '#8fbaf0', ring: '#4a8fe0' }, // biru samudra
+    yaumiyyah: { logo: '#0b7285', strong: '#0b7285', soft: '#e3f3f6', light: '#79c8d6', ring: '#1aa3b8' }, // toska petrol
+    'rapor-pesantren': { logo: '#6f42a6', strong: '#6f42a6', soft: '#f1ebf8', light: '#c3a5ea', ring: '#9a6fd6' }, // ungu anggur
+    simka: { logo: '#b3343a', strong: '#b3343a', soft: '#fbe9ea', light: '#f2a1a5', ring: '#e0565c' }, // merah marun
+    infrastruktur: { logo: '#52606d', strong: '#52606d', soft: '#eef1f4', light: '#b9c3d0', ring: '#94a3b8' },
   };
   const WARNA = Object.fromEntries(Object.entries(PALET).map(([k, v]) => [k, v.logo]));
   const p = location.pathname;
@@ -143,11 +144,16 @@
   }
   function tempel() {
     if (APP === 'beranda' || !apps) return;
-    for (const slot of document.querySelectorAll('[data-nuris-pindah]')) pasang(slot, slot.closest('.ns-drawer, .ns-side') ? 'gelap' : 'terang');
+    for (const slot of document.querySelectorAll('[data-nuris-pindah]')) pasang(slot, slot.closest('.ns-side') ? 'gelap' : 'terang');
     if (APP === 'mutabaah') {
       pasang(document.querySelector('aside.kufi-pattern > nav'), 'gelap');
       // Laci "Lainnya" (HP): panel putih di bawah layar.
       pasang(document.querySelector(SHEET + ' > div.rounded-t-3xl'), 'terang');
+      // Petak "Aplikasi" kini diwakili daftar Pindah Aplikasi di bawahnya.
+      for (const t of document.querySelectorAll(SHEET + ' > div.rounded-t-3xl :is(button, a)')) {
+        if (t.closest('[data-nuris-pindah-list]') || t.textContent.trim() !== 'Aplikasi' || t.style.display === 'none') continue;
+        t.style.display = 'none'; t.setAttribute('aria-hidden', 'true'); t.tabIndex = -1;
+      }
     }
     if (APP === 'simka' || APP === 'simka-putri') { pasang(document.querySelector('.nuris-sidebar > nav'), 'gelap'); varian(); }
   }

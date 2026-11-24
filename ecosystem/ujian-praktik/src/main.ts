@@ -2,7 +2,7 @@
 import { RUBRIK, MATERI_DEFAULT, GRUP, grupOf, materiOf, totalSkor } from './materi';
 import { huruf, MAKNA } from '../../shared/skala';
 import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, sessionEnded, unitLabel, download, csvOf } from '../../shared/ui';
-import { APP, navGabungan, bottomOf, bersama, segmen } from '../../yaumiyyah-app/src/nav';
+import { APP, navGabungan, bottomOf, bersama, segmen, jembatan } from '../../yaumiyyah-app/src/nav';
 
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/ujian-praktik/');
 const UNITS = ['SMP Ikhwan', 'SMA Ikhwan', 'MA Ikhwan', 'SMP Akhwat', 'SMA Akhwat', 'MA Akhwat'];
@@ -33,8 +33,30 @@ function render() {
 ujian.show = async (view: string) => {
   st.view = ['peserta', 'rekap', 'rubrik', 'materi'].includes(view) ? view : 'peserta'; st.edit = null;
   if (st.user && !st.user.admin && st.view === 'materi') st.view = 'peserta';
-  if (!ujian.started) { ujian.started = true; await boot(); return; }
-  render(); ($('#main') as HTMLElement)?.focus();
+  const ke = jembatan.keUjian; jembatan.keUjian = null;
+  if (ke) { st.view = 'peserta'; st.f = { unit: '', kamar: '', halaqah: '', tingkat: '', kp: '', q: ke.nama, status: '' }; }
+  if (st.gagal) { st.gagal = false; st.loaded = false; ujian.started = false; } // muat ulang bila pemuatan diam-diam sebelumnya gagal
+  if (!ujian.started) { ujian.started = true; await boot(); } else render();
+  ($('#main') as HTMLElement)?.focus();
+  if (ke && ujian.active) { if (st.loaded) bukaSantri(ke.id); else tunda = ke.id; }
+};
+// Dimuat diam-diam setelah Ibadah bulanan terbuka, agar kartu santri menampilkan nilai ujian & pindah bagian terasa instan.
+export function siapkanUjian() { if (!ujian.started && token()) { ujian.started = true; void boot(); } }
+let tunda: string | null = null;
+// Dari Ibadah bulanan: langsung buka penilaian santri yang sama (bila terdaftar & periode dibuka).
+function bukaSantri(id: string) {
+  const s: P | undefined = st.peserta.find((x: P) => x.id === id);
+  if (!s) { if (st.periode) toast('Santri ini belum ada di daftar peserta ujian Anda.', 'err'); return; }
+  if (st.periode?.aktif && materiFor(s).length) nilaiDialog(id);
+}
+// Ringkasan nilai subujian untuk kartu santri di Ibadah bulanan (bila data ujian sudah dimuat).
+jembatan.ringkasUjian = (id: string) => {
+  if (!st.loaded || !st.periode) return '';
+  const s: P | undefined = st.peserta.find((x: P) => x.id === id); if (!s) return '';
+  const m = materiFor(s); if (!m.length) return '';
+  const chip = (k: string) => { const v = s.nilai?.[k]; return `<span class="yg-chip${v == null ? ' kosong' : ''}" title="${esc(RUBRIK[k].nama)}: ${v == null ? 'belum dinilai' : fmt(v) + ' (' + huruf(v) + ')'}">${esc(RUBRIK[k].nama)} <b>${v == null ? '–' : huruf(v)}</b></span>`; };
+  const n = m.filter((k) => s.nilai?.[k] != null).length;
+  return `<small>${n === m.length ? 'Semua subujian sudah dinilai' : `${n} dari ${m.length} subujian dinilai`}</small><span class="yg-link-pills">${m.map(chip).join('')}</span>`;
 };
 
 /* ---------- Peserta ---------- */
@@ -66,7 +88,7 @@ function pesertaView() {
   const rows = list.slice(0, 400).map((s: P) => {
     const m = materiFor(s);
     const kp = canKelola(s.unit) ? `<input class="up-kp" data-kp="${esc(s.id)}" value="${esc(s.kelas_pagi)}" maxlength="20" placeholder="mis. 7A" aria-label="Kelas pagi ${esc(s.nama)}">` : esc(s.kelas_pagi || '–');
-    return `<tr><td><b>${esc(s.nama)}</b><small>${esc(unitLabel(s.unit))} · Kelas ${esc(s.tingkat)}</small></td>
+    return `<tr><td><b>${esc(s.nama)}</b><small>${esc(unitLabel(s.unit))} · Kelas ${esc(s.tingkat)} · <a href="#isian" data-nav="isian" data-ibadah-santri="${esc(s.id)}" class="yg-mini">Ibadah bulanan</a></small></td>
       <td>${esc(s.kamar || '–')}<small>${esc(s.halaqah || '')}</small></td><td>${kp}</td>
       <td><div class="up-pills">${m.length ? m.map((k) => `<span class="up-sub"><small>${esc(RUBRIK[k].nama)}</small>${pill(s.nilai?.[k])}</span>`).join('') : '<span class="ns-muted">Materi belum ditetapkan</span>'}</div></td>
       <td><button class="ns-btn sm ${statusOf(s) === 'lengkap' ? '' : 'primary'}" data-act="nilai" data-id="${esc(s.id)}" ${m.length && st.periode.aktif ? '' : 'disabled'}>${icon(I.edit, 16)}${statusOf(s) === 'belum' ? 'Nilai' : 'Ubah'}</button></td></tr>`;
@@ -193,7 +215,7 @@ async function loadPeserta() {
   st.peserta = r.peserta; st.penguji = r.penguji; st.periode = r.periode; render();
 }
 async function boot() {
-  if (!token()) { app.innerHTML = shell({ app: APP, title: APP, nav: [], active: '' }, needLogin(APP)); return; }
+  if (!token()) { if (ujian.active) app.innerHTML = shell({ app: APP, title: APP, nav: [], active: '' }, needLogin(APP)); return; }
   render();
   try {
     const r = await api('boot');
@@ -202,10 +224,11 @@ async function boot() {
     st.periode = st.periodes.find((p: any) => p.id === saved) || st.periodes.find((p: any) => p.aktif) || st.periodes[0] || null;
     if (!st.user.admin && st.view === 'materi') st.view = 'peserta';
     if (!st.user.admin && st.user.units.length === 1) st.f.unit = st.user.units[0];
-    await loadPeserta(); st.loaded = true; render();
+    await loadPeserta(); st.loaded = true; render(); jembatan.onUjian?.();
+    if (tunda && ujian.active) { const id = tunda; tunda = null; bukaSantri(id); }
   } catch (e: any) {
-    if (e.status === 401) sessionEnded();
-    st.loaded = true;
+    if (e.status === 401 && ujian.active) sessionEnded();
+    st.loaded = true; if (!ujian.active) st.gagal = true;
     if (ujian.active) app.innerHTML = shell({ app: APP, title: APP, nav: navGabungan(), active: '' }, empty(e.status === 401 ? 'Sesi berakhir.' : 'Data ujian belum dapat dimuat.', e.message, e.status === 401 ? '<a class="ns-btn primary" href="/" target="_top">Masuk kembali</a>' : '<button class="ns-btn primary" data-act="reload">Coba lagi</button>'));
   }
 }

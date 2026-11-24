@@ -32,3 +32,16 @@
 .yg-seg-item{flex:1;display:flex;align-items:center;justify-content:center;min-height:42px;padding:6px 10px;border-radius:12px;text-align:center;font-size:13.5px;font-weight:700;color:var(--muted);text-decoration:none;line-height:1.2}
 .yg-seg-item:hover{background:var(--leaf-soft);color:var(--leaf-deep)}
 .yg-seg-item.on{background:var(--saffron);color:var(--saffron-ink)}
+/* Gabungan 2026-11-24: kartu tautan santri ⇄ ujian, sub-menu ujian */
+.yg-link{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px;border-radius:16px;background:var(--nuris-accent-soft,#e3f3f6);border:1px solid color-mix(in srgb,var(--nuris-accent-strong,#0b7285) 16%,transparent)}
+.yg-link-ic{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--nuris-accent-strong,#0b7285);color:#fff}
+.yg-link-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.yg-link-tx b{font-size:13.5px;color:var(--ink)}.yg-link-tx small{font-size:12px;color:var(--muted)}
+.yg-link-pills{display:flex;flex-wrap:wrap;gap:6px}
+.yg-link .ns-btn{flex:none}
+.yg-mini{color:var(--nuris-accent-strong,#0b7285);font-weight:700;text-decoration:none;white-space:nowrap}
+.yg-mini:hover{text-decoration:underline}
+.yg-seg{overflow-x:auto;scrollbar-width:none}.yg-seg::-webkit-scrollbar{display:none}
+.yg-seg-item{min-width:max-content}
+.yg-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;background:#fff;font-size:11.5px;font-weight:600;color:var(--ink)}.yg-chip b{color:var(--nuris-accent-strong,#0b7285)}.yg-chip.kosong b{color:var(--muted)}
+@media (max-width:640px){.yg-link{gap:10px;padding:10px}.yg-link-ic{width:32px;height:32px}}
