@@ -42,12 +42,29 @@ html[data-nuris-app="beranda"] #mobile-nav { display: none !important; }
 html[data-nuris-app="beranda"] .app-card .icon { color: var(--app-c, #0d4a28); background: color-mix(in srgb, var(--app-c, #0d4a28) 12%, #fff); }
 html[data-nuris-app="beranda"] .app-card.disabled .icon { background: transparent; color: var(--muted); }
 html[data-nuris-app="beranda"] .app-card[href]:hover { border-color: var(--app-c, var(--leaf)); }
-.app-card[href="#mutabaah"] { --app-c: #2b7bd6; }
-.app-card[href="#yaumiyyah"] { --app-c: #0e9494; }
-.app-card[href="#rapor-pesantren"] { --app-c: #7c4dcc; }
-.app-card[href="#simka"] { --app-c: #c4473a; }
-.app-card[href="#simka-putri"] { --app-c: #e0528a; }
-.app-card[href="#infrastruktur"] { --app-c: #64748b; }
+.app-card[href="#mutabaah"] { --app-c: #0060d6; }
+.app-card[href="#yaumiyyah"] { --app-c: #00796f; }
+.app-card[href="#rapor-pesantren"] { --app-c: #660199; }
+.app-card[href="#simka"] { --app-c: #c20012; }
+.app-card[href="#infrastruktur"] { --app-c: #4b5768; }
+
+/* ---------- Aksen khas tiap aplikasi (putih dominan, hijau sekunder tetap) ---------- */
+/* Mutabaah (Tailwind): tombol aksen berteks putih; aksen teks di panel hijau tua memakai versi terang. */
+html:not([data-nuris-warna="beranda"]) .bg-saffron, html:not([data-nuris-warna="beranda"]) .bg-saffron :is(.text-pine, .text-ink, svg) { color: #fff !important; }
+html:not([data-nuris-warna="beranda"]) .bg-saffron:hover { filter: brightness(1.08); }
+html:not([data-nuris-warna="beranda"]) :is(.kufi-pattern, [class*="bg-pine"], .bg-pine, [class*="bg-leaf-deep"]) .text-saffron { color: var(--nuris-accent-light) !important; }
+html:not([data-nuris-warna="beranda"]) .bg-saffron-soft { color: var(--nuris-accent-strong); }
+/* SIMKA */
+html[data-nuris-warna="simka"] .nuris-primary { background: var(--nuris-accent-strong) !important; border-color: var(--nuris-accent-strong) !important; color: #fff !important; }
+html[data-nuris-warna="simka"] .nuris-primary:hover { filter: brightness(1.08); }
+html:not([data-nuris-warna="beranda"]) .nuris-record-tab > span { background: var(--nuris-accent-strong) !important; color: #fff !important; }
+/* Pilihan bagian SIMKA (Putra / Putri) di sidebar & laci */
+.nps-varian { display: flex; gap: 4px; margin: 10px 12px 2px; padding: 4px; border-radius: 14px; background: #ffffff12; border: 1px solid #ffffff1f; }
+.nps-varian button { flex: 1; min-height: 36px; border: 0; border-radius: 10px; background: transparent; color: #cfe3d6; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.nps-varian button:hover { background: #ffffff14; color: #fff; }
+.nps-varian button[aria-pressed="true"] { background: #fff; color: #082e1a; box-shadow: inset 0 -2px 0 var(--nuris-accent-strong); }
+.nps-varian button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.nuris-sidebar[class*="w-[76px]"] .nps-varian { display: none; }
 
 /* ---------- SIMKA Putra & Putri: sidebar/laci hijau tua seperti Mutabaah ---------- */
 html[data-nuris-app^="simka"] .nuris-sidebar.nuris-sidebar {
@@ -67,7 +84,7 @@ html[data-nuris-app^="simka"] .nuris-sidebar [class*="text-emerald-5"] { color: 
 html[data-nuris-app^="simka"] .nuris-sidebar > div:first-child [class*="bg-emerald-500/10"] { background: #ffffff1a !important; color: #e7f2ea !important; border-color: #ffffff2e !important; }
 /* Kartu profil */
 html[data-nuris-app^="simka"] .nuris-sidebar [class*="bg-slate-50"] { background: #ffffff10 !important; }
-html[data-nuris-app^="simka"] .nuris-sidebar [class*="bg-emerald-600"] { background: var(--nuris-accent) !important; color: #fff !important; }
+html[data-nuris-app^="simka"] .nuris-sidebar [class*="bg-emerald-600"] { background: var(--nuris-accent-strong) !important; color: #fff !important; }
 /* Lencana unit (Unit MA / Semua Unit): teks gelap di latar terang, kontras > 7:1 */
 html[data-nuris-app^="simka"] .nuris-sidebar [class*="bg-emerald-100"] { background: #e3f2e8 !important; color: #0a4f4a !important; border-color: #e3f2e8 !important; }
 /* Item menu */

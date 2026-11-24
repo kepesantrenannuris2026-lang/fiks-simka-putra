@@ -10,7 +10,7 @@
 .yw-ex{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--muted)}
 .yw-bin button[aria-selected=true]{background:var(--leaf-deep);color:#fff}
 .yw-savebar{position:sticky;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:10px 12px 10px 16px;border-radius:16px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 26px -14px #082e1a66;font-weight:700;font-size:13px;color:var(--muted)}
-.yw-savebar.dirty{background:var(--saffron-soft);color:#8a4a12}
+.yw-savebar.dirty{background:var(--saffron-soft);color:var(--saffron-text,#8a4a12)}
 .yw-in{height:38px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 10px;font-weight:700}
 .yw-scroll{overflow:hidden;background:var(--soft-2);border:1px solid var(--line);border-radius:var(--r);padding:4px}#preview{transform-origin:top left}
 @media (max-width:899px){.yw-savebar{bottom:calc(92px + env(safe-area-inset-bottom))}}

@@ -8,16 +8,33 @@
 (() => {
   if (window.__nurisShell) return; window.__nurisShell = 1;
   const API = 'https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/kepesantrenan/session';
-  const WARNA = { beranda: '#ee8a36', mutabaah: '#2b7bd6', yaumiyyah: '#0e9494', 'rapor-pesantren': '#7c4dcc', simka: '#c4473a', 'simka-putri': '#e0528a', infrastruktur: '#64748b' };
+  // Warna logo (bagian atas) sesuai logo per aplikasi; strong = tombol/aksen berteks putih (kontras ≥ 4.5:1),
+  // soft = latar tipis, light = aksen di atas latar hijau tua. Putih dominan & hijau sekunder tetap.
+  const PALET = {
+    beranda: { logo: '#ee8a36' },
+    mutabaah: { logo: '#0060d6', strong: '#0060d6', soft: '#e5effb', light: '#8db8f2' },
+    yaumiyyah: { logo: '#01a49a', strong: '#00796f', soft: '#def4f2', light: '#7fd9d1' },
+    'rapor-pesantren': { logo: '#660199', strong: '#660199', soft: '#f0e5f6', light: '#c99be3' },
+    simka: { logo: '#df0114', strong: '#c20012', soft: '#fde6e8', light: '#ff9aa3' },
+    infrastruktur: { logo: '#64748b', strong: '#4b5768', soft: '#eef1f5', light: '#b9c3d0' },
+  };
+  const WARNA = Object.fromEntries(Object.entries(PALET).map(([k, v]) => [k, v.logo]));
   const p = location.pathname;
   const APP = p.startsWith('/mutabaah') ? 'mutabaah' : p.startsWith('/yaumiyyah') || p.startsWith('/ujian-praktik') ? 'yaumiyyah'
     : p.startsWith('/rapor-pesantren') ? 'rapor-pesantren' : p.startsWith('/simka-putri') ? 'simka-putri' : p.startsWith('/simka') ? 'simka'
     : p.startsWith('/infrastruktur') ? 'infrastruktur' : 'beranda';
+  const KUNCI = APP === 'simka-putri' ? 'simka' : APP; // SIMKA Putra & Putri = satu aplikasi, satu warna
   const root = document.documentElement;
-  root.dataset.nurisApp = APP;
-  root.style.setProperty('--nuris-accent', WARNA[APP]);
-  root.style.setProperty('--nn-saffron', WARNA[APP]);
-  if (APP !== 'beranda') root.style.setProperty('--nn-ink', '#ffffff');
+  root.dataset.nurisApp = APP; root.dataset.nurisWarna = KUNCI;
+  const W = PALET[KUNCI];
+  root.style.setProperty('--nuris-accent', W.logo);
+  if (W.strong) {
+    const set = { '--nuris-accent-strong': W.strong, '--nuris-accent-soft': W.soft, '--nuris-accent-light': W.light,
+      '--nn-saffron': W.strong, '--nn-ink': '#ffffff',
+      '--saffron': W.strong, '--saffron-ink': '#ffffff', '--saffron-soft': W.soft, '--saffron-light': W.light, '--saffron-text': W.strong, // kerangka bersama
+      '--color-saffron': W.strong, '--color-saffron-soft': W.soft }; // Mutabaah (Tailwind)
+    for (const [k, v] of Object.entries(set)) root.style.setProperty(k, v);
+  }
   const framed = window.parent !== window;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -34,11 +51,11 @@
     if (APP === 'beranda' || img.dataset.nurisLogo) return;
     const src = img.getAttribute('src') || '';
     if (!LOGO.test(src) || !img.closest(CHROME) || img.closest('#preview, .rapor, .rp-page, [data-rapor]')) return;
-    img.dataset.nurisLogo = '1'; img.onerror = null; img.src = '/logo-app/' + APP + '.svg';
+    img.dataset.nurisLogo = '1'; img.onerror = null; img.src = '/logo-app/' + KUNCI + '.svg';
   }
   function favicon() {
     if (APP === 'beranda') return;
-    for (const l of document.querySelectorAll('link[rel~="icon"]')) if (!l.dataset.nurisLogo) { l.dataset.nurisLogo = '1'; l.href = '/logo-app/' + APP + '.svg'; l.type = 'image/svg+xml'; }
+    for (const l of document.querySelectorAll('link[rel~="icon"]')) if (!l.dataset.nurisLogo) { l.dataset.nurisLogo = '1'; l.href = '/logo-app/' + KUNCI + '.svg'; l.type = 'image/svg+xml'; }
   }
 
   /* ---------- 2) Logo pojok kiri atas → Beranda Portal ---------- */
@@ -88,9 +105,10 @@
   // Bila akses belum/tidak dapat dibaca, tampilkan aplikasi umum; portal tetap memeriksa akses saat dibuka.
   function daftar() {
     return (apps || []).filter((a) => !a.alias).filter((a) => {
-      if (a.id === APP) return true;
+      if (a.id === KUNCI) return true;
       if (a.admin) return !!akses?.admin;
       if (!akses || akses.anon) return true;
+      if (a.varian) return a.varian.some((v) => akses.apps[v.id]);
       return !!akses.apps[a.requires || a.id];
     });
   }
@@ -99,7 +117,7 @@
     const row = (id, name, color, cur) => `<a href="/#${esc(id)}" data-nuris-app-link="${esc(id)}" class="nps-item${cur ? ' is-cur' : ''}"${cur ? ' aria-current="true"' : ''} title="${esc(name)}"><i style="background:${color}"></i><span>${esc(name)}</span>${cur ? '<small>Aktif</small>' : ''}</a>`;
     return `<div class="nps nps-${tema}" data-nuris-pindah-list><p class="nps-title">Pindah Aplikasi</p>`
       + row('beranda', 'Beranda Portal', WARNA.beranda, false)
-      + items.map((a) => row(a.id, a.name, WARNA[a.id] || WARNA.beranda, a.id === APP)).join('') + '</div>';
+      + items.map((a) => row(a.id, a.name, WARNA[a.id] || WARNA.beranda, a.id === KUNCI)).join('') + '</div>';
   }
   document.addEventListener('click', (e) => {
     const a = e.target.closest && e.target.closest('[data-nuris-app-link]');
@@ -107,7 +125,7 @@
     e.preventDefault(); e.stopPropagation();
     const id = a.dataset.nurisAppLink;
     tutupLaci();
-    if (id !== APP) buka(id);
+    if (id !== KUNCI) buka(id);
   }, true);
   function tutupLaci() {
     // Laci Mutabaah ("Lainnya") tertutup bila latarnya diketuk; laci SIMKA lewat tombol "Tutup Menu"; laci bersama lewat data-act.
@@ -131,8 +149,30 @@
       // Laci "Lainnya" (HP): panel putih di bawah layar.
       pasang(document.querySelector(SHEET + ' > div.rounded-t-3xl'), 'terang');
     }
-    if (APP === 'simka' || APP === 'simka-putri') pasang(document.querySelector('.nuris-sidebar > nav'), 'gelap');
+    if (APP === 'simka' || APP === 'simka-putri') { pasang(document.querySelector('.nuris-sidebar > nav'), 'gelap'); varian(); }
   }
+
+  /* ---------- SIMKA Putra & Putri dalam satu aplikasi: pilihan bagian di sidebar/laci ---------- */
+  const VARIAN = [{ id: 'simka', nama: 'Putra', path: '/simka/' }, { id: 'simka-putri', nama: 'Putri', path: '/simka-putri/' }];
+  function varian() {
+    const head = document.querySelector('.nuris-sidebar > div:first-child'); if (!head) return;
+    const boleh = VARIAN.filter((v) => v.id === APP || !akses || akses.anon || akses.admin || akses.apps[v.id]);
+    const sig = boleh.map((v) => v.id).join(',');
+    let box = head.nextElementSibling?.matches?.('.nps-varian') ? head.nextElementSibling : null;
+    if (box && box.dataset.sig === sig) return;
+    if (boleh.length < 2) { box?.remove(); return; }
+    const el = document.createElement('div'); el.className = 'nps-varian'; el.dataset.sig = sig; el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Bagian SIMKA');
+    el.innerHTML = boleh.map((v) => `<button type="button" data-simka-varian="${v.id}" aria-pressed="${v.id === APP}">SIMKA ${v.nama}</button>`).join('');
+    if (box) box.replaceWith(el); else head.after(el);
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('[data-simka-varian]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const v = VARIAN.find((x) => x.id === b.dataset.simkaVarian); if (!v || v.id === APP) return;
+    try { localStorage.setItem('nuris_varian_simka', v.id); } catch {}
+    location.assign(v.path); // di dalam bingkai portal: bingkai SIMKA berganti bagian, alamat portal tetap #simka
+  }, true);
+  if (APP === 'simka' || APP === 'simka-putri') try { localStorage.setItem('nuris_varian_simka', APP); } catch {}
 
   /* ---------- 4) SIMKA: label & copy ---------- */
   const PUTRI = APP === 'simka-putri';

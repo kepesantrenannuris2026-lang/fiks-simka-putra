@@ -34,6 +34,8 @@ cp ecosystem/cloudflare/baseline-nuris-appearance.js deploy/nuris-appearance.js
 # Lapisan bersama semua aplikasi: warna aplikasi, logo ke Portal, Pindah Aplikasi di menu, penyeragaman SIMKA.
 cp ecosystem/glass/nuris-shell.js ecosystem/glass/nuris-shell.css deploy/
 mkdir -p deploy/logo-app && cp ecosystem/glass/logo-app/*.svg deploy/logo-app/
+# Portal (salinan live 24 Nov + aplikasi bervarian SIMKA Putra/Putri).
+cp ecosystem/portal/portal.js deploy/portal.js
 cp ecosystem/portal/apps.js deploy/
 # Infrastructure Manager (khusus pimpinan/admin).
 mkdir -p deploy/infrastruktur && cp ecosystem/portal/infrastruktur/index.html deploy/infrastruktur/

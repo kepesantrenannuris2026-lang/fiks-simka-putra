@@ -57,7 +57,7 @@ main{max-width:1240px;margin:0 auto;padding:22px clamp(14px,3vw,30px) 110px;outl
 .ns-eyebrow{margin:0;font-size:12px;font-weight:700;color:#a9d8b8;letter-spacing:.01em}
 .ns-kpi{display:flex;gap:10px;flex-wrap:wrap}
 .ns-kpi>div{background:#ffffff14;border:1px solid #ffffff1f;border-radius:16px;padding:10px 14px;min-width:110px}
-.ns-kpi strong{display:block;font-size:24px;line-height:1.1;color:#fff}.ns-kpi strong.acc{color:#ffc489}.ns-kpi span{font-size:12px;color:#bcd8c5}
+.ns-kpi strong{display:block;font-size:24px;line-height:1.1;color:#fff}.ns-kpi strong.acc{color:var(--saffron-light,#ffc489)}.ns-kpi span{font-size:12px;color:#bcd8c5}
 .ns-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 15px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--leaf-deep);font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;white-space:nowrap}
 .ns-btn:hover{background:var(--soft)}.ns-btn:disabled{opacity:.5;cursor:not-allowed}
 .ns-btn.primary{background:var(--saffron);border-color:var(--saffron);color:var(--saffron-ink)}.ns-btn.primary:hover{filter:brightness(1.04)}
