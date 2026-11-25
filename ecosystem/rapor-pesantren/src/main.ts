@@ -83,7 +83,7 @@ function homeView() {
   const cards = [...groups].map(([g, ks]) => `<section class="rp-group"><h3>${esc(g)}</h3><div class="rp-cards">${ks.map((k) => {
     const pct = k.jumlah ? Math.round((k.terisi / k.jumlah) * 100) : 0;
     if (k.penuh === false) return `<button class="rp-card lain" data-act="open" data-id="${esc(k.id)}"><span class="rp-card-ic">${icon(I.book)}</span><span class="rp-card-body"><b>${esc(k.nama)}</b><small>${esc(k.wali_nama || 'Wali belum ditetapkan')}</small>
-      <span class="rp-meter" aria-label="${k.kitab_terisi} dari ${k.jumlah} santri sudah ada nilai kitab"><i style="width:${k.jumlah ? Math.round((k.kitab_terisi / k.jumlah) * 100) : 0}%"></i></span><small>Kajian kitab ${k.kitab_terisi}/${k.jumlah} santri</small></span></button>`;
+      <span class="rp-meter" aria-label="${k.kitab_terisi} dari ${k.jumlah} santri sudah ada nilai kitab"><i style="width:${k.jumlah ? Math.round((k.kitab_terisi / k.jumlah) * 100) : 0}%"></i></span><small>Kitab ${k.kitab_terisi}/${k.jumlah} · Pidato ${k.pidato_terisi ?? 0}/${k.jumlah}</small></span></button>`;
     return `<button class="rp-card${pisah ? ' ampu' : ''}" data-act="open" data-id="${esc(k.id)}"><span class="rp-card-ic">${icon(I.bed)}</span><span class="rp-card-body"><b>${esc(k.nama)}</b><small>${esc(k.wali_nama || 'Wali belum ditetapkan')}</small>
       <span class="rp-meter" aria-label="${k.terisi} dari ${k.jumlah} santri sudah dinilai"><i style="width:${pct}%"></i></span><small>${k.terisi}/${k.jumlah} santri dinilai</small></span></button>`;
   }).join('')}</div></section>`).join('');
@@ -117,7 +117,7 @@ function inputView() {
   const b = BAGIAN.find((x) => x.key === st.tab);
   const cols = st.tab === 'catatan' ? [] : columns(st.tab);
   const huruf = b?.jenis === 'huruf';
-  const ro = st.kamar?.penuh === false && st.tab !== 'kitab'; // kamar lain di unit: kelompok selain Kajian Kitab hanya dilihat
+  const ro = st.kamar?.penuh === false && st.tab !== 'kitab' && st.tab !== 'pidato'; // kamar lain di unit: selain Kajian Kitab & Pidato hanya dilihat
   const helper = ro ? '' : st.tab === 'ibadah' ? `<button class="rp-btn soft" data-act="auto">${icon(I.spark)}Isi kosong dari Mutabaah Yaumiyyah</button>`
     : st.tab === 'praktik' ? `<button class="rp-btn soft" data-act="auto">${icon(I.spark)}Isi kosong dari Ujian Praktik Ibadah</button>`
     : st.tab === 'hadis' ? `<button class="rp-btn soft" data-act="auto">${icon(I.spark)}Isi dari setoran Hadis Arbain</button>` : '';
@@ -140,7 +140,7 @@ function inputView() {
     const ind = st.tab === 'akhlak' && !ro ? `<button class="rp-mini" data-act="indikator" data-id="${esc(s.id)}" title="Isi skor 20 indikator akhlak (1–4)">Indikator${s.data?.akhlak_skor ? ' ✓' : ''}</button>` : '';
     return `<tr><th scope="row"><span class="rp-nm">${esc(s.nama)}</span><small>${kl.isi}/${kl.total} butir${st.dirty.has(s.id) ? ' · <b>belum disimpan</b>' : ''}</small>${ind}</th>${cells}</tr>`;
   }).join('');
-  const lain = st.kamar?.penuh === false ? `<div class="rp-lain">${icon(I.book)}<span><b>Kamar ${esc(st.kamar.nama)} bukan kamar ampuan Anda.</b> Anda dapat mengisi <b>Kajian Kitab</b> (nilai ujian semester kitab) untuk kamar ini; kelompok nilai lain hanya dapat dilihat dan diisi oleh wali kamarnya (${esc(st.kamar.wali_nama || '–')}).</span></div>` : '';
+  const lain = st.kamar?.penuh === false ? `<div class="rp-lain">${icon(I.book)}<span><b>Kamar ${esc(st.kamar.nama)} bukan kamar ampuan Anda.</b> Anda dapat mengisi <b>Kajian Kitab</b> (nilai ujian semester kitab) dan <b>Pidato</b> untuk kamar ini; kelompok nilai lain hanya dapat dilihat dan diisi oleh wali kamarnya (${esc(st.kamar.wali_nama || '–')}).</span></div>` : '';
   return `${lain}<div class="rp-tabs" role="tablist" aria-label="Kelompok nilai" data-nuris-glass>${tabs.map(([k, t]) => `<button role="tab" aria-selected="${st.tab === k}" data-act="tab" data-v="${k}">${t}</button>`).join('')}</div>
   <div class="rp-gridbar"><p>${b ? `${esc(b.judul)} <span lang="ar" dir="rtl">${b.ar}</span> · skala ${b.skala}${huruf ? ' — ketik A, B+, B, atau C' : b.jenis === 'hadis' ? ' — jumlah hadis yang sudah disetorkan hafal' : st.tab === 'praktik' ? ' — tiap subujian dinilai terpisah (A 90–100, B+ 80–89, B 70–79, C &lt;70)' : ''}` : 'Catatan singkat wali kamar untuk setiap santri.'}</p>
   <div>${helper}${fill}<button class="rp-btn ghost" data-act="csv">${icon(I.down)}Leger CSV</button></div></div>
@@ -257,8 +257,8 @@ function indikatorDialog(s: Student) {
 
 /* ---------- Nilai ---------- */
 // Kamar lain di unit yang sama (bukan ampuan): hanya Kajian Kitab yang boleh diisi.
-const bolehUbah = (s: Student, key: string) => (s as any).penuh !== false || key.startsWith('kitab.');
-const PESAN_KITAB = 'Kamar ini bukan ampuan Anda: hanya nilai Kajian Kitab yang dapat diisi.';
+const bolehUbah = (s: Student, key: string) => (s as any).penuh !== false || key.startsWith('kitab.') || key.startsWith('pidato.');
+const PESAN_KITAB = 'Kamar ini bukan ampuan Anda: hanya nilai Kajian Kitab dan Pidato yang dapat diisi.';
 function setValue(s: Student, key: string, raw: string): boolean {
   if (!bolehUbah(s, key)) { toast(PESAN_KITAB, 'err'); return false; }
   const d = dataOf(s);

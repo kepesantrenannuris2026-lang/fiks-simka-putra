@@ -1,6 +1,6 @@
 // Rapor Pesantren (per kamar). Sesi & akun = Mutabaah (public.sesi/public.akun). Data di skema privat rapor_pesantren.
 // Wali kamar: akses PENUH untuk kamar ampuannya, dan dapat membuka seluruh kamar di unit yang sama (mis. MA Putra)
-// khusus untuk mengisi nilai Kajian Kitab (penguji kitab sering musyrif lain). Koordinator unit & pimpinan: penuh.
+// khusus untuk mengisi nilai Kajian Kitab & Pidato (penguji sering musyrif lain). Koordinator unit & pimpinan: penuh.
 import pg from 'npm:pg@8.13.1';
 import { semesterMonths, semesterReport, validateMonth, validMonth } from './yaumiyyahModel.ts';
 
@@ -67,6 +67,8 @@ const penuhSql = (a: Actor, args: unknown[]) => {
   return `(coalesce(g.wali_username,k.wali_username)=$${args.length - 1} OR ${KAMAR_UNIT}=ANY($${args.length}::text[]))`;
 };
 export const KITAB_KEYS = ['tajwid', 'safinah', 'taisir', 'mabadi', 'yaqut', 'ayyuhal', 'tafsir', 'tuhfah'];
+// Kelompok nilai yang boleh diisi penguji dari kamar lain di unit yang sama (juga lewat Mutabaah Yaumiyyah).
+export const GRUP_UNIT: Record<string, string[]> = { kitab: KITAB_KEYS, pidato: ['arab', 'inggris', 'pidato'] };
 
 const DEFAULTS = {
   umum: {
@@ -152,7 +154,8 @@ async function kamarList(a: Actor, ta: string, sem: number) {
         ($2 OR coalesce(k.wali_username=$1,false) OR coalesce(bool_or(g.wali_username=$1),false) OR ${KAMAR_UNIT}=ANY($6::text[])) AS penuh,
         count(s.id) FILTER (WHERE $2 OR coalesce(g.wali_username,k.wali_username)=$1 OR ${KAMAR_UNIT}=ANY($5::text[]))::int AS jumlah,
         count(n.santri_id) FILTER (WHERE $2 OR coalesce(g.wali_username,k.wali_username)=$1 OR ${KAMAR_UNIT}=ANY($5::text[]))::int AS terisi,
-        count(n.santri_id) FILTER (WHERE n.data ? 'kitab' AND n.data->'kitab'<>'{}'::jsonb)::int AS kitab_terisi
+        count(n.santri_id) FILTER (WHERE n.data ? 'kitab' AND n.data->'kitab'<>'{}'::jsonb)::int AS kitab_terisi,
+        count(n.santri_id) FILTER (WHERE n.data ? 'pidato' AND n.data->'pidato'<>'{}'::jsonb)::int AS pidato_terisi
         FROM rapor_pesantren.kamar k LEFT JOIN public.akun w ON w.username=k.wali_username
         LEFT JOIN rapor_pesantren.anggota g ON g.kamar_id=k.id LEFT JOIN public.santri s ON s.id=g.santri_id AND s.aktif
         LEFT JOIN rapor_pesantren.nilai n ON n.santri_id=s.id AND n.tahun_ajaran=$3 AND n.semester=$4
@@ -212,10 +215,11 @@ async function handle(path: string, a: Actor, body: any) {
         const hak = (await client.query(`SELECT coalesce(${penuhQ},false) AS penuh FROM rapor_pesantren.anggota g JOIN rapor_pesantren.kamar k ON k.id=g.kamar_id JOIN public.santri s ON s.id=g.santri_id AND s.aktif WHERE g.santri_id=$1 AND ${scope}`, args)).rows[0];
         if (!hak) throw fail('Ada santri di luar kamar binaan atau unit Anda.', 403);
         if (!hak.penuh) {
-          // Kamar lain di unit yang sama: hanya Kajian Kitab yang boleh berubah; kelompok lain tetap seperti tersimpan.
+          // Kamar lain di unit yang sama: hanya Kajian Kitab & Pidato yang boleh berubah; kelompok lain tetap seperti tersimpan.
           const lama = (await client.query('SELECT data FROM rapor_pesantren.nilai WHERE santri_id=$1 AND tahun_ajaran=$2 AND semester=$3', [id, ta, sem])).rows[0]?.data || {};
-          const k = data.kitab; for (const key of Object.keys(data)) delete data[key]; Object.assign(data, lama);
-          if (k && Object.keys(k).length) data.kitab = k; else delete data.kitab;
+          const baru: Record<string, any> = {}; for (const g of Object.keys(GRUP_UNIT)) baru[g] = data[g];
+          for (const key of Object.keys(data)) delete data[key]; Object.assign(data, lama);
+          for (const g of Object.keys(GRUP_UNIT)) { if (baru[g] && Object.keys(baru[g]).length) data[g] = baru[g]; else delete data[g]; }
         }
         const r = (await client.query(`INSERT INTO rapor_pesantren.nilai(santri_id,tahun_ajaran,semester,data,updated_by) SELECT $1,$2,$3,$4::jsonb,$5 WHERE $6::uuid IS NULL
             ON CONFLICT (santri_id,tahun_ajaran,semester) DO NOTHING RETURNING santri_id,version,updated_at,updated_by`, [id, ta, sem, JSON.stringify(data), a.username, version])).rows[0]
@@ -230,7 +234,8 @@ async function handle(path: string, a: Actor, body: any) {
     return { saved, conflicts };
   }
   // Mutabaah Yaumiyyah (aplikasi baru): binaan musyrif, anggota kamar yang diwalikan, atau seluruh unit koordinator.
-  if (path.startsWith('yaum-kitab-')) return kitab(path, a, body);
+  const gm = /^yaum-(kitab|pidato)-(kamar|load|save)$/.exec(path);
+  if (gm) return nilaiUnit(gm[1], gm[2], a, body);
   if (path.startsWith('yaum-')) return yaumiyyah(path, a, body);
   if (!a.admin) throw fail('Hanya pimpinan yang dapat mengatur kamar dan rapor.', 403);
   if (path === 'kamar-save') {
@@ -273,18 +278,19 @@ async function handle(path: string, a: Actor, body: any) {
   throw fail('Rute tidak dikenal.', 404);
 }
 
-// Nilai Kajian Kitab dari Mutabaah Yaumiyyah (hasil ujian semester kitab, 0–100). Disimpan ke rapor_pesantren.nilai
-// kelompok 'kitab' — satu sumber dengan Rapor Pesantren. Hanya butir yang diubah yang digabung (tidak menimpa nilai lain).
-async function kitab(path: string, a: Actor, body: any) {
+// Nilai Kajian Kitab (hasil ujian semester kitab) & Pidato dari Mutabaah Yaumiyyah, 0–100. Disimpan ke rapor_pesantren.nilai
+// kelompok 'kitab' / 'pidato' — satu sumber dengan Rapor Pesantren. Hanya butir yang diubah yang digabung (tidak menimpa nilai lain).
+async function nilaiUnit(grup: string, aksi: string, a: Actor, body: any) {
+  const KUNCI = GRUP_UNIT[grup];
   const { ta, sem } = periodOf(body);
-  if (path === 'yaum-kitab-kamar') return { user: { username: a.username, nama: a.nama, admin: a.admin, koordinator: a.koordinator }, kamars: await kamarList(a, ta, sem), kurikulum: (await settings()).kurikulum || {} };
-  if (path === 'yaum-kitab-load') {
+  if (aksi === 'kamar') return { user: { username: a.username, nama: a.nama, admin: a.admin, koordinator: a.koordinator }, kamars: await kamarList(a, ta, sem), kurikulum: (await settings()).kurikulum || {} };
+  if (aksi === 'load') {
     if (typeof body.kamar !== 'string' || body.kamar.length > 120) throw fail('Pilih kamar.');
     const students = await kamarStudents(a, body.kamar, ta, sem);
     if (!a.admin && !students.length) throw fail('Kamar ini bukan binaan atau unit akun Anda.', 403);
-    return { students: students.map((s: any) => ({ id: s.id, nama: s.nama, unit: s.unit, tingkat: s.tingkat, kitab: s.data?.kitab || {}, updated_by: s.updated_by, updated_at: s.updated_at })) };
+    return { students: students.map((s: any) => ({ id: s.id, nama: s.nama, unit: s.unit, tingkat: s.tingkat, nilai: s.data?.[grup] || {}, kitab: s.data?.kitab || {}, updated_by: s.updated_by, updated_at: s.updated_at })) };
   }
-  if (path === 'yaum-kitab-save') {
+  if (aksi === 'save') {
     if (!Array.isArray(body.items) || !body.items.length || body.items.length > 80) throw fail('Maksimal 80 santri per simpan.');
     const client = await (await getPool()).connect();
     const saved: any[] = [];
@@ -292,23 +298,23 @@ async function kitab(path: string, a: Actor, body: any) {
       await client.query('BEGIN');
       for (const item of body.items) {
         const id = String(item.santri_id || '');
-        const ubah = item.kitab;
-        if (!ubah || typeof ubah !== 'object' || Array.isArray(ubah)) throw fail('Data nilai kitab tidak valid.');
+        const ubah = item.nilai ?? item.kitab;
+        if (!ubah || typeof ubah !== 'object' || Array.isArray(ubah)) throw fail('Data nilai tidak valid.');
         for (const [k, v] of Object.entries(ubah)) {
-          if (!KITAB_KEYS.includes(k)) throw fail('Kitab tidak dikenal.');
-          if (v !== null && !(typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100)) throw fail('Nilai kitab harus 0–100.');
+          if (!KUNCI.includes(k)) throw fail(grup === 'kitab' ? 'Kitab tidak dikenal.' : 'Butir pidato tidak dikenal.');
+          if (v !== null && !(typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100)) throw fail('Nilai harus 0–100.');
         }
         const args: unknown[] = [id];
         const ok = (await client.query(`SELECT 1 FROM rapor_pesantren.anggota g JOIN rapor_pesantren.kamar k ON k.id=g.kamar_id JOIN public.santri s ON s.id=g.santri_id AND s.aktif WHERE g.santri_id=$1 AND ${scopeSql(a, args)}`, args)).rows.length;
         if (!ok) throw fail('Ada santri di luar kamar binaan atau unit Anda.', 403);
         await client.query(`INSERT INTO rapor_pesantren.nilai(santri_id,tahun_ajaran,semester,data,updated_by) VALUES($1,$2,$3,'{}'::jsonb,$4) ON CONFLICT DO NOTHING`, [id, ta, sem, a.username]);
         const lama = (await client.query('SELECT data FROM rapor_pesantren.nilai WHERE santri_id=$1 AND tahun_ajaran=$2 AND semester=$3 FOR UPDATE', [id, ta, sem])).rows[0].data || {};
-        const kb: Record<string, number> = { ...(lama.kitab || {}) };
+        const kb: Record<string, number> = { ...(lama[grup] || {}) };
         for (const [k, v] of Object.entries(ubah)) { if (v === null) delete kb[k]; else kb[k] = Math.round((v as number) * 100) / 100; }
-        const data = { ...lama, kitab: kb };
+        const data = { ...lama, [grup]: kb };
         const r = (await client.query(`UPDATE rapor_pesantren.nilai SET data=$4::jsonb,updated_by=$5,updated_at=now(),version=gen_random_uuid()
-            WHERE santri_id=$1 AND tahun_ajaran=$2 AND semester=$3 RETURNING santri_id,data->'kitab' AS kitab,updated_at,updated_by`, [id, ta, sem, JSON.stringify(data), a.username])).rows[0];
-        await client.query('INSERT INTO rapor_pesantren.audit(username,aksi,ref,data) VALUES($1,$2,$3,$4::jsonb)', [a.username, 'kitab', `${id}|${ta}|${sem}`, JSON.stringify(ubah)]);
+            WHERE santri_id=$1 AND tahun_ajaran=$2 AND semester=$3 RETURNING santri_id,data->$6 AS nilai,updated_at,updated_by`, [id, ta, sem, JSON.stringify(data), a.username, grup])).rows[0];
+        await client.query('INSERT INTO rapor_pesantren.audit(username,aksi,ref,data) VALUES($1,$2,$3,$4::jsonb)', [a.username, grup, `${id}|${ta}|${sem}`, JSON.stringify(ubah)]);
         saved.push(r);
       }
       await client.query('COMMIT');
