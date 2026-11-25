@@ -142,3 +142,10 @@ html[data-nuris-theme=dark] .rp-toast{background:#183f26}.rp-toast.err{backgroun
 :is(.dark,[data-nuris-theme=dark]) .rp-avg{background:#3a2a12;color:#ffd7a8}
 .rp-ind .rp-choice{display:flex;gap:5px;flex:none}.rp-ind .rp-choice button{width:40px;min-width:40px;height:36px;font-size:15px}
 .rp-print-layout>*{min-width:0}
+/* Akses unit (25 Nov 2026): kamar lain di unit yang sama — khusus Kajian Kitab */
+.rp-lain{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;padding:12px 14px;border-radius:14px;background:var(--nuris-accent-soft,#f1ebf8);color:var(--ink);font-size:13px;line-height:1.5}
+.rp-lain svg{flex:none;margin-top:2px;color:var(--nuris-accent-strong,#6f42a6)}
+.rp-card.lain{background:#fbfcfb;border-style:dashed}
+.rp-card.lain .rp-card-ic{background:var(--nuris-accent-soft,#f1ebf8);color:var(--nuris-accent-strong,#6f42a6)}
+.rp-card.ampu{box-shadow:inset 0 0 0 2px var(--nuris-accent-strong,#6f42a6)}
+.rp-grid input[readonly],.rp-grid textarea[readonly]{background:transparent;color:var(--muted);cursor:not-allowed}

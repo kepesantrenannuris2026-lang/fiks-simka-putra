@@ -4,19 +4,20 @@ export const APP = 'Mutabaah Yaumiyyah';
 export const bersama = { admin: false };
 // Jembatan antarmodul: santri yang sama dibuka di Ibadah bulanan ⇄ Ujian praktik (id = public.santri.id di keduanya).
 export const jembatan: { keUjian: { id: string; nama: string } | null; keIbadah: string | null; ringkasUjian: ((id: string) => string) | null; onUjian: (() => void) | null } = { keUjian: null, keIbadah: null, ringkasUjian: null, onUjian: null };
-const G1 = 'Ibadah bulanan', G2 = 'Ujian praktik ibadah';
+const G1 = 'Ibadah bulanan', G2 = 'Ujian praktik ibadah', G3 = 'Kajian kitab';
 const UJIAN = ['peserta', 'ujian-rekap', 'rubrik', 'materi'];
 export function navGabungan(): NavItem[] {
   const n: NavItem[] = [
     { id: 'isian', label: 'Isian bulanan', icon: I.edit, group: G1 }, { id: 'rekap', label: 'Rekap ibadah', icon: I.chart, group: G1 },
+    { id: 'kitab', label: 'Nilai kajian kitab', icon: I.book, group: G3 },
     { id: 'peserta', label: 'Peserta ujian', icon: I.users, group: G2 }, { id: 'ujian-rekap', label: 'Rekap ujian', icon: I.list, group: G2 }, { id: 'rubrik', label: 'Rubrik', icon: I.book, group: G2 },
   ];
   if (bersama.admin) n.push({ id: 'materi', label: 'Periode & materi', icon: I.gear, group: G2 });
   return n;
 }
-// Menu bawah (HP) tetap sama di semua halaman: Isian · Rekap · Ujian · Menu.
+// Menu bawah (HP) tetap sama di semua halaman: Isian · Rekap · Kitab · Ujian · Menu.
 export const bottomOf = (_active: string): NavItem[] => [
-  { id: 'isian', label: 'Isian', icon: I.edit }, { id: 'rekap', label: 'Rekap', icon: I.chart },
+  { id: 'isian', label: 'Isian', icon: I.edit }, { id: 'rekap', label: 'Rekap', icon: I.chart }, { id: 'kitab', label: 'Kitab', icon: I.book },
   { id: 'peserta', label: 'Ujian', icon: I.award, also: UJIAN },
 ];
 // Sub-menu Ujian di atas halaman (Peserta · Rekap · Rubrik · Periode), hanya saat bagian Ujian dibuka.

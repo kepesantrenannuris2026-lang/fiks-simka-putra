@@ -1,13 +1,14 @@
 // Mutabaah Yaumiyyah — aplikasi gabungan: Isian/Rekap ibadah bulanan (Yaumiyyah) + Ujian Praktik Ibadah.
-// Alamat: #isian #rekap (Yaumiyyah) · #peserta #ujian-rekap #rubrik #materi (Ujian Praktik). Tautan lama
+// Alamat: #isian #rekap (Yaumiyyah) · #kitab (Nilai kajian kitab → Rapor Pesantren) · #peserta #ujian-rekap #rubrik #materi (Ujian Praktik). Tautan lama
 // /ujian-praktik/#x dialihkan ke sini (#rekap lama Ujian → #ujian-rekap).
 import { yaum } from './main';
 import { ujian, siapkanUjian } from '../../ujian-praktik/src/main';
 import { jembatan } from './nav';
+import { kitab } from './kitab';
 
 type Mod = typeof yaum;
 const ROUTE: Record<string, [Mod, string]> = {
-  isian: [yaum, 'isian'], rekap: [yaum, 'rekap'], rapor: [yaum, 'rekap'],
+  isian: [yaum, 'isian'], rekap: [yaum, 'rekap'], rapor: [yaum, 'rekap'], kitab: [kitab as Mod, 'kitab'],
   peserta: [ujian as Mod, 'peserta'], 'ujian-rekap': [ujian as Mod, 'rekap'], rubrik: [ujian as Mod, 'rubrik'], materi: [ujian as Mod, 'materi'],
 };
 let cur: Mod | null = null, curHash = '';
