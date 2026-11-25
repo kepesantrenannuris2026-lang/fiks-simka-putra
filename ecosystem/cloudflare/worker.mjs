@@ -11,7 +11,7 @@ export default {
     if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD', ...sec } });
     if (p === '/ujian-praktik' || p.startsWith('/ujian-praktik/')) {
       const seg = p.split('/')[2] || '';
-      const tab = { peserta: 'peserta', rekap: 'ujian-rekap', rubrik: 'rubrik', materi: 'materi' }[seg] || 'peserta';
+      const tab = { peserta: 'peserta', rekap: 'ujian-rekap', rubrik: 'rubrik', 'bank-soal': 'bank-soal', materi: 'materi' }[seg] || 'peserta';
       return new Response(null, { status: 302, headers: { Location: `/yaumiyyah/#${tab}`, 'Cache-Control': 'no-cache', ...sec } });
     }
     const module = SPA.find((id) => p === `/${id}` || p.startsWith(`/${id}/`));

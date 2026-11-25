@@ -1,6 +1,7 @@
 // Ujian Praktik Ibadah — aplikasi penguji & pengelola (desain Mutabaah).
 import { RUBRIK, MATERI_DEFAULT, GRUP, grupOf, materiOf, totalSkor } from './materi';
 import { huruf, MAKNA } from '../../shared/skala';
+import { LAMPIRAN, JUKLAK, FOLDER, lampiranSub, lampiranGrup, lihatUrl, pratinjauUrl, unduhUrl, type Lampiran } from './lampiran';
 import { shell, $, $$, esc, icon, I, toast, apiOf, token, needLogin, loading, empty, sessionEnded, unitLabel, download, csvOf } from '../../shared/ui';
 import { APP, navGabungan, bottomOf, bersama, segmen, jembatan } from '../../yaumiyyah-app/src/nav';
 
@@ -22,16 +23,16 @@ function periodePicker() {
 }
 // Modul Ujian Praktik di dalam aplikasi gabungan Mutabaah Yaumiyyah (lihat yaumiyyah-app/src/gabung.ts).
 // Tampilan internal tetap 'peserta' | 'rekap' | 'rubrik' | 'materi'; di menu & alamat, 'rekap' menjadi 'ujian-rekap'.
-export const ujian = { views: ['peserta', 'rekap', 'rubrik', 'materi'], active: false, started: false, canLeave: () => true, show: async (_v: string) => {} };
+export const ujian = { views: ['peserta', 'rekap', 'rubrik', 'bank-soal', 'materi'], active: false, started: false, canLeave: () => true, show: async (_v: string) => {} };
 const navId = (v: string) => (v === 'rekap' ? 'ujian-rekap' : v);
 function render() {
   if (!ujian.active) return;
-  const title = { peserta: 'Peserta ujian', rekap: 'Rekap ujian', rubrik: 'Rubrik ujian', materi: 'Periode & materi' }[st.view as string] || 'Ujian Praktik Ibadah';
-  const body = !st.loaded ? loading() : st.view === 'rekap' ? rekapView() : st.view === 'rubrik' ? rubrikView() : st.view === 'materi' ? materiView() : pesertaView();
+  const title = { peserta: 'Peserta ujian', rekap: 'Rekap ujian', rubrik: 'Rubrik ujian', 'bank-soal': 'Bank soal & panduan', materi: 'Periode & materi' }[st.view as string] || 'Ujian Praktik Ibadah';
+  const body = !st.loaded ? loading() : st.view === 'rekap' ? rekapView() : st.view === 'rubrik' ? rubrikView() : st.view === 'bank-soal' ? bankView() : st.view === 'materi' ? materiView() : pesertaView();
   app.innerHTML = shell({ app: APP, title, nav: navGabungan(), bottom: bottomOf(navId(st.view)), active: navId(st.view), top: segmen(navId(st.view)), user: st.user && { nama: st.user.nama, peran: peran() }, actions: periodePicker() }, body);
 }
 ujian.show = async (view: string) => {
-  st.view = ['peserta', 'rekap', 'rubrik', 'materi'].includes(view) ? view : 'peserta'; st.edit = null;
+  st.view = ['peserta', 'rekap', 'rubrik', 'bank-soal', 'materi'].includes(view) ? view : 'peserta'; st.edit = null;
   if (st.user && !st.user.admin && st.view === 'materi') st.view = 'peserta';
   const ke = jembatan.keUjian; jembatan.keUjian = null;
   if (ke) { st.view = 'peserta'; st.f = { unit: '', kamar: '', halaqah: '', tingkat: '', kp: '', q: ke.nama, status: '' }; }
@@ -113,6 +114,7 @@ function nilaiDialog(id: string) {
     const who = s.penguji?.[k] ? st.penguji[s.penguji[k]] || s.penguji[k] : '';
     return `<section class="up-rub"><header><div><small>${r.jenis === 'praktik' ? 'Praktik' : 'Lisan'}</small><h3>${esc(r.nama)} <span lang="ar" dir="rtl">${r.ar}</span></h3>${r.catatan ? `<p>${esc(r.catatan)}</p>` : ''}</div>
       <div class="up-total" data-total="${k}">${t == null ? '<b>–</b><small>Belum dinilai</small>' : `<b>${fmt(t)}</b><small>${huruf(t)} · ${MAKNA[huruf(t)]}</small>`}</div></header>
+      ${lampiranChips(lampiranSub(grupOf(s.unit, s.tingkat), k, r.jenis), r.jenis === 'lisan' ? 'Bank soal' : 'Panduan')}
       ${r.aspek.map((a, i) => `<label class="up-asp"><span>${esc(a.label)}</span><span class="up-inp"><input type="number" inputmode="decimal" min="0" max="${a.max}" step="1" data-k="${k}" data-i="${i}" value="${draft[k][i] ?? ''}" aria-label="${esc(a.label)} (maks ${a.max})"><small>/ ${a.max}</small><button type="button" class="up-max" data-max="${k}.${i}" title="Isi poin penuh">maks</button></span></label>`).join('')}
       ${who ? `<p class="up-who">Penguji: ${esc(who)}</p>` : ''}</section>`;
   };
@@ -140,6 +142,7 @@ function nilaiDialog(id: string) {
   m.addEventListener('click', async (e) => {
     const b = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!b) { if (e.target === m) m.remove(); return; }
     if (b.dataset.max) { const [k, i] = b.dataset.max.split('.'); const max = RUBRIK[k].aspek[Number(i)].max; draft[k][Number(i)] = max; (m.querySelector(`input[data-k="${k}"][data-i="${i}"]`) as HTMLInputElement).value = String(max); refresh(k); return; }
+    if (b.dataset.lid) return bukaLampiran(b.dataset.lid);
     if (b.dataset.x === 'tutup') return m.remove();
     if (b.dataset.x === 'ok' || b.dataset.x === 'next') {
       b.disabled = true;
@@ -193,6 +196,44 @@ function rubrikView() {
     <p class="ns-muted">Nilai praktik dan nilai lisan ditampilkan per komponen, tanpa rata-rata gabungan atau bobot persentase. Skala ini menjadi dasar nilai di Rapor Pesantren.</p></section>
     <section class="ns-card"><h3>Materi ${esc(st.periode?.nama || 'semester I')}</h3><table class="ns-table"><tbody>${materi}</tbody></table></section></div>
     <div class="up-ref-grid">${rub}</div>`;
+}
+
+/* ---------- Bank soal & panduan ---------- */
+// Tombol lampiran (dipakai di dialog penilaian & halaman Bank soal); dibuka di penampil dalam aplikasi.
+function lampiranChips(ls: Lampiran[], label: string) {
+  if (!ls.length) return '';
+  return `<div class="up-lamp" aria-label="${esc(label)}"><small>${esc(label)}</small>${ls.map((l) => `<button type="button" class="up-lamp-btn" data-lid="${l.id}">${icon(l.jenis === 'bank' ? I.book : I.pdf, 15)}${esc(l.judul)}</button>`).join('')}</div>`;
+}
+const kartuLampiran = (l: Lampiran) => `<li><button type="button" class="up-lamp-row" data-lid="${l.id}">${icon(l.jenis === 'bank' ? I.book : I.pdf, 18)}<span>${esc(l.judul)}<small>${l.berkas === 'gambar' ? 'Gambar' : 'PDF'} · Google Drive</small></span></button></li>`;
+const namaGrup = (g: string) => `Kelas ${g.split('-')[0]} ${g.endsWith('putra') ? 'Putra' : 'Putri'}`;
+function bankView() {
+  // Musyrif/penguji melihat tingkat yang ada pesertanya lebih dulu; pimpinan melihat semua tingkat.
+  const jml = (g: string) => st.peserta.filter((s: P) => grupOf(s.unit, s.tingkat) === g).length;
+  const urut = [...GRUP].sort((a, b) => (st.user?.admin ? 0 : Number(!jml(a)) - Number(!jml(b))));
+  const kartu = urut.map((g) => {
+    const mat = materiOf(st.periode?.materi, g), { bank, panduan } = lampiranGrup(g, mat);
+    const lisan = mat.map((k) => RUBRIK[k]).filter((r) => r?.jenis === 'lisan').map((r) => r.nama).join(', ');
+    const n = jml(g);
+    return `<section class="ns-card up-bank"><header><h3>${namaGrup(g)}</h3>${n ? `<span class="ns-pill">${n} peserta</span>` : ''}</header>
+      <p class="ns-muted">Materi: ${esc(mat.map((k) => RUBRIK[k]?.nama).filter(Boolean).join(', ') || '–')}</p>
+      <h4>Bank soal ${esc(lisan || 'lisan')}</h4>${bank.length ? `<ul class="up-lamp-list">${bank.map(kartuLampiran).join('')}</ul>` : `<p class="ns-muted">${/doa/.test(mat.join()) ? 'Doa Ba’da Salat dinilai langsung dengan rubrik; tidak ada bank soal.' : 'Belum ada bank soal untuk tingkat ini.'}</p>`}
+      ${panduan.length ? `<h4>Panduan praktik</h4><ul class="up-lamp-list">${panduan.map(kartuLampiran).join('')}</ul>` : ''}</section>`;
+  }).join('');
+  return `<section class="ns-hero anim-rise"><div><p class="ns-eyebrow">${esc(st.periode?.nama || 'Semester 1 2026/2027')}</p><h2>Bank soal & panduan</h2><p>Bank soal ujian lisan per tingkat dan panduan materi praktik. Saat menilai, berkas yang sama muncul di setiap subujian santri. Penguji memilih tiga pertanyaan dari bank soal tingkatnya.</p></div></section>
+    <section class="ns-card up-bank"><header><h3>Berlaku untuk semua tingkat</h3></header><ul class="up-lamp-list">${JUKLAK.map(kartuLampiran).join('')}</ul><p class="ns-muted"><a href="${FOLDER}" target="_blank" rel="noopener">Buka folder di Google Drive</a></p></section>
+    <div class="up-bank-grid">${kartu}</div>`;
+}
+// Penampil lampiran: pratinjau Google Drive di dalam aplikasi, dengan tautan buka & unduh.
+function bukaLampiran(id: string) {
+  const l = LAMPIRAN.find((x) => x.id === id); if (!l) return;
+  const m = document.createElement('div'); m.className = 'ns-modal up-viewer'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', l.judul);
+  m.innerHTML = `<div class="ns-modal-box"><header><div><small>${l.jenis === 'bank' ? 'Bank soal ujian lisan' : l.jenis === 'juklak' ? 'Petunjuk pelaksanaan' : 'Panduan praktik'}</small><h2>${esc(l.judul)}</h2></div><button class="ns-icon" data-x="tutup" aria-label="Tutup">${icon(I.x)}</button></header>
+    <div class="up-viewer-body"><iframe src="${pratinjauUrl(l)}" title="${esc(l.judul)}" allow="autoplay" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+    <footer><small class="ns-muted">Berkas tidak tampil? Buka langsung di Google Drive.</small><span class="ns-grow"></span><a class="ns-btn" href="${unduhUrl(l)}" target="_blank" rel="noopener">${icon(I.down, 16)}Unduh</a><a class="ns-btn primary" href="${lihatUrl(l)}" target="_blank" rel="noopener">Buka di Drive</a></footer></div>`;
+  document.body.append(m); (m.querySelector('[data-x]') as HTMLElement).focus();
+  const tutup = () => m.remove();
+  m.addEventListener('click', (e) => { if (e.target === m || (e.target as HTMLElement).closest('[data-x=tutup]')) tutup(); });
+  m.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); tutup(); } });
 }
 
 /* ---------- Periode & materi (pimpinan) ---------- */
@@ -257,6 +298,7 @@ function kpPaste() {
 /* ---------- Peristiwa ---------- */
 document.addEventListener('click', (e) => {
   if (!ujian.active) return; // perpindahan menu ditangani gabung.ts
+  const lb = (e.target as HTMLElement).closest<HTMLElement>('.up-lamp-row[data-lid]'); if (lb) { bukaLampiran(lb.dataset.lid!); return; }
   const t = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!t) return;
   const a = t.dataset.act;
   if (a === 'nilai') nilaiDialog(t.dataset.id!);
