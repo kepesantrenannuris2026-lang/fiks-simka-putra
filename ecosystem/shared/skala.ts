@@ -8,11 +8,12 @@ export const normHuruf = (v: unknown): Huruf | '' => {
   const s = String(v ?? '').trim().toUpperCase().replace(/\s+/g, '').replace(/^B\+$|^BPLUS$/, 'B+');
   return (HURUF as readonly string[]).includes(s) ? (s as Huruf) : '';
 };
-// Panduan Penilaian Akhlak: skor indikator 1–4, rerata aspek → predikat.
-export const hurufAkhlak = (avg: number | null) => (avg == null ? '' : avg >= 3.5 ? 'A' : avg >= 2.75 ? 'B+' : avg >= 2 ? 'B' : 'C');
+// Panduan Penilaian Akhlak (revisi Nov 2026): skor indikator 1–4; keempat indikator wajib diberi skor,
+// JUMLAH skor satu aspek (4–16) dikonversi: 14–16 A, 11–13 B+, 8–10 B, 4–7 C (setara rerata 3,50 / 2,75 / 2,00).
+export const hurufAkhlakJumlah = (jml: number | null) => (jml == null ? '' : jml >= 14 ? 'A' : jml >= 11 ? 'B+' : jml >= 8 ? 'B' : 'C');
 export const RUBRIK_AKHLAK = [
-  { skor: 4, huruf: 'A', label: 'Sangat Baik', rentang: '3,50 – 4,00', pedoman: 'Perilaku tampak konsisten dan umumnya dilakukan atas kesadaran sendiri.' },
-  { skor: 3, huruf: 'B+', label: 'Baik', rentang: '2,75 – 3,49', pedoman: 'Perilaku umumnya tampak. Santri sesekali perlu diingatkan dan segera mengikuti arahan.' },
-  { skor: 2, huruf: 'B', label: 'Cukup', rentang: '2,00 – 2,74', pedoman: 'Perilaku mulai tampak. Santri masih sering memerlukan pengingat atau pendampingan.' },
-  { skor: 1, huruf: 'C', label: 'Perlu Pembinaan', rentang: '1,00 – 1,99', pedoman: 'Perilaku yang diharapkan jarang tampak atau terjadi pelanggaran berulang meski sudah dibina.' },
+  { skor: 4, huruf: 'A', label: 'Sangat Baik', jumlah: '14 – 16', pedoman: 'Perilaku tampak konsisten dan umumnya dilakukan atas kesadaran sendiri.' },
+  { skor: 3, huruf: 'B+', label: 'Baik', jumlah: '11 – 13', pedoman: 'Perilaku umumnya tampak. Santri sesekali perlu diingatkan dan segera mengikuti arahan.' },
+  { skor: 2, huruf: 'B', label: 'Cukup', jumlah: '8 – 10', pedoman: 'Perilaku mulai tampak. Santri masih sering harus diingatkan atau didampingi.' },
+  { skor: 1, huruf: 'C', label: 'Perlu Pembinaan', jumlah: '4 – 7', pedoman: 'Perilaku yang diharapkan jarang tampak atau masih terjadi kejadian berulang meski sudah diingatkan.' },
 ] as const;

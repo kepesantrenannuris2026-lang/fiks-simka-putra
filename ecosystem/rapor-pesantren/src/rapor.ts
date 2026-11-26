@@ -1,5 +1,5 @@
 import { BAGIAN, itemsFor, predikatAngka, makna, jenjang, Santri, INDIKATOR_AKHLAK } from './kurikulum';
-import { hurufAkhlak } from '../../shared/skala';
+import { hurufAkhlakJumlah } from '../../shared/skala';
 import { CAP, TTD_KABID, KABID } from '../../shared/pengesahan';
 
 export type Ctx = { ta: string; sem: number; kamar: any; settings: any; logo: string; paper: 'A4' | 'F4' };
@@ -16,15 +16,17 @@ export function nilaiButir(bagian: string, k: string, data: any, auto: any): { v
   if (isi !== undefined && isi !== null && isi !== '') return { v: isi, auto: false };
   if (bagian === 'ibadah' && auto?.yaumiyyah?.skor?.[k] != null) return { v: predikatAngka(auto.yaumiyyah.skor[k]), auto: true };
   if (bagian === 'praktik' && auto?.praktik?.nilai?.[k] != null) return { v: Number(auto.praktik.nilai[k]), auto: true };
-  if (bagian === 'akhlak') { const r = rerataAkhlak(data, k); if (r != null) return { v: hurufAkhlak(r), auto: true }; }
+  if (bagian === 'akhlak') { const j = jumlahAkhlak(data, k); if (j.jumlah != null) return { v: hurufAkhlakJumlah(j.jumlah), auto: true }; }
   if (bagian === 'hadis' && k === 'jumlah' && auto?.hadis?.hafal != null) return { v: auto.hadis.hafal, auto: true };
   return { v: null, auto: false };
 }
 
-// Rerata skor indikator (1–4) satu aspek akhlak; indikator yang belum teramati tidak dihitung.
-export function rerataAkhlak(data: any, aspek: string): number | null {
-  const n = (INDIKATOR_AKHLAK[aspek] || []).map((_, i) => data?.akhlak_skor?.[`${aspek}_${i + 1}`]).filter((v) => typeof v === 'number' && v >= 1 && v <= 4) as number[];
-  return n.length ? Math.round((n.reduce((a, b) => a + b, 0) / n.length) * 100) / 100 : null;
+// Jumlah skor indikator (1–4) satu aspek akhlak. Panduan revisi: keempat indikator WAJIB diberi skor;
+// bila belum lengkap, jumlah = null (predikat belum dapat ditetapkan).
+export function jumlahAkhlak(data: any, aspek: string): { jumlah: number | null; terisi: number; total: number } {
+  const ind = INDIKATOR_AKHLAK[aspek] || [];
+  const n = ind.map((_, i) => data?.akhlak_skor?.[`${aspek}_${i + 1}`]).filter((v) => typeof v === 'number' && v >= 1 && v <= 4) as number[];
+  return { jumlah: n.length === ind.length && ind.length ? n.reduce((a, b) => a + b, 0) : null, terisi: n.length, total: ind.length };
 }
 
 export function keterangan(bagian: string, v: any, s: Santri, settings: any) {

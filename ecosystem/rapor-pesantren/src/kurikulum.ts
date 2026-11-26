@@ -31,37 +31,37 @@ export const AKHLAK: Item[] = [
   { k: 'disiplin', id: 'Ketertiban dan Kedisiplinan', ar: 'النظام والانضباط' },
   { k: 'mandiri', id: 'Kemandirian', ar: 'الاعتماد على النفس' },
 ];
-// Panduan Penilaian Akhlak Santri: 5 aspek × 4 indikator, skor 1–4.
+// Panduan Penilaian Akhlak Santri (revisi Nov 2026): 5 aspek × 4 indikator, skor 1–4.
 export const INDIKATOR_AKHLAK: Record<string, string[]> = {
   pergaulan: [
-    'Menghormati guru, musyrif, dan orang yang lebih tua serta bersikap ramah dan peduli kepada teman dan santri yang lebih muda.',
-    'Menjaga keamanan teman dengan menghindari perundungan, intimidasi, pemaksaan, dan tindakan fisik yang menyakiti.',
-    'Menghargai ruang pribadi teman, meminta izin sebelum meminjam, dan mengembalikan barang pinjaman.',
-    'Bekerja sama, menyelesaikan perselisihan dengan baik, dan meminta bantuan pembina bila diperlukan.',
+    'Menghormati guru, musyrif, dan orang yang lebih tua serta bersikap ramah dan peduli kepada teman dan adik kelas.',
+    'Menjaga kenyamanan di asrama dengan tidak membuat gaduh dan menghindari pertikaian.',
+    'Menghargai ruang pribadi teman, menjaga hak orang lain, dan tidak ada catatan pelanggaran yang berkaitan dengan muamalah sesama.',
+    'Mudah bekerja sama, tidak berdiam diri, dan mendapatkan penilaian baik dari teman-temannya.',
   ],
   lisan: [
     'Mengucapkan dan menjawab salam serta bertutur sopan kepada guru, musyrif, dan teman.',
     'Menjaga ucapan dari berkata kasar, berkata buruk, ejekan, atau julukan yang tidak disukai teman.',
-    'Berkata jujur dan menjaga diri dari menyebarkan aib atau kabar yang belum jelas.',
-    'Menyampaikan pendapat atau keluhan dengan santun dan mendengarkan orang lain.',
+    'Berkata jujur dan menjaga diri dari berita yang belum jelas.',
+    'Menyampaikan pendapat dengan santun dan mendengarkan orang lain.',
   ],
   bersih: [
     'Menjaga kebersihan diri dan pakaian serta berpenampilan rapi sesuai aturan pesantren.',
     'Menata tempat tidur, lemari, sepatu, handuk, dan perlengkapan pribadi pada tempatnya.',
     'Membersihkan alat makan, membuang sampah pada tempatnya, dan menjaga fasilitas bersama.',
-    'Menuntaskan piket sesuai jadwal dan menerapkan 5R (Ringkas, Rapi, Resik, Rawat, Rajin).',
+    'Menuntaskan piket sesuai jadwal dan menerapkan 5R (Ringkas, Rapi, Resik, Rawat, dan Rajin) di pesantren.',
   ],
   disiplin: [
-    'Hadir tepat waktu dan mengikuti kegiatan wajib, seperti salat berjamaah dan kajian.',
-    'Menjaga ketertiban saat antre, mengikuti kegiatan, dan menggunakan fasilitas bersama.',
-    'Mematuhi aturan keluar-masuk asrama, waktu istirahat, dan penggunaan barang atau fasilitas.',
-    'Mengikuti prosedur perizinan ketika berhalangan dan menindaklanjuti arahan pembina.',
+    'Selalu hadir tepat waktu dan disiplin dalam mengikuti kegiatan pesantren, seperti Ibadah, Tahfidz, dan Kajian (atau kegiatan pesantren lainnya).',
+    'Tidak melakukan pelanggaran kategori sedang – berat, dan tidak tercatat melakukan pelanggaran ringan yang berulang.',
+    'Tidak memiliki catatan terkait akhlak dan karakter dari musyrif terkait atau dari asatidzah lainnya.',
+    'Selalu mengikuti arahan musyrif dalam setiap hal kedisiplinan dan ketertiban.',
   ],
   mandiri: [
-    'Menyiapkan pakaian, perlengkapan ibadah, dan kebutuhan belajar sesuai tanggung jawabnya.',
-    'Mengatur waktu belajar, ibadah, istirahat, dan tugas pribadi dengan semakin sedikit pengingat.',
-    'Menyelesaikan tugas pribadi dan merawat perlengkapan milik sendiri.',
-    'Mencoba mengatasi kendala sesuai kemampuan dan meminta bantuan bila diperlukan.',
+    'Mengurus kebutuhan harian sendiri: mencuci, menjemur, dan melipat pakaian serta menyiapkan perlengkapan ibadah dan belajar (sajadah, Al-Qur’an, kitab, alat tulis) tanpa disuruh.',
+    'Mengatur waktu belajar, ibadah, istirahat, dan kegiatan lainnya dengan baik.',
+    'Mengelola uang saku dan barang pribadi dengan bijak.',
+    'Menyelesaikan tugas pribadi tepat waktu, seperti setoran hafalan, murojaah, amanah organisasi, atau lainnya.',
   ],
 };
 export const KITAB: Record<string, Item> = {

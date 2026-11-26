@@ -1,6 +1,6 @@
 import { BAGIAN, KITAB, KITAB_KELAS, AKHLAK, INDIKATOR_AKHLAK, itemsFor, Santri, Item } from './kurikulum';
-import { HURUF, normHuruf, hurufAkhlak, RUBRIK_AKHLAK } from '../../shared/skala';
-import { raporHTML, RAPOR_CSS, kelengkapan, nilaiButir, fitPage, rerataAkhlak, pageSize, Ctx } from './rapor';
+import { HURUF, normHuruf, hurufAkhlakJumlah, RUBRIK_AKHLAK } from '../../shared/skala';
+import { raporHTML, RAPOR_CSS, kelengkapan, nilaiButir, fitPage, jumlahAkhlak, pageSize, Ctx } from './rapor';
 import { unduhPdf } from '../../shared/pdf';
 import { shell as nsShell } from '../../shared/ui';
 
@@ -160,12 +160,13 @@ function raporView() {
   return `<div class="rp-print-layout"><aside class="rp-list"><div class="rp-list-head"><label class="rp-chk"><input type="checkbox" data-act="selall" ${n === st.students.length && n ? 'checked' : ''}><span>Pilih semua</span></label><small>${n} dipilih</small></div><ul>${list}</ul></aside>
   <section class="rp-preview"><div class="rp-actions">
     <div class="rp-seg sm" role="tablist" aria-label="Ukuran kertas" data-nuris-glass><button role="tab" aria-selected="${st.paper === 'A4'}" data-act="paper" data-v="A4">A4</button><button role="tab" aria-selected="${st.paper === 'F4'}" data-act="paper" data-v="F4">F4</button></div>
+    <span id="rp-autosave" class="rp-autosave" aria-live="polite"></span>
     <span class="rp-grow"></span>
     <button class="rp-btn ghost" data-act="print1">${icon(I.print)}Cetak santri ini</button>
     <button class="rp-btn ghost" data-act="pdf1">${icon(I.pdf)}PDF santri ini</button>
-    <button class="rp-btn primary" data-act="printsel" ${n ? '' : 'disabled'}>${icon(I.print)}Cetak ${n || ''} terpilih</button>
-    <button class="rp-btn primary" data-act="pdfsel" ${n ? '' : 'disabled'}>${icon(I.pdf)}PDF ${n || ''} terpilih</button></div>
-    <p class="rp-tip">Klik nilai atau catatan pada rapor untuk mengubahnya sebelum dicetak. Perubahan tersimpan otomatis.</p>
+    ${n ? `<button class="rp-btn ghost" data-act="printsel">${icon(I.print)}Cetak ${n} terpilih</button>
+    <button class="rp-btn ghost" data-act="pdfsel">${icon(I.pdf)}PDF ${n} terpilih</button>` : ''}</div>
+    <p class="rp-tip">Klik nilai atau catatan pada rapor untuk mengubahnya. Setiap perubahan <b>langsung tersimpan otomatis</b> — tidak perlu mencetak. Cetak/PDF hanya bila rapor siap dibagikan.</p>
     <div class="rp-paper-scroll"><div id="preview" class="editing"></div></div></section></div>`;
 }
 function drawPreview() {
@@ -225,21 +226,21 @@ function editPopover(target: HTMLElement) {
 const KOOR_UNITS = ['SMP Ikhwan', 'SMA Ikhwan', 'MA Ikhwan', 'SMP Akhwat', 'SMA Akhwat', 'MA Akhwat'];
 function akhlakLegend() {
   return `<details class="rp-legend" open><summary>Rubrik penilaian akhlak (Panduan Penilaian Akhlak Santri)</summary>
-  <table><thead><tr><th>Skor</th><th>Predikat</th><th>Pedoman pemberian skor</th><th>Rentang rerata aspek</th></tr></thead><tbody>
-  ${RUBRIK_AKHLAK.map((r) => `<tr><td>${r.skor}</td><td><b>${r.huruf}</b> ${r.label}</td><td>${r.pedoman}</td><td>${r.rentang}</td></tr>`).join('')}</tbody></table>
-  <p>Nilai aspek = jumlah skor indikator yang teramati ÷ banyaknya indikator yang teramati (dua angka di belakang koma), lalu dicocokkan dengan rentang. Sakit atau udzur syar'i tidak dihitung sebagai pelanggaran. Gunakan tombol <b>Indikator</b> pada nama santri, atau ketik langsung huruf A, B+, B, C.</p></details>`;
+  <table><thead><tr><th>Skor</th><th>Pedoman pemberian skor (per indikator)</th><th>Nilai aspek</th><th>Jumlah skor 4 indikator</th></tr></thead><tbody>
+  ${RUBRIK_AKHLAK.map((r) => `<tr><td>${r.skor}</td><td>${r.pedoman}</td><td><b>${r.huruf}</b> ${r.label}</td><td>${r.jumlah}</td></tr>`).join('')}</tbody></table>
+  <p>Cara menghitung nilai aspek: beri skor 1–4 pada <b>keempat</b> indikator (semua wajib teramati; bila ada yang belum, lengkapi dulu pengamatannya), jumlahkan, lalu cocokkan dengan tabel konversi di atas. Contoh: 4 + 3 + 3 + 2 = 12 → <b>B+</b>. Kondisi sakit atau udzur syar'i dimaklumi. Gunakan tombol <b>Indikator</b> pada nama santri, atau ketik langsung huruf A, B+, B, C.</p></details>`;
 }
 function indikatorDialog(s: Student) {
   $('.rp-modal')?.remove();
   const d = dataOf(s); const skor = { ...(d.akhlak_skor || {}) };
   const m = document.createElement('div'); m.className = 'rp-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', 'Skor indikator akhlak');
   const body = () => AKHLAK.map((a, ai) => {
-    const avg = rerataAkhlak({ akhlak_skor: skor }, a.k);
-    return `<fieldset><legend>Aspek ${ai + 1}. ${esc(a.id)} <span lang="ar" dir="rtl">${a.ar}</span><b class="rp-avg">${avg == null ? 'belum teramati' : `${String(avg.toFixed(2)).replace('.', ',')} → ${hurufAkhlak(avg)}`}</b></legend>
+    const j = jumlahAkhlak({ akhlak_skor: skor }, a.k);
+    return `<fieldset><legend>Aspek ${ai + 1}. ${esc(a.id)} <span lang="ar" dir="rtl">${a.ar}</span><b class="rp-avg${j.jumlah == null && j.terisi ? ' kurang' : ''}">${j.jumlah != null ? `Jumlah ${j.jumlah} → ${hurufAkhlakJumlah(j.jumlah)}` : j.terisi ? `${j.terisi}/${j.total} indikator · lengkapi dulu` : 'belum teramati'}</b></legend>
     ${INDIKATOR_AKHLAK[a.k].map((t, i) => { const key = `${a.k}_${i + 1}`; return `<div class="rp-ind"><span><small>${ai + 1}.${i + 1}</small> ${esc(t)}</span><span class="rp-choice">${[4, 3, 2, 1].map((n) => `<button type="button" data-k="${key}" data-n="${n}" class="${skor[key] === n ? 'on' : ''}" aria-label="Skor ${n}">${n}</button>`).join('')}<button type="button" data-k="${key}" data-n="0" class="${skor[key] == null ? 'on soft' : 'soft'}" title="Belum cukup teramati">–</button></span></div>`; }).join('')}</fieldset>`;
   }).join('');
   const draw = () => { m.innerHTML = `<div class="rp-modal-box"><header><div><small>Akhlak · skor 1–4 per indikator</small><h2>${esc(s.nama)}</h2></div><button class="rp-iconbtn" data-x="tutup" aria-label="Tutup">✕</button></header>
-    <div class="rp-modal-body">${body()}</div><footer><small>4 Sangat Baik · 3 Baik · 2 Cukup · 1 Perlu Pembinaan · – belum teramati</small><span class="rp-grow"></span><button class="rp-btn ghost" data-x="tutup">Batal</button><button class="rp-btn primary" data-x="ok">Terapkan ke rapor</button></footer></div>`; };
+    <div class="rp-modal-body">${body()}</div><footer><small>Skor 4 · 3 · 2 · 1 per indikator · jumlah 14–16 A · 11–13 B+ · 8–10 B · 4–7 C · keempat indikator wajib diisi</small><span class="rp-grow"></span><button class="rp-btn ghost" data-x="tutup">Batal</button><button class="rp-btn primary" data-x="ok">Terapkan ke rapor</button></footer></div>`; };
   draw(); document.body.append(m); (m.querySelector('[data-n]') as HTMLElement)?.focus();
   m.addEventListener('click', (e) => {
     const t = (e.target as HTMLElement).closest('button') as HTMLElement | null; if (!t) { if (e.target === m) m.remove(); return; }
@@ -248,8 +249,10 @@ function indikatorDialog(s: Student) {
     if (t.dataset.x === 'ok') {
       d.akhlak_skor = Object.keys(skor).length ? skor : undefined; if (!d.akhlak_skor) delete d.akhlak_skor;
       d.akhlak ??= {};
-      for (const a of AKHLAK) { const avg = rerataAkhlak(d, a.k); if (avg != null) d.akhlak[a.k] = hurufAkhlak(avg); }
-      markDirty(s.id); m.remove(); render(); toast('Skor indikator diterapkan ke predikat akhlak.');
+      const kurang: string[] = [];
+      for (const a of AKHLAK) { const j = jumlahAkhlak(d, a.k); if (j.jumlah != null) d.akhlak[a.k] = hurufAkhlakJumlah(j.jumlah); else if (j.terisi) kurang.push(a.id); }
+      markDirty(s.id); m.remove(); render();
+      toast(kurang.length ? `Tersimpan. Aspek ${kurang.join(', ')} belum diberi predikat: lengkapi keempat indikatornya.` : 'Skor indikator diterapkan ke predikat akhlak.', kurang.length ? 'err' : undefined);
     }
   });
   m.addEventListener('keydown', (e) => { if (e.key === 'Escape') m.remove(); });
@@ -273,7 +276,8 @@ function setValue(s: Student, key: string, raw: string): boolean {
   markDirty(s.id); return true;
 }
 let saveTimer = 0;
-function markDirty(id: string) { st.dirty.add(id); saveBar(); clearTimeout(saveTimer); saveTimer = window.setTimeout(save, 1400); }
+// Simpan otomatis: di tampilan rapor langsung (0,3 dtk), di tabel rekap setelah jeda singkat mengetik.
+function markDirty(id: string) { st.dirty.add(id); saveBar(); clearTimeout(saveTimer); saveTimer = window.setTimeout(save, st.mode === 'rapor' ? 300 : 1400); }
 async function save() {
   if (st.saving || !st.dirty.size) return;
   st.saving = true; saveBar();
@@ -295,6 +299,8 @@ function saveBar() {
   if (!bar) { bar = document.createElement('div'); bar.id = 'rp-save'; bar.setAttribute('aria-live', 'polite'); document.body.append(bar); }
   bar.className = st.saving ? 'busy' : st.dirty.size ? 'dirty' : 'clean';
   bar.innerHTML = st.saving ? '<span class="rp-dot"></span>Menyimpan…' : st.dirty.size ? `<span class="rp-dot"></span>${st.dirty.size} santri belum disimpan <button data-act="save">Simpan sekarang</button>` : `${icon(I.check)}Semua nilai tersimpan`;
+  const inl = $('#rp-autosave');
+  if (inl) { inl.className = 'rp-autosave ' + bar.className; inl.innerHTML = st.saving ? '<span class="rp-dot"></span>Menyimpan otomatis…' : st.dirty.size ? '<span class="rp-dot"></span>Perubahan menunggu disimpan…' : `${icon(I.check)}Tersimpan otomatis`; }
 }
 
 function applyAuto() {

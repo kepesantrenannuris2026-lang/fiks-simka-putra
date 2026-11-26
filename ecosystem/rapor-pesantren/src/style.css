@@ -149,3 +149,9 @@ html[data-nuris-theme=dark] .rp-toast{background:#183f26}.rp-toast.err{backgroun
 .rp-card.lain .rp-card-ic{background:var(--nuris-accent-soft,#f1ebf8);color:var(--nuris-accent-strong,#6f42a6)}
 .rp-card.ampu{box-shadow:inset 0 0 0 2px var(--nuris-accent-strong,#6f42a6)}
 .rp-grid input[readonly],.rp-grid textarea[readonly]{background:transparent;color:var(--muted);cursor:not-allowed}
+/* Simpan otomatis di tampilan rapor (26 Nov 2026) */
+.rp-autosave{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:700;background:#e8f5ec;color:var(--leaf-deep,#0a4f2e)}
+.rp-autosave svg{width:16px;height:16px}
+.rp-autosave.dirty{background:var(--saffron-soft,#fdf0e3);color:var(--saffron-text,#8a4a12)}
+.rp-autosave.busy .rp-dot{background:var(--leaf,#0f7a3d);animation:rp-pulse 1s infinite}
+.rp-avg.kurang{color:#b45309}
