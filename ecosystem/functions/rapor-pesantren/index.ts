@@ -174,39 +174,51 @@ async function kamarStudents(a: Actor, kamarId: string, ta: string, sem: number)
         WHERE g.kamar_id=$1 AND ${scope} ORDER BY s.nama`, args)).rows;
 }
 
-// Ujian Tahfidz semester (Mutabaah, tabel public.ujian_semester): hapus hasil yang sudah FINAL agar dapat diuji/diisi ulang.
-// Boleh: penguji yang menginput, musyrif halaqah santri, koordinator unit, pimpinan. Isi lama disimpan di audit Mutabaah.
-function tahfidzHakSql(a: Actor, args: unknown[]) {
+// Ujian Tahfidz semester (Mutabaah, tabel public.ujian_semester): hasil FINAL dapat DIPERBAIKI (dibuka kembali menjadi
+// draft milik pengguna, isi tetap) atau DIHAPUS (kembali "Belum diuji"). Hak: penguji yang menginput, musyrif/ah SATU UNIT
+// (unit santri halaqahnya, unit kamar ampuan, unit koordinasi), dan pimpinan. Isi lama disimpan di audit Mutabaah.
+async function tahfidzUnits(a: Actor): Promise<string[]> {
+  const m = a.musyrif.trim() ? (await q(`SELECT DISTINCT unit FROM public.santri WHERE aktif AND lower(trim(musyrif))=lower(trim($1))`, [a.musyrif])).rows.map((r: any) => r.unit) : [];
+  return [...new Set([...m, ...a.units])];
+}
+function tahfidzHakSql(a: Actor, units: string[], args: unknown[]) {
   if (a.admin) return 'true';
-  args.push(a.username, a.musyrif, a.koordinator);
-  const u = args.length - 2, m = args.length - 1, k = args.length;
-  return `(r.penguji_username=$${u} OR (trim($${m})<>'' AND lower(trim(s.musyrif))=lower(trim($${m}))) OR s.unit=ANY($${k}::text[]))`;
+  args.push(a.username, units);
+  return `(r.penguji_username=$${args.length - 1} OR s.unit=ANY($${args.length}::text[]))`;
 }
 async function tahfidzUjian(path: string, a: Actor, body: any) {
+  const units = a.admin ? [] : await tahfidzUnits(a);
   if (path === 'tahfidz-final') {
     const args: unknown[] = [];
-    const hak = tahfidzHakSql(a, args);
+    const hak = tahfidzHakSql(a, units, args);
     const rows = (await q(`SELECT r.id,r.santri_id,s.nama,s.unit,s.tingkat,r.tahun_ajaran,r.semester,r.tahfidz_nilai AS nilai,r.penguji,r.diperbarui_pada
       FROM public.ujian_semester r JOIN public.santri s ON s.id=r.santri_id
       WHERE r.ujian_status='final' AND r.diperbarui_pada > now() - interval '400 days' AND ${hak} ORDER BY r.diperbarui_pada DESC LIMIT 3000`, args)).rows;
     return { rows };
   }
-  if (path === 'tahfidz-hapus') {
+  if (path === 'tahfidz-hapus' || path === 'tahfidz-buka') {
     const id = String(body.id || '');
     if (!/^[^|]{1,80}\|\d{4}\/\d{4}\|[12]$/.test(id)) throw fail('Data ujian tidak valid.');
     const client = await (await getPool()).connect();
     try {
       await client.query('BEGIN');
       const args: unknown[] = [id];
-      const hak = tahfidzHakSql(a, args);
+      const hak = tahfidzHakSql(a, units, args);
       const old = (await client.query(`SELECT r.*,(${hak}) AS boleh FROM public.ujian_semester r JOIN public.santri s ON s.id=r.santri_id WHERE r.id=$1 FOR UPDATE OF r`, args)).rows[0];
       if (!old) throw fail('Data ujian tidak ditemukan.', 404);
-      if (old.ujian_status !== 'final') throw fail('Ujian ini belum final; gunakan tombol Restart untuk draft.');
-      if (!old.boleh) throw fail('Hanya penguji yang menginput, musyrif halaqah, koordinator unit, atau pimpinan yang dapat menghapus nilai ini.', 403);
-      await client.query(`UPDATE public.ujian_semester SET tahfidz_ujian='[]'::jsonb, tahfidz_nilai=NULL, ujian_status='', penguji_username='', ujian_mulai=NULL,
-          diperbarui_oleh=$2, diperbarui_pada=now() WHERE id=$1`, [id, a.username.slice(0, 100)]);
+      if (old.ujian_status !== 'final') throw fail('Ujian ini belum final; gunakan Lanjutkan atau Restart pada draft.');
+      if (!old.boleh) throw fail('Hanya penguji, musyrif/ah satu unit, koordinator, atau pimpinan yang dapat mengubah nilai ini.', 403);
+      const lama = { status: old.ujian_status, nilai: old.tahfidz_nilai, penguji: old.penguji, penguji_username: old.penguji_username, tanggal: old.tanggal, data: old.tahfidz_ujian };
+      if (path === 'tahfidz-hapus') {
+        await client.query(`UPDATE public.ujian_semester SET tahfidz_ujian='[]'::jsonb, tahfidz_nilai=NULL, ujian_status='', penguji_username='', ujian_mulai=NULL,
+            diperbarui_oleh=$2, diperbarui_pada=now() WHERE id=$1`, [id, a.username.slice(0, 100)]);
+      } else {
+        // Buka kembali sebagai DRAFT milik pengguna ini: rincian ujian tetap, bisa diperbaiki lalu diselesaikan lagi di Mutabaah.
+        await client.query(`UPDATE public.ujian_semester SET ujian_status='draft', penguji=$3, penguji_username=$2, ujian_mulai=coalesce(ujian_mulai, now()),
+            diperbarui_oleh=$2, diperbarui_pada=now() WHERE id=$1`, [id, a.username.slice(0, 100), a.nama.slice(0, 120)]);
+      }
       await client.query('INSERT INTO public.audit (username, aksi, entitas, entitas_id, sebelum, sesudah) VALUES ($1,$2,$3,$4,$5,$6)',
-        [a.username, 'UJIAN_HAPUS', 'UjianSemester', id, JSON.stringify({ status: old.ujian_status, nilai: old.tahfidz_nilai, penguji: old.penguji, penguji_username: old.penguji_username, tanggal: old.tanggal, data: old.tahfidz_ujian }), null]);
+        [a.username, path === 'tahfidz-hapus' ? 'UJIAN_HAPUS' : 'UJIAN_BUKA', 'UjianSemester', id, JSON.stringify(lama), path === 'tahfidz-buka' ? JSON.stringify({ status: 'draft', penguji_username: a.username }) : null]);
       await client.query('COMMIT');
     } catch (e) { await client.query('ROLLBACK'); throw e; } finally { client.release(); }
     return { ok: true };

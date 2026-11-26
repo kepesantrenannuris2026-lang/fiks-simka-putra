@@ -160,4 +160,6 @@ html[data-nuris-app^="simka"] .nuris-sidebar nav { scrollbar-color: #ffffff40 tr
 .nuris-uj-hapus{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;border:1px solid #f3c2c7;background:#fff;color:#b3343a;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .nuris-uj-hapus.sm{height:32px;padding:0 10px;font-size:12.5px}
 .nuris-uj-hapus:hover{background:#fdecee}.nuris-uj-hapus:disabled{opacity:.6;cursor:wait}
-.nuris-uj-wrap{margin-top:10px}
+.nuris-uj-wrap{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.nuris-uj-buka{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;border:1px solid #cfe3d6;background:#fff;color:#0a4f2e;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.nuris-uj-buka.sm{height:32px;padding:0 10px;font-size:12.5px}.nuris-uj-buka:hover{background:#eef7f1}.nuris-uj-buka:disabled{opacity:.6;cursor:wait}

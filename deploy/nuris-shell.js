@@ -206,7 +206,7 @@
   let antre = 0;
   /* ---------- Mutabaah Tahfidz › Ujian Semester: hapus nilai ujian yang sudah final (26 Nov 2026) ----------
      Hasil final terkunci di aplikasi Mutabaah; tombol ini memanggil API Rapor Pesantren (sesi yang sama) untuk
-     mengembalikan santri ke "Belum diuji". Hak: penguji yang menginput, musyrif halaqah, koordinator, pimpinan. */
+     mengembalikan santri ke "Belum diuji". Hak: penguji yang menginput, musyrif/ah satu unit, koordinator, pimpinan. */
   const UJ_API = 'https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/';
   let ujFinal = null, ujMuat = 0;
   const ujToken = () => { try { return localStorage.getItem('mut_token') || ''; } catch { return ''; } };
@@ -224,17 +224,29 @@
     const c = ujFinal.filter((r) => String(r.nama).trim().toUpperCase() === n && (!info || info.includes(`Kelas ${r.tingkat}`)));
     return c.find((r) => nilai == null || angkaUj(r.nilai) === nilai) || c[0] || null;
   }
-  function ujTombol(r, kecil) {
+  const UJ_IKON = {
+    hapus: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    buka: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  };
+  function ujTombol(r, kecil, jenis) {
+    const hapus = jenis === 'hapus', label = hapus ? 'Hapus nilai' : 'Perbaiki';
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'nuris-uj-hapus' + (kecil ? ' sm' : ''); b.dataset.ujId = r.id;
-    b.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Hapus nilai';
-    b.title = 'Hapus nilai ujian ini agar dapat diisi ulang';
+    b.type = 'button'; b.className = 'nuris-uj-' + jenis + (kecil ? ' sm' : ''); b.dataset.ujId = r.id;
+    b.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UJ_IKON[jenis]}</svg>${label}`;
+    b.title = hapus ? 'Hapus nilai ujian ini agar santri dapat diuji ulang dari awal' : 'Buka kembali ujian ini sebagai draft (rincian tetap) untuk diperbaiki';
     b.addEventListener('click', async (e) => {
       e.preventDefault(); e.stopPropagation();
-      if (!confirm(`Hapus nilai ujian tahfidz ${r.nama} (nilai ${angkaUj(r.nilai)}, ${r.tahun_ajaran} smt ${r.semester})?\n\nSantri kembali berstatus "Belum diuji" dan dapat diuji/diisi ulang. Nilai lama tetap tercatat di riwayat.`)) return;
-      b.disabled = true; b.textContent = 'Menghapus…';
-      try { await ujPanggil('tahfidz-hapus', { id: r.id }); alert('Nilai ujian dihapus. Santri kembali berstatus Belum diuji.'); location.reload(); }
-      catch (err) { alert(err.message); b.disabled = false; b.textContent = 'Hapus nilai'; }
+      const info = `${r.nama} (nilai ${angkaUj(r.nilai)}, ${r.tahun_ajaran} smt ${r.semester})`;
+      const tanya = hapus
+        ? `Hapus nilai ujian tahfidz ${info}?\n\nSantri kembali berstatus "Belum diuji" dan dapat diuji ulang dari awal. Nilai lama tetap tercatat di riwayat.`
+        : `Perbaiki nilai ujian tahfidz ${info}?\n\nUjian dibuka kembali sebagai draft atas nama Anda dengan rincian penilaian tetap. Ketuk "Lanjutkan" pada santri ini, perbaiki, lalu selesaikan lagi.`;
+      if (!confirm(tanya)) return;
+      b.disabled = true; b.textContent = hapus ? 'Menghapus…' : 'Membuka…';
+      try {
+        await ujPanggil(hapus ? 'tahfidz-hapus' : 'tahfidz-buka', { id: r.id });
+        alert(hapus ? 'Nilai ujian dihapus. Santri kembali berstatus Belum diuji.' : 'Ujian dibuka kembali sebagai draft. Ketuk "Lanjutkan" pada santri ini untuk memperbaiki.');
+        location.reload();
+      } catch (err) { alert(err.message); b.disabled = false; b.textContent = label; }
     });
     return b;
   }
@@ -251,14 +263,14 @@
       const p = baris.querySelectorAll('p');
       const nilaiEl = [...grup.children].find((x) => x.tagName === 'SPAN' && /^[\d,]+$/.test(x.textContent.trim()));
       const r = ujCari(p[0]?.textContent || '', p[1]?.textContent || '', nilaiEl ? nilaiEl.textContent.trim() : null);
-      if (r) grup.insertBefore(ujTombol(r, true), b);
+      if (r) { grup.insertBefore(ujTombol(r, true, 'buka'), b); grup.insertBefore(ujTombol(r, true, 'hapus'), b); }
     }
     for (const x of kartu) {
       x.dataset.ujCek = '1';
       const nama = document.querySelector('main h2, h2')?.textContent || '';
       const m = /nilai\s+([\d,]+)/.exec(x.parentElement?.textContent || '');
       const r = ujCari(nama, '', m ? m[1] : null);
-      if (r) { const w = document.createElement('div'); w.className = 'nuris-uj-wrap'; w.append(ujTombol(r, false)); x.parentElement.append(w); }
+      if (r) { const w = document.createElement('div'); w.className = 'nuris-uj-wrap'; w.append(ujTombol(r, false, 'buka'), ujTombol(r, false, 'hapus')); x.parentElement.append(w); }
     }
   }
 
