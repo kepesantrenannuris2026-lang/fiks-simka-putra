@@ -274,12 +274,66 @@
     }
   }
 
+  /* ---------- Mutabaah › Setor Hadis (Arbain): saring santri menurut KAMAR (27 Nov 2026) ----------
+     Daftar asli hanya per halaqah. Pilihan kamar menyetel "Semua di unit" lalu menyembunyikan santri di luar kamar. */
+  let kmData = null, kmMuat = 0;
+  let kmPilih = (() => { try { return sessionStorage.getItem('nuris_kamar_hadis') || ''; } catch { return ''; } })();
+  const kmKunci = (nama, unit, tingkat) => `${String(nama).trim().toUpperCase()}|${String(unit).trim()} ${String(tingkat).trim()}`;
+  function kmSetel(sel, v) { // ubah <select> React dengan benar
+    const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(sel, v);
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  function hadis() {
+    if (APP !== 'mutabaah') return;
+    const hero = [...document.querySelectorAll('p')].find((p) => p.textContent.includes('42 hadis pilihan Imam An-Nawawi'));
+    if (!hero) return;
+    const cari = document.querySelector('input[placeholder="Cari santri"]');
+    const bar = cari?.closest('div.flex.flex-wrap'); if (!bar) return;
+    if (!kmData) { if (Date.now() - kmMuat > 30000 && ujToken()) { kmMuat = Date.now(); ujPanggil('tahfidz-kamar').then((r) => { kmData = r.kamars || []; jadwal(); }).catch(() => { kmData = []; }); } return; }
+    if (!kmData.length) return;
+    let sel = bar.querySelector('select.nuris-kamar-sel');
+    if (!sel) {
+      sel = document.createElement('select'); sel.className = 'nuris-kamar-sel'; sel.setAttribute('aria-label', 'Pilih kamar');
+      const opt = (k) => `<option value="${k.id}">${k.nama} · ${k.unit} ${k.lingkungan === 'PUTRA' ? 'Putra' : 'Putri'} ${k.tingkat} (${k.santri.length})</option>`;
+      const amp = kmData.filter((k) => k.ampu), lain = kmData.filter((k) => !k.ampu);
+      sel.innerHTML = '<option value="">Semua kamar</option>' + (amp.length && lain.length ? `<optgroup label="Kamar ampuan saya">${amp.map(opt).join('')}</optgroup><optgroup label="Kamar lain di unit">${lain.map(opt).join('')}</optgroup>` : kmData.map(opt).join(''));
+      if (kmData.some((k) => k.id === kmPilih)) sel.value = kmPilih; else kmPilih = '';
+      sel.addEventListener('change', () => {
+        kmPilih = sel.value; try { sessionStorage.setItem('nuris_kamar_hadis', kmPilih); } catch {}
+        const hq = bar.querySelector('select[aria-label="Pilih halaqah"]');
+        if (kmPilih && hq && hq.value !== 'semua') kmSetel(hq, 'semua');
+        jadwal();
+      });
+      const hq = bar.querySelector('select[aria-label="Pilih halaqah"]');
+      (hq || bar.firstElementChild).after(sel);
+      if (kmPilih && hq && hq.value !== 'semua') kmSetel(hq, 'semua');
+    }
+    const k = kmData.find((x) => x.id === kmPilih);
+    const ada = k ? new Set(k.santri.map((x) => kmKunci(x.n, x.u, x.t))) : null;
+    const root = hero.closest('section')?.parentElement || document;
+    // Kartu "Isi hafalan" & baris "Rekap per santri": baris kedua = "unit tingkat · halaqah".
+    const items = [...root.querySelectorAll('button.min-w-0, tbody tr')];
+    let tampil = 0;
+    for (const el of items) {
+      const p = el.querySelectorAll('p'); if (p.length < 2) continue;
+      const info = p[1].textContent.split('·')[0].trim();
+      const sembunyi = !!ada && !ada.has(`${p[0].textContent.trim().toUpperCase()}|${info}`);
+      el.classList.toggle('nuris-km-sembunyi', sembunyi); if (!sembunyi) tampil++;
+    }
+    let ket = bar.parentElement.querySelector('.nuris-km-ket');
+    if (k) {
+      if (!ket) { ket = document.createElement('p'); ket.className = 'nuris-km-ket'; bar.after(ket); }
+      const t = `Kamar ${k.nama} · wali kamar ${k.wali || '–'} · ${tampil} dari ${k.santri.length} santri tampil${tampil < k.santri.length ? ' (sisanya di luar unit/halaqah yang dapat Anda buka)' : ''}.`;
+      if (ket.textContent !== t) ket.textContent = t;
+    } else ket?.remove();
+  }
+
   function sapu() {
     antre = 0;
     favicon();
     for (const img of document.querySelectorAll('img')) logo(img);
     if (APP !== 'beranda') for (const el of document.querySelectorAll(KE_PORTAL)) tandaiLogo(el);
-    tempel(); simka(); ujian();
+    tempel(); simka(); ujian(); hadis();
   }
   const jadwal = () => { if (!antre) antre = requestAnimationFrame(sapu); };
   function mulai() {

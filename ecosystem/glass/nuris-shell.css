@@ -163,3 +163,8 @@ html[data-nuris-app^="simka"] .nuris-sidebar nav { scrollbar-color: #ffffff40 tr
 .nuris-uj-wrap{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
 .nuris-uj-buka{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;border:1px solid #cfe3d6;background:#fff;color:#0a4f2e;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .nuris-uj-buka.sm{height:32px;padding:0 10px;font-size:12.5px}.nuris-uj-buka:hover{background:#eef7f1}.nuris-uj-buka:disabled{opacity:.6;cursor:wait}
+
+/* Mutabaah › Setor Hadis: saring per kamar */
+.nuris-kamar-sel{height:40px;max-width:240px;border-radius:12px;border:1px solid var(--color-line,#e3e9e5);background:#fff;padding:0 10px;font:inherit;font-size:14px;color:inherit}
+.nuris-km-sembunyi{display:none!important}
+.nuris-km-ket{margin:6px 2px 0;font-size:12.5px;color:#5b6b63}

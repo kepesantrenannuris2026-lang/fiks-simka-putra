@@ -196,6 +196,18 @@ async function tahfidzUjian(path: string, a: Actor, body: any) {
       WHERE r.ujian_status='final' AND r.diperbarui_pada > now() - interval '400 days' AND ${hak} ORDER BY r.diperbarui_pada DESC LIMIT 3000`, args)).rows;
     return { rows };
   }
+  if (path === 'tahfidz-kamar') {
+    // Daftar kamar (dengan nama santrinya) untuk menyaring daftar santri di Mutabaah (mis. Setor Hadis) menurut kamar.
+    const args: unknown[] = [a.username, a.admin, units];
+    const kamars = (await q(`SELECT k.id,k.nama,k.unit,k.lingkungan,k.tingkat,coalesce(w.nama,k.wali_label,'') AS wali,
+        (coalesce(k.wali_username=$1,false) OR coalesce(bool_or(g.wali_username=$1),false)) AS ampu,
+        json_agg(json_build_object('n',s.nama,'u',s.unit,'t',s.tingkat) ORDER BY s.nama) AS santri
+      FROM rapor_pesantren.kamar k JOIN rapor_pesantren.anggota g ON g.kamar_id=k.id JOIN public.santri s ON s.id=g.santri_id AND s.aktif
+      LEFT JOIN public.akun w ON w.username=k.wali_username
+      WHERE k.aktif AND ($2 OR ${KAMAR_UNIT}=ANY($3::text[]) OR k.wali_username=$1 OR g.wali_username=$1)
+      GROUP BY k.id,w.nama ORDER BY k.lingkungan,array_position(ARRAY['SMP','SMA','MA'],k.unit),k.tingkat::int,k.urut,k.nama`, args)).rows;
+    return { kamars };
+  }
   if (path === 'tahfidz-hapus' || path === 'tahfidz-buka') {
     const id = String(body.id || '');
     if (!/^[^|]{1,80}\|\d{4}\/\d{4}\|[12]$/.test(id)) throw fail('Data ujian tidak valid.');
