@@ -167,5 +167,5 @@ export const kitab = buatNilai({ grup: 'kitab', view: 'kitab', judul: 'Nilai kaj
   tip: `Nilai 0–100 dari ujian semester kitab; ${TIP_SKALA} bagian C · Kajian Kitab. Tempel (Ctrl+V) dari Excel didukung; Enter/panah untuk pindah.` });
 export const pidato = buatNilai({ grup: 'pidato', view: 'pidato', judul: 'Nilai pidato', satuan: 'nilai', satuanPanjang: 'nilai Pidato', ikon: I.mic,
   pilih: 'Pilih kamar untuk mengisi nilai pidato semester ini.', kosong: ['Tidak ada penilaian pidato untuk kelas ini.', 'Santriwati kelas 12 tidak mendapat penilaian pidato.'],
-  hero: 'Isi nilai pidato (khithobah) per santri: Bahasa Arab & Bahasa Inggris (SMP/SMA Putri: satu nilai). Kamar ampuan Anda di atas; kamar lain di unit yang sama juga dapat diisi.',
+  hero: 'Isi satu nilai pidato (khithobah) per santri; khusus MA Putri kelas 10 & 11 dinilai Bahasa Arab & Bahasa Inggris. Kamar ampuan Anda di atas; kamar lain di unit yang sama juga dapat diisi.',
   tip: `Nilai 0–100; ${TIP_SKALA} bagian F · Pidato. Tempel (Ctrl+V) dari Excel didukung; Enter/panah untuk pindah.` });

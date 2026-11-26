@@ -324,20 +324,36 @@ async function nilaiUnit(grup: string, aksi: string, a: Actor, body: any) {
   throw fail('Rute tidak dikenal.', 404);
 }
 
+// Santri Mutabaah Yaumiyyah mengikuti KAMAR (wali kamar / wali anggota), bukan halaqah tahfidz (26 Nov 2026).
+// Koordinator unit & pimpinan tetap seluruh unitnya.
 function yaumScope(a: Actor, args: unknown[]) {
   if (a.admin) return 'true';
-  args.push(a.musyrif, a.koordinator, a.username);
-  const m = args.length - 2, k = args.length - 1, w = args.length;
-  return `((trim($${m})<>'' AND lower(trim(s.musyrif))=lower(trim($${m}))) OR s.unit=ANY($${k}::text[])
+  args.push(a.koordinator, a.username);
+  const k = args.length - 1, w = args.length;
+  return `(s.unit=ANY($${k}::text[])
     OR EXISTS (SELECT 1 FROM rapor_pesantren.anggota g JOIN rapor_pesantren.kamar k ON k.id=g.kamar_id WHERE g.santri_id=s.id AND coalesce(g.wali_username,k.wali_username)=$${w}))`;
 }
 async function yaumiyyah(path: string, a: Actor, body: any) {
   if (path === 'yaum-students') {
     const args: unknown[] = [];
-    const students = (await q(`SELECT s.id,s.nama,s.tingkat AS kelas,s.unit,s.halaqah,s.musyrif,coalesce(k.nama,'') AS kamar FROM public.santri s
+    const scope = yaumScope(a, args); args.push(a.username);
+    const students = (await q(`SELECT s.id,s.nama,s.tingkat AS kelas,s.unit,s.halaqah,s.musyrif,coalesce(k.nama,'') AS kamar,g.kamar_id,
+      coalesce(gw.nama,kw.nama,k.wali_label,'') AS wali,coalesce(coalesce(g.wali_username,k.wali_username)=$${args.length},false) AS ampu FROM public.santri s
       LEFT JOIN rapor_pesantren.anggota g ON g.santri_id=s.id LEFT JOIN rapor_pesantren.kamar k ON k.id=g.kamar_id
-      WHERE s.aktif AND ${yaumScope(a, args)} ORDER BY array_position(ARRAY['SMP Ikhwan','SMA Ikhwan','MA Ikhwan','SMP Akhwat','SMA Akhwat','MA Akhwat'],s.unit),s.tingkat,s.nama LIMIT 5000`, args)).rows;
+      LEFT JOIN public.akun gw ON gw.username=g.wali_username LEFT JOIN public.akun kw ON kw.username=k.wali_username
+      WHERE s.aktif AND ${scope} ORDER BY array_position(ARRAY['SMP Ikhwan','SMA Ikhwan','MA Ikhwan','SMP Akhwat','SMA Akhwat','MA Akhwat'],s.unit),s.tingkat,k.urut,k.nama,s.nama LIMIT 5000`, args)).rows;
     return { user: { username: a.username, nama: a.nama, admin: a.admin, koordinator: a.koordinator }, students };
+  }
+  if (path === 'yaum-rekap-kamar') {
+    // Rekap ibadah satu kamar (seluruh santri kamar yang boleh diakses) untuk 1–6 bulan.
+    if (typeof body.kamar !== 'string' || !body.kamar || body.kamar.length > 120) throw fail('Pilih kamar.');
+    if (!Array.isArray(body.months) || body.months.length < 1 || body.months.length > 6 || new Set(body.months).size !== body.months.length || !body.months.every((m: any) => validMonth(String(m)))) throw fail('Pilih maksimal enam bulan.');
+    const args: unknown[] = [body.kamar];
+    const students = (await q(`SELECT s.id,s.nama,s.tingkat AS kelas,s.unit FROM public.santri s JOIN rapor_pesantren.anggota g0 ON g0.santri_id=s.id
+      WHERE g0.kamar_id=$1 AND s.aktif AND ${yaumScope(a, args)} ORDER BY s.nama`, args)).rows;
+    if (!students.length) throw fail('Kamar ini bukan binaan atau unit Anda.', 403);
+    const entries = (await q(`SELECT santri_id,bulan AS month,aktivitas AS values,izin FROM yaumiyyah.bulanan WHERE santri_id=ANY($1::text[]) AND bulan=ANY($2::text[])`, [students.map((x: any) => x.id), body.months])).rows;
+    return { students, entries };
   }
   const id = String(body.santri_id || '');
   if (!id || id.length > 150) throw fail('Pilih santri.');

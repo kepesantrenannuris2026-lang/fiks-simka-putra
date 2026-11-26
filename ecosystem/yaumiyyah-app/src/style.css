@@ -68,3 +68,8 @@
 @media (max-width:899px){.yk-savebar{bottom:calc(104px + env(safe-area-inset-bottom))}}
 .yk-grid td{padding-top:8px;padding-bottom:8px}.yk-h{display:block;margin:2px 0 0;font-size:11px}
 .yk-savebar span{white-space:nowrap}
+/* Rekap per kamar (26 Nov 2026) */
+.yw-kamar th[scope=row]{min-width:160px;text-align:left}.yw-kamar th[scope=row] small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+.yw-kamar td,.yw-kamar thead th{text-align:center}.yw-kamar thead th:first-child{text-align:left}
+.yw-link{all:unset;cursor:pointer;font-weight:700;color:var(--ink)}.yw-link:hover,.yw-link:focus-visible{color:var(--nuris-accent-strong,#0b7285);text-decoration:underline}
+.yw-kamar tfoot th,.yw-kamar tfoot td{border-top:2px solid var(--line);font-weight:700;background:var(--nuris-accent-soft,#e3f3f6)}

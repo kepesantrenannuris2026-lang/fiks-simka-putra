@@ -7,6 +7,7 @@ import { APP, navGabungan, bottomOf, bersama, segmen, jembatan } from './nav';
 const api = apiOf('https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/');
 const today = todayWIB(), thisMonth = today.slice(0, 7);
 const st: any = { user: null, students: [], sid: '', view: 'isian', month: thisMonth, period: 'month', year: Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 7 ? 1 : 0), sem: Number(today.slice(5, 7)) >= 7 ? 1 : 2, entries: [] as MonthEntry[], draft: null as MonthEntry | null, dirty: false, busy: false, loading: true, logo: '', rincian: false };
+try { st.rmode = sessionStorage.getItem('yw-rmode') || 'kamar'; st.kamarId = sessionStorage.getItem('yw-kamar') || ''; } catch { st.rmode = 'kamar'; }
 const app = document.getElementById('app')!;
 const fresh = (month: string): MonthEntry => ({ month, values: {}, izin: 0, note: '' });
 const student = () => st.students.find((s: any) => s.id === st.sid);
@@ -30,7 +31,7 @@ function picker() {
   return `<section class="ns-card yw-pick"><div class="ns-field yw-combo"><label for="yw-santri">Santri</label>
     <input id="yw-santri" type="text" data-act="sq" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="yw-opts" autocomplete="off" spellcheck="false" value="${esc(s?.nama || '')}" placeholder="Ketik nama santri">
     <div id="yw-opts" class="yw-opts" role="listbox" hidden></div></div>
-    ${s ? `<p class="ns-muted yw-who">${esc(unitLabel(s.unit))} · Kelas ${esc(s.kelas)}${s.kamar ? ` · Kamar ${esc(s.kamar)}` : ''} · Musyrif/ah: ${esc(s.musyrif || '–')}</p>
+    ${s ? `<p class="ns-muted yw-who">${esc(unitLabel(s.unit))} · Kelas ${esc(s.kelas)}${s.kamar ? ` · Kamar ${esc(s.kamar)}` : ' · Belum masuk kamar'}${s.wali ? ` · Wali kamar: ${esc(s.wali)}` : ''}</p>
     <div class="yg-link"><span class="yg-link-ic">${icon(I.award, 18)}</span><div class="yg-link-tx"><b>Ujian praktik ibadah</b>${jembatan.ringkasUjian?.(s.id) || '<small>Lihat nilai subujian santri ini</small>'}</div><a href="#peserta" data-nav="peserta" data-ujian-santri="${esc(s.id)}" data-nama="${esc(s.nama)}" class="ns-btn sm">Buka</a></div>` : ''}</section>`;
 }
 const combo = { hi: 0, list: [] as any[] };
@@ -56,10 +57,10 @@ function body() {
   if (st.loading && !st.students.length) return loading();
   if (!st.students.length) return empty('Belum ada santri binaan.', 'Akun ini belum memegang santri, kamar, atau unit. Hubungi pimpinan melalui Mutabaah Tahfidz.');
   return `<section class="ns-hero anim-rise"><div><p class="ns-eyebrow">Kepesantrenan Nuris</p><h2>Ibadah santri, dicatat setiap bulan.</h2><p>8 ibadah sesuai Rapor Pesantren. Isi jumlah pelaksanaan dalam sebulan; target, nilai, dan predikat dihitung otomatis.</p></div>${heroScore()}</section>
-    ${picker()}${st.loading ? loading() : st.view === 'isian' ? isian() : rekap()}`;
+    ${st.view === 'rekap' ? modeSeg() : ''}${st.view === 'rekap' && st.rmode === 'kamar' ? kamarPick() + (st.kloading ? loading() : rekapKamar()) : picker() + (st.loading ? loading() : st.view === 'isian' ? isian() : rekap())}`;
 }
 function heroScore() {
-  if (st.loading || !st.entries) return '';
+  if (st.loading || !st.entries || (st.view === 'rekap' && st.rmode === 'kamar')) return '';
   const r = monthlyReport(st.month, st.view === 'isian' ? st.draft : st.entries.find((e: MonthEntry) => e.month === st.month));
   return `<div class="ns-kpi"><div><strong>${r.score == null ? '–' : r.score.toFixed(0)}</strong><span>nilai ${monthLabel(st.month).split(' ')[0]}</span></div><div><strong class="acc">${r.predikat}</strong><span>predikat</span></div><div><strong>${r.filled}/8</strong><span>ibadah terisi</span></div></div>`;
 }
@@ -108,8 +109,56 @@ function rekap() {
 }
 // Nilai ujian siap → perbarui kartu santri saja (tanpa menggambar ulang isian yang sedang diketik).
 jembatan.onUjian = () => { const el = $('.yg-link-tx'), s = student(); if (el && s && yaum.active) el.innerHTML = `<b>Ujian praktik ibadah</b>${jembatan.ringkasUjian?.(s.id) || '<small>Lihat nilai subujian santri ini</small>'}`; };
+/* ---------- Rekap per kamar (kelompok = kamar, bukan halaqah tahfidz) ---------- */
+const SINGKAT: Record<string, string> = { jamaah: 'Jamaah', qiyam: 'Qiyam', dhuha: 'Dhuha', rawatib: 'Rawatib', dzikir: 'Dzikir', matsurat: 'Ma’tsurat', quran: 'Tilawah', puasa: 'Puasa' };
+function kamarList() {
+  const m = new Map<string, any>();
+  for (const x of st.students) if (x.kamar_id && !m.has(x.kamar_id)) m.set(x.kamar_id, { id: x.kamar_id, nama: x.kamar, wali: x.wali, unit: x.unit, kelas: x.kelas, ampu: x.ampu, n: 0 });
+  for (const x of st.students) if (x.kamar_id) m.get(x.kamar_id).n++;
+  return [...m.values()];
+}
+function modeSeg() {
+  return `<div class="ns-section-title"><div class="ns-seg" role="tablist" aria-label="Jenis rekap" data-nuris-glass><button role="tab" aria-selected="${st.rmode === 'kamar'}" data-act="rmode" data-v="kamar">Per kamar</button><button role="tab" aria-selected="${st.rmode !== 'kamar'}" data-act="rmode" data-v="santri">Per santri</button></div></div>`;
+}
+function kamarPick() {
+  const ks = kamarList();
+  if (!ks.length) return '';
+  const opt = (k: any) => `<option value="${esc(k.id)}" ${k.id === st.kamarId ? 'selected' : ''}>${esc(k.nama)} · ${esc(unitLabel(k.unit))} ${esc(k.kelas)} · ${k.n} santri</option>`;
+  const a = ks.filter((k) => k.ampu), b = ks.filter((k) => !k.ampu);
+  return `<section class="ns-card yw-pick"><label class="ns-field">Kamar<select data-act="kamar" class="yw-in" style="width:100%">${a.length && b.length ? `<optgroup label="Kamar ampuan Anda">${a.map(opt).join('')}</optgroup><optgroup label="Kamar lain">${b.map(opt).join('')}</optgroup>` : ks.map(opt).join('')}</select></label>
+    ${(() => { const k = ks.find((x) => x.id === st.kamarId); return k ? `<p class="ns-muted yw-who">Wali kamar: ${esc(k.wali || '–')}</p>` : ''; })()}</section>`;
+}
+function rekapKamar() {
+  const ks = kamarList();
+  if (!ks.length) return empty('Belum ada kamar.', 'Santri binaan Anda belum tercatat di kamar mana pun (Rapor Pesantren › anggota kamar).');
+  const d = st.kdata; if (!d) return '';
+  const m = months(), sem = m.length > 1;
+  const rows = d.students.map((x: any) => {
+    const en = d.entries.filter((e: any) => e.santri_id === x.id);
+    const r: any = sem ? semesterReport(m, en) : monthlyReport(m[0], en.find((e: any) => e.month === m[0]));
+    return { x, r };
+  });
+  const rata = (vals: (number | null)[]) => { const v = vals.filter((n): n is number => n != null); return v.length ? v.reduce((p, n) => p + n, 0) / v.length : null; };
+  const isi = rows.filter((o: any) => o.r.score != null).length;
+  const kr = rata(rows.map((o: any) => o.r.score));
+  const sel = (v: number | null) => `<td class="tabular">${v == null ? '–' : Math.round(v)}</td>`;
+  const body = rows.map(({ x, r }: any) => `<tr><th scope="row"><button class="yw-link" data-act="pilih" data-sid="${esc(x.id)}">${esc(x.nama)}</button><small>Kelas ${esc(x.kelas)}</small></th>${r.rows.map((y: any) => sel(y.score)).join('')}<td class="tabular"><b>${fmt(r.score)}</b></td><td><span class="ns-pill ${predClass(r.predikat)}">${r.predikat}</span></td></tr>`).join('');
+  const foot = `<tr class="yw-foot"><th scope="row">Rata-rata kamar</th>${activities.map((a) => sel(rata(rows.map((o: any) => o.r.rows.find((y: any) => y.id === a.id)?.score ?? null)))).join('')}<td class="tabular"><b>${fmt(kr)}</b></td><td><span class="ns-pill ${predClass(grade(kr))}">${grade(kr)}</span></td></tr>`;
+  return `${periodBar()}<div class="ns-stats"><div class="ns-stat"><strong>${fmt(kr, 2)}</strong><span>rata-rata kamar</span></div><div class="ns-stat acc"><strong>${grade(kr)}</strong><span>predikat</span></div><div class="ns-stat"><strong>${isi}/${rows.length}</strong><span>santri ada isian</span></div></div>
+    <div class="ns-table-wrap"><table class="ns-table yw-kamar"><thead><tr><th>Santri</th>${activities.map((a) => `<th title="${esc(a.name)}">${esc(SINGKAT[a.id] || a.name)}</th>`).join('')}<th>Nilai</th><th>Predikat</th></tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>
+    <p class="ns-muted" style="font-size:13px">Kelompok rekap = kamar santri (Rapor Pesantren). ${sem ? 'Nilai semester = rata-rata bulan yang terisi.' : ''} Ketuk nama santri untuk membuka rekap per santri.</p>`;
+}
+async function loadKamar() {
+  if (!st.kamarId || !kamarList().some((k) => k.id === st.kamarId)) st.kamarId = (kamarList().find((k) => k.ampu) || kamarList()[0])?.id || '';
+  if (!st.kamarId) { render(); return; }
+  st.kloading = true; render();
+  try { st.kdata = await api('yaum-rekap-kamar', { kamar: st.kamarId, months: months() }); }
+  catch (e: any) { st.kdata = null; toast(e.message, 'err'); if (e.status === 401) sessionEnded(); }
+  st.kloading = false; render();
+}
 /* ---------- Data ---------- */
 async function load() {
+  if (st.view === 'rekap' && st.rmode === 'kamar') return loadKamar();
   if (!st.sid) return;
   st.loading = true; render();
   try { const r = await api('yaum-load', { santri_id: st.sid, months: months() }); st.entries = r.entries; st.draft = structuredClone(st.entries.find((e: MonthEntry) => e.month === st.month) || fresh(st.month)); st.dirty = false; }
@@ -155,6 +204,8 @@ document.addEventListener('click', async (e) => {
   if (a === 'save') save();
   else if (a === 'rincian') { st.rincian = !st.rincian; refreshCard(); }
   else if (a === 'period') { st.period = t.dataset.v; await load(); }
+  else if (a === 'rmode') { st.rmode = t.dataset.v; try { sessionStorage.setItem('yw-rmode', st.rmode); } catch {} await load(); }
+  else if (a === 'pilih') { st.sid = t.dataset.sid; sessionStorage.setItem('yw-sid', st.sid); st.rmode = 'santri'; await load(); }
 });
 document.addEventListener('input', (e) => {
   if (!yaum.active) return;
@@ -172,6 +223,7 @@ document.addEventListener('change', async (e) => {
   else if (a === 'month') { if (!t.value || t.value > thisMonth) { toast('Bulan tidak boleh melewati bulan ini.', 'err'); render(); return; } if (!leave()) { render(); return; } st.month = t.value; await load(); }
   else if (a === 'year') { st.year = Number(t.value); await load(); }
   else if (a === 'semx') { st.sem = Number(t.value); await load(); }
+  else if (a === 'kamar') { st.kamarId = t.value; try { sessionStorage.setItem('yw-kamar', st.kamarId); } catch {} await load(); }
 });
 document.addEventListener('focusin', (e) => { if (!yaum.active) return; const t = e.target as HTMLInputElement; if (t.dataset?.act === 'sq') { t.select(); comboShow(''); } });
 document.addEventListener('focusout', (e) => { const t = e.target as HTMLInputElement; if (t.dataset?.act === 'sq') setTimeout(() => { if (document.activeElement !== t) comboHide(); }, 120); });

@@ -78,7 +78,7 @@ export const PIDATO: Item[] = [
   { k: 'arab', id: 'Bahasa Arab', ar: 'الخطابة باللغة العربية' },
   { k: 'inggris', id: 'Bahasa Inggris', ar: 'الخطابة باللغة الإنجليزية' },
 ];
-// SMP & SMA Putri: satu nilai pidato (tanpa pembagian Arab/Inggris). MA Putri tetap dua nilai.
+// Satu nilai pidato (tanpa keterangan bahasa) untuk semua santri, kecuali MA Putri kelas 10 & 11 (Bahasa Arab & Bahasa Inggris).
 export const PIDATO_TUNGGAL: Item = { k: 'pidato', id: 'Pidato', ar: 'الخطابة' };
 
 // Kitab yang diujikan per jenjang & kelas.
@@ -97,9 +97,10 @@ export function itemsFor(bagian: string, s: Santri, kur: any = {}): Item[] {
   if (bagian === 'ibadah') return IBADAH;
   if (bagian === 'akhlak') return AKHLAK;
   if (bagian === 'pidato') {
-    // Putri: kelas 12 (semua jenjang) tidak ada penilaian pidato; SMP & SMA satu nilai; MA dua nilai (Arab & Inggris).
-    if (gender(s) === 'putri') { if (String(s.tingkat) === '12') return []; if (jenjang(s) === 'SMP' || jenjang(s) === 'SMA') return [PIDATO_TUNGGAL]; }
-    return PIDATO;
+    // Putri kelas 12 (semua jenjang): tidak ada penilaian pidato. MA Putri kelas 10 & 11: Arab & Inggris. Selain itu: satu nilai.
+    if (gender(s) === 'putri' && String(s.tingkat) === '12') return [];
+    if (gender(s) === 'putri' && jenjang(s) === 'MA' && ['10', '11'].includes(String(s.tingkat))) return PIDATO;
+    return [PIDATO_TUNGGAL];
   }
   if (bagian === 'kitab') {
     const keys: string[] = kur?.kitab?.[`${jenjang(s)}-${s.tingkat}`] || KITAB_KELAS[`${jenjang(s)}-${s.tingkat}`] || [];
