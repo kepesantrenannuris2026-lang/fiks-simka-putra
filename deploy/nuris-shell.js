@@ -204,12 +204,70 @@
 
   /* ---------- Jalankan & pantau perubahan DOM aplikasi ---------- */
   let antre = 0;
+  /* ---------- Mutabaah Tahfidz › Ujian Semester: hapus nilai ujian yang sudah final (26 Nov 2026) ----------
+     Hasil final terkunci di aplikasi Mutabaah; tombol ini memanggil API Rapor Pesantren (sesi yang sama) untuk
+     mengembalikan santri ke "Belum diuji". Hak: penguji yang menginput, musyrif halaqah, koordinator, pimpinan. */
+  const UJ_API = 'https://yvcqcgbzdsrjkskvcmqq.supabase.co/functions/v1/rapor-pesantren/';
+  let ujFinal = null, ujMuat = 0;
+  const ujToken = () => { try { return localStorage.getItem('mut_token') || ''; } catch { return ''; } };
+  const ujPanggil = (rute, body) => fetch(UJ_API + rute, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + ujToken() }, body: JSON.stringify(body || {}) })
+    .then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok || j.ok === false) throw new Error(j?.error?.message || 'Gagal menghubungi server.'); return j.data ?? j; });
+  const angkaUj = (v) => (v == null ? '' : String(Number(v)).replace('.', ','));
+  function ujDaftar() {
+    if (ujFinal || Date.now() - ujMuat < 30000 || !ujToken()) return;
+    ujMuat = Date.now();
+    ujPanggil('tahfidz-final').then((r) => { ujFinal = r.rows || []; jadwal(); }).catch(() => { ujFinal = []; });
+  }
+  function ujCari(nama, info, nilai) {
+    if (!ujFinal) return null;
+    const n = nama.trim().toUpperCase();
+    const c = ujFinal.filter((r) => String(r.nama).trim().toUpperCase() === n && (!info || info.includes(`Kelas ${r.tingkat}`)));
+    return c.find((r) => nilai == null || angkaUj(r.nilai) === nilai) || c[0] || null;
+  }
+  function ujTombol(r, kecil) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'nuris-uj-hapus' + (kecil ? ' sm' : ''); b.dataset.ujId = r.id;
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Hapus nilai';
+    b.title = 'Hapus nilai ujian ini agar dapat diisi ulang';
+    b.addEventListener('click', async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (!confirm(`Hapus nilai ujian tahfidz ${r.nama} (nilai ${angkaUj(r.nilai)}, ${r.tahun_ajaran} smt ${r.semester})?\n\nSantri kembali berstatus "Belum diuji" dan dapat diuji/diisi ulang. Nilai lama tetap tercatat di riwayat.`)) return;
+      b.disabled = true; b.textContent = 'Menghapus…';
+      try { await ujPanggil('tahfidz-hapus', { id: r.id }); alert('Nilai ujian dihapus. Santri kembali berstatus Belum diuji.'); location.reload(); }
+      catch (err) { alert(err.message); b.disabled = false; b.textContent = 'Hapus nilai'; }
+    });
+    return b;
+  }
+  function ujian() {
+    if (APP !== 'mutabaah') return;
+    const lihat = [...document.querySelectorAll('main button, button')].filter((b) => b.textContent.trim() === 'Lihat' && !b.dataset.ujCek);
+    const kartu = [...document.querySelectorAll('b')].filter((x) => x.textContent.trim() === 'Ujian sudah final' && !x.dataset.ujCek);
+    if (!lihat.length && !kartu.length) return;
+    if (!ujFinal) { ujDaftar(); return; }
+    for (const b of lihat) {
+      const grup = b.parentElement, baris = grup?.parentElement;
+      if (!grup || !baris || ![...grup.children].some((x) => x.textContent.trim() === 'Selesai')) continue;
+      b.dataset.ujCek = '1';
+      const p = baris.querySelectorAll('p');
+      const nilaiEl = [...grup.children].find((x) => x.tagName === 'SPAN' && /^[\d,]+$/.test(x.textContent.trim()));
+      const r = ujCari(p[0]?.textContent || '', p[1]?.textContent || '', nilaiEl ? nilaiEl.textContent.trim() : null);
+      if (r) grup.insertBefore(ujTombol(r, true), b);
+    }
+    for (const x of kartu) {
+      x.dataset.ujCek = '1';
+      const nama = document.querySelector('main h2, h2')?.textContent || '';
+      const m = /nilai\s+([\d,]+)/.exec(x.parentElement?.textContent || '');
+      const r = ujCari(nama, '', m ? m[1] : null);
+      if (r) { const w = document.createElement('div'); w.className = 'nuris-uj-wrap'; w.append(ujTombol(r, false)); x.parentElement.append(w); }
+    }
+  }
+
   function sapu() {
     antre = 0;
     favicon();
     for (const img of document.querySelectorAll('img')) logo(img);
     if (APP !== 'beranda') for (const el of document.querySelectorAll(KE_PORTAL)) tandaiLogo(el);
-    tempel(); simka();
+    tempel(); simka(); ujian();
   }
   const jadwal = () => { if (!antre) antre = requestAnimationFrame(sapu); };
   function mulai() {

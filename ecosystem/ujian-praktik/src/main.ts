@@ -89,16 +89,17 @@ function pesertaView() {
   const rows = list.slice(0, 400).map((s: P) => {
     const m = materiFor(s);
     const kp = canKelola(s.unit) ? `<input class="up-kp" data-kp="${esc(s.id)}" value="${esc(s.kelas_pagi)}" maxlength="20" placeholder="mis. 7A" aria-label="Kelas pagi ${esc(s.nama)}">` : esc(s.kelas_pagi || '–');
-    return `<tr><td><b>${esc(s.nama)}</b><small>${esc(unitLabel(s.unit))} · Kelas ${esc(s.tingkat)} · <a href="#isian" data-nav="isian" data-ibadah-santri="${esc(s.id)}" class="yg-mini">Ibadah bulanan</a></small></td>
+    const btn = `<button class="ns-btn sm up-nilai-btn ${statusOf(s) === 'lengkap' ? '' : 'primary'}" data-act="nilai" data-id="${esc(s.id)}" ${m.length && st.periode.aktif ? '' : 'disabled'} aria-label="${statusOf(s) === 'belum' ? 'Nilai' : 'Ubah nilai'} ${esc(s.nama)}">${icon(I.edit, 16)}${statusOf(s) === 'belum' ? 'Nilai' : 'Ubah'}</button>`;
+    return `<tr><td><div class="up-nama">${btn}<div><b>${esc(s.nama)}</b><small>${esc(unitLabel(s.unit))} · Kelas ${esc(s.tingkat)} · <a href="#isian" data-nav="isian" data-ibadah-santri="${esc(s.id)}" class="yg-mini">Ibadah bulanan</a></small></div></div></td>
       <td>${esc(s.kamar || '–')}<small>${esc(s.halaqah || '')}</small></td><td>${kp}</td>
       <td><div class="up-pills">${m.length ? m.map((k) => `<span class="up-sub"><small>${esc(RUBRIK[k].nama)}</small>${pill(s.nilai?.[k])}</span>`).join('') : '<span class="ns-muted">Materi belum ditetapkan</span>'}</div></td>
-      <td><button class="ns-btn sm ${statusOf(s) === 'lengkap' ? '' : 'primary'}" data-act="nilai" data-id="${esc(s.id)}" ${m.length && st.periode.aktif ? '' : 'disabled'}>${icon(I.edit, 16)}${statusOf(s) === 'belum' ? 'Nilai' : 'Ubah'}</button></td></tr>`;
+</tr>`;
   }).join('');
   return `<section class="ns-hero anim-rise"><div><p class="ns-eyebrow">${esc(st.periode.nama)}${st.periode.aktif ? '' : ' · ditutup'}</p><h2>Ujian Praktik Ibadah</h2><p>Setiap subujian dinilai dan dikonversi sendiri (A 90–100, B+ 80–89, B 70–79, C &lt;70), tanpa nilai gabungan. Saring peserta, buka santri, lalu isi poin tiap aspek rubrik.</p></div>
     <div class="ns-kpi"><div><strong>${list.length}</strong><span>peserta</span></div><div><strong>${c.lengkap}</strong><span>lengkap</span></div><div><strong class="acc">${c.belum + c.sebagian}</strong><span>belum selesai</span></div></div></section>
     ${filterBar()}
     <div class="ns-section-title"><h3>${list.length} santri${list.length > 400 ? ' (400 pertama ditampilkan; persempit saringan)' : ''}</h3>${st.user?.admin || st.user?.koordinator?.length ? `<button class="ns-btn sm ghost" data-act="kp-paste">${icon(I.edit, 16)}Tempel kelas pagi</button>` : ''}</div>
-    ${list.length ? `<div class="ns-table-wrap"><table class="ns-table up-table"><thead><tr><th>Santri</th><th>Kamar / halaqah</th><th>Kelas pagi</th><th>Nilai subujian</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : empty('Tidak ada santri yang cocok.', 'Ubah saringan di atas.')}`;
+    ${list.length ? `<div class="ns-table-wrap"><table class="ns-table up-table"><thead><tr><th>Santri</th><th>Kamar / halaqah</th><th>Kelas pagi</th><th>Nilai subujian</th></tr></thead><tbody>${rows}</tbody></table></div>` : empty('Tidak ada santri yang cocok.', 'Ubah saringan di atas.')}`;
 }
 
 /* ---------- Dialog penilaian ---------- */

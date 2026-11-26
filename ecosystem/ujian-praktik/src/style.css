@@ -34,3 +34,7 @@
 .up-lamp-row{width:100%;display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:var(--soft-2);color:var(--ink,inherit);font:inherit;font-size:14px;font-weight:700;cursor:pointer;text-align:left}
 .up-lamp-row:hover{border-color:var(--leaf);background:var(--leaf-soft)}.up-lamp-row svg{flex:none;color:var(--leaf)}.up-lamp-row small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
 .up-viewer .ns-modal-box{width:min(980px,100%);height:calc(100dvh - 28px)}.up-viewer-body{flex:1;min-height:0;background:var(--soft-2)}.up-viewer-body iframe{width:100%;height:100%;border:0;display:block}
+/* Tombol nilai di samping nama santri (26 Nov 2026) */
+.up-nama{display:flex;align-items:center;gap:10px}
+.up-nama .up-nilai-btn{flex:none;min-width:84px;justify-content:center}
+.up-nama > div{min-width:0}
