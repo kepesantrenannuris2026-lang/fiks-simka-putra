@@ -213,11 +213,15 @@
   const ujPanggil = (rute, body) => fetch(UJ_API + rute, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + ujToken() }, body: JSON.stringify(body || {}) })
     .then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok || j.ok === false) throw new Error(j?.error?.message || 'Gagal menghubungi server.'); return j.data ?? j; });
   const angkaUj = (v) => (v == null ? '' : String(Number(v)).replace('.', ','));
-  function ujDaftar() {
-    if (ujFinal || Date.now() - ujMuat < 30000 || !ujToken()) return;
+  // Daftar hasil final dimuat saat panel dibuka dan DIMUAT ULANG bila ada santri "Selesai" yang belum dikenal
+  // (mis. baru difinalkan setelah daftar dimuat) — paling sering tiap 8 detik.
+  function ujDaftar(segarkan) {
+    if (!ujToken() || (ujFinal && !segarkan) || Date.now() - ujMuat < (ujFinal ? 8000 : 30000)) return;
     ujMuat = Date.now();
     ujPanggil('tahfidz-final').then((r) => { ujFinal = r.rows || []; jadwal(); }).catch(() => { ujFinal = []; });
   }
+  let ujTimer = 0;
+  const ujNanti = () => { if (!ujTimer) ujTimer = setTimeout(() => { ujTimer = 0; jadwal(); }, 8100); };
   function ujCari(nama, info, nilai) {
     if (!ujFinal) return null;
     const n = nama.trim().toUpperCase();
@@ -259,17 +263,21 @@
     for (const b of lihat) {
       const grup = b.parentElement, baris = grup?.parentElement;
       if (!grup || !baris || ![...grup.children].some((x) => x.textContent.trim() === 'Selesai')) continue;
-      b.dataset.ujCek = '1';
       const p = baris.querySelectorAll('p');
       const nilaiEl = [...grup.children].find((x) => x.tagName === 'SPAN' && /^[\d,]+$/.test(x.textContent.trim()));
       const r = ujCari(p[0]?.textContent || '', p[1]?.textContent || '', nilaiEl ? nilaiEl.textContent.trim() : null);
-      if (r) { grup.insertBefore(ujTombol(r, true, 'buka'), b); grup.insertBefore(ujTombol(r, true, 'hapus'), b); }
+      if (r) { b.dataset.ujCek = '1'; grup.insertBefore(ujTombol(r, true, 'buka'), b); grup.insertBefore(ujTombol(r, true, 'hapus'), b); continue; }
+      // Belum dikenal: coba muat ulang daftar (maks. 3 kali per baris), lalu berhenti (mis. di luar hak pengguna).
+      const coba = Number(b.dataset.ujCoba || 0);
+      if (coba >= 3) { b.dataset.ujCek = '1'; continue; }
+      if (Date.now() - ujMuat >= 8000) { b.dataset.ujCoba = String(coba + 1); ujDaftar(true); } else ujNanti();
     }
     for (const x of kartu) {
-      x.dataset.ujCek = '1';
       const nama = document.querySelector('main h2, h2')?.textContent || '';
       const m = /nilai\s+([\d,]+)/.exec(x.parentElement?.textContent || '');
       const r = ujCari(nama, '', m ? m[1] : null);
+      if (!r) { const coba = Number(x.dataset.ujCoba || 0); if (coba >= 3) x.dataset.ujCek = '1'; else if (Date.now() - ujMuat >= 8000) { x.dataset.ujCoba = String(coba + 1); ujDaftar(true); } else ujNanti(); continue; }
+      x.dataset.ujCek = '1';
       if (r) { const w = document.createElement('div'); w.className = 'nuris-uj-wrap'; w.append(ujTombol(r, false, 'buka'), ujTombol(r, false, 'hapus')); x.parentElement.append(w); }
     }
   }
