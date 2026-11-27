@@ -29,6 +29,14 @@ export const RUBRIK: Record<string, Rubrik> = {
     { label: 'Tertib', max: 10 },
     { label: 'Khusyuk dan menjaga sikap', max: 10 },
   ] },
+  // Kelas 8 Putra (tambahan 27 Nov 2026): rubrik tersendiri agar nilai Salat Jenazah kelas 11 yang sudah ada tidak berubah.
+  jenazah8: { key: 'jenazah8', nama: 'Salat Jenazah', ar: 'صلاة الجنازة', jenis: 'praktik', aspek: [
+    { label: 'Niat (bahasa Arab atau Indonesia)', max: 10 },
+    { label: 'Empat kali takbir', max: 10 },
+    { label: 'Membaca doa/bacaan setelah takbir dengan sempurna', max: 60 },
+    { label: 'Tertib', max: 10 },
+    { label: 'Khusyuk / tidak cengengesan', max: 10 },
+  ] },
   azan: { key: 'azan', nama: 'Azan dan Iqamah', ar: 'الأذان والإقامة', jenis: 'praktik', aspek: [
     { label: 'Melaksanakan rukun dan bacaan dengan sempurna', max: 50 },
     { label: 'Memperbanyak sunnah', max: 20 },
@@ -60,7 +68,7 @@ export const RUBRIK_KEYS = Object.keys(RUBRIK);
 // Materi semester I per tingkat & jenis kelamin (tabel "Materi Ujian Praktik Fikih").
 export const MATERI_DEFAULT: Record<string, string[]> = {
   '7-putra': ['wudhu', 'tayamum', 'lisan'], '7-putri': ['wudhu', 'tayamum', 'lisan'],
-  '8-putra': ['azan', 'lisan'], '8-putri': ['mandi', 'lisan_fp'],
+  '8-putra': ['azan', 'jenazah8', 'lisan'], '8-putri': ['mandi', 'lisan_fp'],
   '9-putra': ['haji', 'matsurat'], '9-putri': ['haji', 'matsurat'],
   '10-putra': ['wudhu', 'tayamum', 'mandi', 'lisan'], '10-putri': ['wudhu', 'tayamum', 'mandi', 'lisan'],
   '11-putra': ['azan', 'jenazah', 'lisan'], '11-putri': ['jenazah', 'lisan_fp'],

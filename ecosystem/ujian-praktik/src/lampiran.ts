@@ -17,7 +17,7 @@ export const LAMPIRAN: Lampiran[] = [
   { id: '1KZyBrrqVq4Ra3bT6iabZ0BwBNlMpsClJ', judul: 'Bank Soal Ujian Lisan Kelas 11 Putra', jenis: 'bank', berkas: 'pdf', grup: ['11-putra'] },
   { id: '15jeUY2tVOABYeNyNQvqP-3Iihm4fqtI9', judul: 'Bank Soal Ujian Lisan Kelas 11 Putri (kajian & fikih perempuan)', jenis: 'bank', berkas: 'pdf', grup: ['11-putri'] },
   { id: '1_bqkC7UjYkzjJOXfBdmEBgAeX5Lbn7ov', judul: 'Fikih Azan dan Iqamah', jenis: 'panduan', berkas: 'pdf', materi: ['azan'] },
-  { id: '1J_FBW51k5OC8HAgxAnCbMXEhencpSvPz', judul: 'Ringkasan Salat Jenazah', jenis: 'panduan', berkas: 'pdf', materi: ['jenazah'] },
+  { id: '1J_FBW51k5OC8HAgxAnCbMXEhencpSvPz', judul: 'Ringkasan Salat Jenazah', jenis: 'panduan', berkas: 'pdf', materi: ['jenazah', 'jenazah8'] },
   { id: '1_40nsrVSyJXsJH_6ktqjjkjOysspwjOT', judul: 'Panduan Ujian Praktik Haji', jenis: 'panduan', berkas: 'pdf', materi: ['haji'] },
   { id: '1WEqY47VhiU3HSp9kPcBhMz8gL0ym2rA8', judul: 'Gambar Manasik Haji', jenis: 'panduan', berkas: 'pdf', materi: ['haji'] },
   { id: '1660LkHzisF4XUHYA1SMpUnE95GA2bYp_', judul: 'Ilustrasi Urutan Manasik Haji', jenis: 'panduan', berkas: 'gambar', materi: ['haji'] },
