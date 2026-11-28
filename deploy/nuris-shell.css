@@ -168,3 +168,15 @@ html[data-nuris-app^="simka"] .nuris-sidebar nav { scrollbar-color: #ffffff40 tr
 .nuris-kamar-sel{height:40px;max-width:240px;border-radius:12px;border:1px solid var(--color-line,#e3e9e5);background:#fff;padding:0 10px;font:inherit;font-size:14px;color:inherit}
 .nuris-km-sembunyi{display:none!important}
 .nuris-km-ket{margin:6px 2px 0;font-size:12.5px;color:#5b6b63}
+
+/* Mutabaah › Ujian Semester: saringan Selesai/Lulus/Tidak lulus */
+.nuris-ujf-asli{display:none!important}
+.nuris-ujf{display:flex;flex-direction:column;gap:6px}
+.nuris-ujf-tabs{display:flex;gap:4px;padding:4px;border-radius:12px;background:#eef3f0}
+.nuris-ujf-tabs button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:4px 8px;border:0;border-radius:9px;background:transparent;font:inherit;font-size:13px;font-weight:600;color:#5b6b63;cursor:pointer;white-space:nowrap}
+.nuris-ujf-tabs button b{min-width:22px;padding:1px 6px;border-radius:999px;background:#fff;font-size:11.5px;font-weight:800;color:#0a4f2e}
+.nuris-ujf-tabs button[aria-selected="true"]{background:#0b3d24;color:#fff}
+.nuris-ujf-tabs button[aria-selected="true"] b{background:rgba(255,255,255,.18);color:#fff}
+.nuris-ujf-tabs button[data-ujf="tidak"]:not([aria-selected="true"]) b{color:#b3343a}
+.nuris-ujf-ket{margin:0 2px;font-size:12.5px;color:#5b6b63}
+@media (max-width:420px){.nuris-ujf-tabs button{flex-direction:column;gap:2px;font-size:12px}}

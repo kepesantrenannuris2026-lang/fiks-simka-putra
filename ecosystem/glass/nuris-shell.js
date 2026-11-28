@@ -336,12 +336,62 @@
     } else ket?.remove();
   }
 
+  /* ---------- Mutabaah › Ujian Semester: saringan Semua · Selesai · Lulus · Tidak lulus + jumlah (28 Nov 2026) ----------
+     Saringan asli (Semua/Belum/Sedang/Selesai) disembunyikan dan dikunci di "Semua"; baris disaring di sini. KKM 75. */
+  const KKM_UJ = 75;
+  let ujfMode = (() => { try { return sessionStorage.getItem('nuris_ujian_saring') || 'semua'; } catch { return 'semua'; } })();
+  function ujianSaring() {
+    if (APP !== 'mutabaah') return;
+    const asli = [...document.querySelectorAll('[role="tablist"]')].find((t) => {
+      const l = [...t.querySelectorAll('button')].map((b) => b.textContent.trim());
+      return l.length === 4 && l[1] === 'Belum' && l[2] === 'Sedang' && l[3] === 'Selesai';
+    });
+    if (!asli) return;
+    asli.classList.add('nuris-ujf-asli');
+    const semuaAsli = asli.querySelector('button');
+    if (semuaAsli && semuaAsli.getAttribute('aria-selected') !== 'true') { semuaAsli.click(); return; }
+    let bar = asli.nextElementSibling?.classList.contains('nuris-ujf') ? asli.nextElementSibling : null;
+    if (!bar) {
+      bar = document.createElement('div'); bar.className = 'nuris-ujf';
+      bar.innerHTML = `<div class="nuris-ujf-tabs" role="tablist" aria-label="Saring hasil ujian">${[['semua', 'Semua'], ['selesai', 'Selesai'], ['lulus', 'Lulus'], ['tidak', 'Tidak lulus']]
+        .map(([v, l]) => `<button type="button" role="tab" data-ujf="${v}"><span>${l}</span><b></b></button>`).join('')}</div><p class="nuris-ujf-ket"></p>`;
+      bar.addEventListener('click', (e) => {
+        const t = e.target.closest('[data-ujf]'); if (!t) return;
+        ujfMode = t.dataset.ujf; try { sessionStorage.setItem('nuris_ujian_saring', ujfMode); } catch {}
+        ujianSaring();
+      });
+      asli.after(bar);
+    }
+    // Baris santri: grup kanan berisi badge status pada anak pertama.
+    const kartu = asli.nextElementSibling?.nextElementSibling;
+    const rows = kartu ? [...kartu.children].filter((r) => r.querySelector(':scope > div.shrink-0')) : [];
+    let selesai = 0, lulus = 0, tidak = 0;
+    for (const r of rows) {
+      const grup = r.querySelector(':scope > div.shrink-0');
+      const fin = [...grup.children].some((x) => x.textContent.trim() === 'Selesai');
+      const nEl = fin ? [...grup.children].find((x) => x.tagName === 'SPAN' && /^[\d,]+$/.test(x.textContent.trim())) : null;
+      const n = nEl ? Number(nEl.textContent.trim().replace(',', '.')) : null;
+      const ok = fin && (nEl && /\bbg-leaf\b/.test(nEl.className) ? true : nEl && /\bbg-rose\b/.test(nEl.className) ? false : n != null && n >= KKM_UJ);
+      if (fin) { selesai++; if (ok) lulus++; else tidak++; }
+      const tampil = ujfMode === 'semua' || (ujfMode === 'selesai' && fin) || (ujfMode === 'lulus' && ok) || (ujfMode === 'tidak' && fin && !ok);
+      r.classList.toggle('nuris-km-sembunyi', !tampil);
+    }
+    const jml = { semua: rows.length, selesai, lulus, tidak };
+    for (const b of bar.querySelectorAll('[data-ujf]')) {
+      const on = b.dataset.ujf === ujfMode; if (b.getAttribute('aria-selected') !== String(on)) b.setAttribute('aria-selected', String(on));
+      const t = String(jml[b.dataset.ujf]); const el = b.querySelector('b'); if (el.textContent !== t) el.textContent = t;
+    }
+    const pct = (x) => (selesai ? Math.round((x / selesai) * 100) : 0);
+    const ket = `${selesai} dari ${rows.length} santri selesai diuji \u00b7 ${lulus} lulus (${pct(lulus)}%) \u00b7 ${tidak} tidak lulus (${pct(tidak)}%) \u00b7 KKM ${KKM_UJ}`;
+    const p = bar.querySelector('.nuris-ujf-ket'); if (p.textContent !== ket) p.textContent = ket;
+  }
+
   function sapu() {
     antre = 0;
     favicon();
     for (const img of document.querySelectorAll('img')) logo(img);
     if (APP !== 'beranda') for (const el of document.querySelectorAll(KE_PORTAL)) tandaiLogo(el);
-    tempel(); simka(); ujian(); hadis();
+    tempel(); simka(); ujian(); hadis(); ujianSaring();
   }
   const jadwal = () => { if (!antre) antre = requestAnimationFrame(sapu); };
   function mulai() {
