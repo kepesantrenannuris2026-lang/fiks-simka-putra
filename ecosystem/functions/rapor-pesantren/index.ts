@@ -162,6 +162,13 @@ async function kamarList(a: Actor, ta: string, sem: number) {
         WHERE k.aktif AND ($2 OR k.wali_username=$1 OR ${KAMAR_UNIT}=ANY($5::text[]) OR EXISTS (SELECT 1 FROM rapor_pesantren.anggota x WHERE x.kamar_id=k.id AND x.wali_username=$1))
         GROUP BY k.id,w.nama ORDER BY k.lingkungan,array_position(ARRAY['SMP','SMA','MA'],k.unit),k.tingkat::int,k.urut`, [a.username, a.admin, ta, sem || 0, a.units, a.koordinator])).rows;
 }
+// Daftar nama santri di semua kamar yang dapat diakses (untuk pencarian nama lintas kamar di Yaumiyyah › Nilai).
+async function kamarNama(a: Actor) {
+  const args: unknown[] = [];
+  const scope = scopeSql(a, args);
+  return (await q(`SELECT s.id,s.nama,g.kamar_id FROM rapor_pesantren.anggota g JOIN rapor_pesantren.kamar k ON k.id=g.kamar_id AND k.aktif
+        JOIN public.santri s ON s.id=g.santri_id AND s.aktif WHERE ${scope} ORDER BY s.nama`, args)).rows;
+}
 // Santri satu kamar beserta hak penuh per santri.
 async function kamarStudents(a: Actor, kamarId: string, ta: string, sem: number) {
   const args: unknown[] = [kamarId, ta, sem];
@@ -348,7 +355,7 @@ async function handle(path: string, a: Actor, body: any) {
 async function nilaiUnit(grup: string, aksi: string, a: Actor, body: any) {
   const KUNCI = GRUP_UNIT[grup];
   const { ta, sem } = periodOf(body);
-  if (aksi === 'kamar') return { user: { username: a.username, nama: a.nama, admin: a.admin, koordinator: a.koordinator }, kamars: await kamarList(a, ta, sem), kurikulum: (await settings()).kurikulum || {} };
+  if (aksi === 'kamar') return { user: { username: a.username, nama: a.nama, admin: a.admin, koordinator: a.koordinator }, kamars: await kamarList(a, ta, sem), santri: await kamarNama(a), kurikulum: (await settings()).kurikulum || {} };
   if (aksi === 'load') {
     if (typeof body.kamar !== 'string' || body.kamar.length > 120) throw fail('Pilih kamar.');
     const students = await kamarStudents(a, body.kamar, ta, sem);

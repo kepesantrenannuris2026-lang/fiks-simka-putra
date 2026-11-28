@@ -13,7 +13,7 @@ function buatNilai(cfg: Cfg) {
   const app = document.getElementById('app')!;
   const now = new Date(Date.now() + 7 * 3600e3); // WIB
   const y0 = now.getUTCFullYear() - (now.getUTCMonth() < 6 ? 1 : 0);
-  const st: any = { user: null, kamars: [], kur: {}, kamarId: '', students: [], ta: `${y0}/${y0 + 1}`, sem: now.getUTCMonth() >= 6 ? 1 : 2, loading: false, err: '', dirty: new Map<string, Record<string, number | null>>(), saving: false };
+  const st: any = { user: null, kamars: [], kur: {}, kamarId: '', students: [], ta: `${y0}/${y0 + 1}`, sem: now.getUTCMonth() >= 6 ? 1 : 2, loading: false, err: '', dirty: new Map<string, Record<string, number | null>>(), saving: false, santri: [], cari: '' };
   try { const k = sessionStorage.getItem('yk-kamar'); if (k) st.kamarId = k; } catch {}
 
   const mod = { views: [cfg.view], active: false, started: false, canLeave: () => { if (st.dirty.size) void simpan(); return true; }, show: async (_v: string) => {} };
@@ -34,7 +34,24 @@ function buatNilai(cfg: Cfg) {
     const opt = (k: any) => `<option value="${esc(k.id)}" ${k.id === st.kamarId ? 'selected' : ''}>${esc(k.nama)} · ${esc(k.unit)} ${k.lingkungan === 'PUTRA' ? 'Putra' : 'Putri'} ${esc(k.tingkat)} · ${k[cfg.grup + '_terisi'] ?? 0}/${k.jumlah}</option>`;
     const ampu = st.kamars.filter((k: any) => k.ampu), lain = st.kamars.filter((k: any) => !k.ampu);
     const grup = ampu.length && lain.length ? `<optgroup label="Kamar ampuan Anda">${ampu.map(opt).join('')}</optgroup><optgroup label="Kamar lain di unit">${lain.map(opt).join('')}</optgroup>` : st.kamars.map(opt).join('');
-    return `<label class="ns-field yk-kamar"><span>Kamar</span><select data-yk="kamar"><option value="">Pilih kamar…</option>${grup}</select></label>`;
+    return `<label class="ns-field yk-kamar"><span>Kamar</span><select data-yk="kamar"><option value="">Pilih kamar…</option>${grup}</select></label>
+      <label class="ns-field yk-cari"><span>Cari nama santri</span><span class="yk-cari-box">${icon(I.search, 16)}<input type="search" data-yk="cari" placeholder="Ketik nama santri…" value="${esc(st.cari)}" autocomplete="off" enterkeyhint="search"></span></label>
+      <div class="yk-hasil" id="yk-hasil-${cfg.grup}" aria-live="polite">${hasil()}</div>`;
+  }
+  // Pencarian nama: baris di kamar aktif disaring; santri yang cocok di kamar lain tampil sebagai pintasan pindah kamar.
+  const norm = (x: string) => x.toLowerCase().replace(/\s+/g, ' ').trim();
+  const cocok = (nama: string) => !st.cari.trim() || norm(nama).includes(norm(st.cari));
+  function hasil() {
+    const qq = norm(st.cari); if (qq.length < 2) return '';
+    const kamarNm = new Map(st.kamars.map((k: any) => [k.id, k]));
+    const lain = st.santri.filter((x: any) => x.kamar_id !== st.kamarId && kamarNm.has(x.kamar_id) && norm(x.nama).includes(qq));
+    const diSini = st.kamarId ? st.students.filter((x: any) => cocok(x.nama)).length : 0;
+    const head = st.kamarId ? `<p class="yk-hasil-ket">${diSini ? `${diSini} santri cocok di kamar ini.` : 'Tidak ada yang cocok di kamar ini.'}${lain.length ? ' Di kamar lain:' : ''}</p>` : lain.length ? '' : '<p class="yk-hasil-ket">Nama tidak ditemukan di kamar yang dapat Anda akses.</p>';
+    return head + (lain.length ? `<div class="yk-hasil-list">${lain.slice(0, 8).map((x: any) => { const k: any = kamarNm.get(x.kamar_id); return `<button type="button" class="yk-hasil-btn" data-yk="ke" data-kamar="${esc(x.kamar_id)}"><b>${esc(x.nama)}</b><small>${esc(k.nama)} · ${esc(k.unit)} ${esc(k.tingkat)}</small></button>`; }).join('')}${lain.length > 8 ? `<p class="yk-hasil-ket">+${lain.length - 8} lainnya — ketik nama lebih lengkap.</p>` : ''}</div>` : '');
+  }
+  function saring() {
+    for (const tr of $$<HTMLTableRowElement>('.yk-grid tbody tr')) tr.hidden = !cocok(tr.dataset.nama || '');
+    const h = $('#yk-hasil-' + cfg.grup); if (h) h.innerHTML = hasil();
   }
   function kolom(): Item[] {
     const seen = new Map<string, Item>();
@@ -54,7 +71,7 @@ function buatNilai(cfg: Cfg) {
         return `<td><input class="yk-in" inputmode="decimal" data-s="${esc(s.id)}" data-k="${c.k}" data-r="${r}" data-c="${ci}" value="${esc(v ?? '')}" aria-label="${esc(c.id)} ${esc(s.nama)}" autocomplete="off"><small class="yk-h">${v != null && v !== '' ? huruf(Number(v)) : ''}</small></td>`;
       }).join('');
       const n = cols.filter((c) => s.nilai?.[c.k] != null).length, t = itemsFor(cfg.grup, s, st.kur).length;
-      return `<tr><th scope="row"><span>${esc(s.nama)}</span><small>Kelas ${esc(s.tingkat)} · ${n}/${t} ${cfg.satuan}${st.dirty.has(s.id) ? ' · <b>belum disimpan</b>' : ''}</small></th>${isi}</tr>`;
+      return `<tr data-nama="${esc(s.nama)}"${cocok(s.nama) ? '' : ' hidden'}><th scope="row"><span>${esc(s.nama)}</span><small>Kelas ${esc(s.tingkat)} · ${n}/${t} ${cfg.satuan}${st.dirty.has(s.id) ? ' · <b>belum disimpan</b>' : ''}</small></th>${isi}</tr>`;
     }).join('');
     const k = kamar();
     return `${k && !k.ampu && !st.user?.admin ? `<p class="yk-note">${icon(cfg.ikon, 16)}<span>Kamar ${esc(k.nama)} diampu ${esc(k.wali_nama || '–')}. Anda mengisi ${cfg.satuanPanjang} untuk kamar ini.</span></p>` : ''}
@@ -110,7 +127,7 @@ function buatNilai(cfg: Cfg) {
   async function muatDaftar() {
     try {
       const r = await api(`yaum-${cfg.grup}-kamar`, { ta: st.ta, sem: st.sem });
-      st.user = r.user; st.kamars = r.kamars; st.kur = r.kurikulum || {}; st.err = '';
+      st.user = r.user; st.kamars = r.kamars; st.santri = r.santri || []; st.kur = r.kurikulum || {}; st.err = '';
       if (!kamar()) st.kamarId = (st.kamars.find((k: any) => k.ampu) || (st.kamars.length === 1 ? st.kamars[0] : null))?.id || '';
     } catch (e: any) { st.err = e.message; if (e.status === 401) sessionEnded(); }
   }
@@ -130,10 +147,16 @@ function buatNilai(cfg: Cfg) {
     if (k === 'ta') { st.ta = (t as HTMLSelectElement).value; void gantiPeriode(); }
     if (k === 'sem') { st.sem = Number((t as HTMLSelectElement).value); void gantiPeriode(); }
   });
+  document.addEventListener('input', (e) => {
+    if (!mod.active) return;
+    const t = e.target as HTMLInputElement; if (t.dataset?.yk !== 'cari') return;
+    st.cari = t.value; saring();
+  });
   document.addEventListener('click', (e) => {
     if (!mod.active) return;
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-yk]'); if (!b || b.tagName === 'SELECT') return;
     if (b.dataset.yk === 'simpan') void simpan();
+    if (b.dataset.yk === 'ke' && b.dataset.kamar) { const id = b.dataset.kamar; void simpan().then(() => { st.kamarId = id; try { sessionStorage.setItem('yk-kamar', id); } catch {} void muatKamar(); }); }
     if (b.dataset.yk === 'ulang') { st.err = ''; mod.started = false; void mod.show(cfg.view); }
   });
   // Enter/panah: pindah sel seperti lembar kerja.
@@ -143,7 +166,10 @@ function buatNilai(cfg: Cfg) {
     const r = Number(t.dataset.r), c = Number(t.dataset.c);
     const ke = e.key === 'Enter' || e.key === 'ArrowDown' ? [r + 1, c] : e.key === 'ArrowUp' ? [r - 1, c] : e.key === 'ArrowRight' && t.selectionStart === t.value.length ? [r, c + 1] : e.key === 'ArrowLeft' && t.selectionStart === 0 ? [r, c - 1] : null;
     if (!ke) return;
-    const n = $<HTMLInputElement>(`.yk-in[data-r="${ke[0]}"][data-c="${ke[1]}"]`); if (!n) return;
+    let n = $<HTMLInputElement>(`.yk-in[data-r="${ke[0]}"][data-c="${ke[1]}"]`);
+    const dr = ke[0] - r; // lompati baris yang tersembunyi oleh pencarian
+    while (n && dr && n.closest('tr')?.hidden) { ke[0] += dr; n = $<HTMLInputElement>(`.yk-in[data-r="${ke[0]}"][data-c="${ke[1]}"]`); }
+    if (!n) return;
     e.preventDefault(); ubah(t); n.focus(); n.select();
   });
   // Tempel blok dari Excel/Google Sheets mulai dari sel yang aktif.
@@ -157,7 +183,6 @@ function buatNilai(cfg: Cfg) {
       const n = $<HTMLInputElement>(`.yk-in[data-r="${r0 + i}"][data-c="${c0 + j}"]`); if (n) { n.value = v.trim(); ubah(n); }
     }));
   });
-  void $$;
   return mod;
 }
 const TIP_SKALA = 'predikat (A ≥90, B+ 80–89, B 70–79, C &lt;70) muncul otomatis. Tersimpan otomatis dan langsung masuk ke Rapor Pesantren';

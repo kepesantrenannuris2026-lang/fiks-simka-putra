@@ -73,3 +73,15 @@
 .yw-kamar td,.yw-kamar thead th{text-align:center}.yw-kamar thead th:first-child{text-align:left}
 .yw-link{all:unset;cursor:pointer;font-weight:700;color:var(--ink)}.yw-link:hover,.yw-link:focus-visible{color:var(--nuris-accent-strong,#0b7285);text-decoration:underline}
 .yw-kamar tfoot th,.yw-kamar tfoot td{border-top:2px solid var(--line);font-weight:700;background:var(--nuris-accent-soft,#e3f3f6)}
+/* Nilai: cari nama santri (28 Nov 2026) */
+.yk-cari,.yk-hasil{grid-column:1/-1}
+.yk-cari-box{position:relative;display:block}
+.yk-cari-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.yk-cari-box input{width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 12px 0 34px;font:inherit;font-size:14px;color:var(--ink)}
+.yk-cari-box input:focus{outline:2px solid var(--nuris-accent-strong,#0b7285);outline-offset:1px}
+.yk-hasil:empty{display:none}
+.yk-hasil-ket{margin:0;font-size:12.5px;color:var(--muted)}
+.yk-hasil-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.yk-hasil-btn{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+.yk-hasil-btn b{font-size:13.5px}.yk-hasil-btn small{font-size:12px;color:var(--muted)}
+.yk-hasil-btn:hover,.yk-hasil-btn:focus-visible{border-color:var(--nuris-accent-strong,#0b7285);background:var(--nuris-accent-soft,#e3f3f6)}
